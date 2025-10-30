@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   moodText: { fontFamily: 'Inter_600SemiBold', color: '#4E4A40', marginTop: 5 },
   // --- Map Button ---
   mapButton: {
-    backgroundColor: '#007A7A', // Canal Teal
+    backgroundColor: '#F47121', // Spritz
     marginHorizontal: 20, // <-- Standardized margin
     marginTop: 15, // <-- ADDED SPACING
     padding: 15, borderRadius: 12, alignItems: 'center',
