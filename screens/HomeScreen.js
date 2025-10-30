@@ -1,16 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
-import CustomHeader from '../components/CustomHeader'; // <-- 1. IMPORT
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  FlatList
+} from 'react-native';
+import CustomHeader from '../components/CustomHeader';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
 
-// (Mock Data and Moods are the same)
-const MOCK_PULSE = [
-  { id: '1', name: 'Popcorn Chicken', score: 1450, whyTag: 'taste', type: 'diningHall' },
-  { id: '2', name: 'Pappy\'s Burger', score: 1420, whyTag: 'value', type: 'diningPoints' },
-  { id: '3', name: 'Windsor\'s Tacos', score: 1390, whyTag: 'taste', type: 'diningHall' },
-];
+// --- FIREBASE IMPORTS ---
+import { db } from '../firebaseConfig';
+import { collection, getDocs } from 'firebase/firestore';
+
+// (Moods are the same)
 const MOODS = [
   { key: 'cozy', label: 'Cozy', emoji: '🍲' },
   { key: 'sick', label: 'Sick', emoji: '🤒' },
@@ -20,14 +27,60 @@ const MOODS = [
 
 export default function HomeScreen({ navigation }) {
   let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_600SemiBold, BodoniModa_700Bold });
+
+  // --- NEW STATE for Dining Halls ---
+  const [diningHalls, setDiningHalls] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // --- NEW: Fetch Dining Halls from Firestore ---
+  useEffect(() => {
+    const fetchDiningHalls = async () => {
+      setLoading(true);
+      const hallsCollectionRef = collection(db, 'diningHalls');
+      try {
+        const querySnapshot = await getDocs(hallsCollectionRef);
+        const hallsList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setDiningHalls(hallsList);
+      } catch (error) {
+        console.error("Error fetching dining halls: ", error);
+      }
+      setLoading(false);
+    };
+
+    fetchDiningHalls();
+  }, []); // Empty array means this runs once on mount
+
+
   const onMoodPress = (mood) => alert(`Tapped ${mood.label}`);
   const onHotspotPress = () => alert('Opening Hotspot Map...');
+
+  // --- NEW: Render Function for Dining Hall Cards ---
+  const renderDiningHall = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      // This is the navigation you set up in AppNavigator.js!
+      onPress={() => navigation.navigate('DiningHall', {
+        diningHallId: item.id,
+        // We pass the name to set the title in the next screen
+        name: item.name
+      })}
+    >
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{item.name}</Text>
+        <Text style={styles.cardLocation}>{item.location}</Text>
+      </View>
+      <Text style={styles.arrowText}>{">"}</Text>
+    </TouchableOpacity>
+  );
 
   if (!fontsLoaded) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CustomHeader /> {/* <-- 2. USE THE COMPONENT */}
+      <CustomHeader />
       <ScrollView style={styles.container}>
         {/* --- FOOD MOODS --- */}
         <Text style={styles.headerTitle}>What's your mood?</Text>
@@ -45,45 +98,37 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.mapButtonText}>📍 View Campus Hotspot Map</Text>
         </TouchableOpacity>
 
-        {/* --- THE PULSE (Leaderboard) --- */}
-        <Text style={styles.headerTitle}>The Pulse</Text>
-        <Text style={styles.subHeader}>Live campus leaderboard</Text>
-
-        {MOCK_PULSE.map((item, index) => (
-          <TouchableOpacity key={item.id} style={styles.card}>
-            <Text style={styles.rankText}>#{index + 1}</Text>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardLocation}>
-                {item.type === 'diningHall' ? 'Dining Hall' : 'Dining Points'}
-              </Text>
-            </View>
-            <View style={styles.whyTagChip}>
-              <Text style={styles.whyTagText}>Top: {item.whyTag}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {/* --- NEW: DINING HALLS LIST --- */}
+        <Text style={styles.headerTitle}>Dining Halls</Text>
+        {loading ? (
+          <Text style={styles.subHeader}>Loading...</Text>
+        ) : (
+          <FlatList
+            data={diningHalls}
+            renderItem={renderDiningHall}
+            keyExtractor={item => item.id}
+            scrollEnabled={false} // Disable scrolling within the ScrollView
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// --- Styles (with better spacing) ---
+// --- Styles ---
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FAF6F0' }, // Background (Sunlight)
+  safeArea: { flex: 1, backgroundColor: '#FAF6F0' },
   container: { flex: 1 },
   headerTitle: {
     fontFamily: 'BodoniModa_700Bold', fontSize: 28, color: '#4E4A40',
-    marginTop: 25, // <-- ADDED SPACING
-    marginBottom: 15, paddingHorizontal: 20,
+    marginTop: 25, marginBottom: 15, paddingHorizontal: 20,
   },
   subHeader: {
     fontFamily: 'Inter_400Regular', fontSize: 16, color: '#7D7D7D',
-    marginTop: -15, marginBottom: 15, // <-- ADDED SPACING
-    paddingHorizontal: 20,
+    marginTop: -15, marginBottom: 15, paddingHorizontal: 20,
   },
   // --- Mood Styles ---
-  moodScroll: { paddingLeft: 20, paddingBottom: 10 }, // <-- ADDED SPACING
+  moodScroll: { paddingLeft: 20, paddingBottom: 10 },
   moodButton: {
     backgroundColor: '#FFFFFF', padding: 15, borderRadius: 12, alignItems: 'center',
     width: 100, marginRight: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
@@ -93,28 +138,25 @@ const styles = StyleSheet.create({
   moodText: { fontFamily: 'Inter_600SemiBold', color: '#4E4A40', marginTop: 5 },
   // --- Map Button ---
   mapButton: {
-    backgroundColor: '#F47121', // Spritz
-    marginHorizontal: 20, // <-- Standardized margin
-    marginTop: 15, // <-- ADDED SPACING
+    backgroundColor: '#F47121', marginHorizontal: 20, marginTop: 15,
     padding: 15, borderRadius: 12, alignItems: 'center',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
   mapButtonText: { fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', fontSize: 16 },
-  // --- Card Styles ---
+  // --- CARD STYLES (Re-using from your DiningHallScreen) ---
   card: {
     backgroundColor: '#FFFFFF', padding: 20, marginVertical: 8, borderRadius: 12,
     marginHorizontal: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05, shadowRadius: 4, elevation: 3,
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  cardContent: { flex: 1, marginLeft: 15 },
+  cardContent: { flex: 1 },
   cardTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 18, color: '#4E4A40' },
   cardLocation: { fontFamily: 'Inter_400Regular', fontSize: 14, color: '#7D7D7D', marginTop: 4 },
-  rankText: { fontFamily: 'BodoniModa_700Bold', fontSize: 22, color: '#7D7D7D' },
-  whyTagChip: {
-    backgroundColor: '#FAF6F0', // Light cream
-    paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20,
+  arrowText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 24,
+    color: '#7D7D7D'
   },
-  whyTagText: { fontFamily: 'Inter_600SemiBold', color: '#4E4A40', fontSize: 12 },
 });
