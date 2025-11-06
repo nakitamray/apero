@@ -4,12 +4,13 @@ import { auth } from '../firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { useFonts } from 'expo-font';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { Inter_400Regular } from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter'; // Use Inter_600SemiBold for a slightly lighter look
 
 export default function CustomHeader() {
   let [fontsLoaded] = useFonts({
     BodoniModa_700Bold,
     Inter_400Regular,
+    Inter_600SemiBold,
   });
 
   const handleLogout = () => {
@@ -17,11 +18,10 @@ export default function CustomHeader() {
   };
 
   if (!fontsLoaded) {
-    return null; // Don't render until fonts are loaded
+    return null; 
   }
 
   return (
-    // Use SafeAreaView to handle notches, but only for the top edge
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
         <Text style={styles.title}>apero</Text>
@@ -55,9 +55,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   logoutText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold', // Slightly less weight than 700
+    fontSize: 15, // Slightly smaller
     color: '#007A7A', // Secondary Accent (Canal)
-    fontWeight: '500',
   },
 });

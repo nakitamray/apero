@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { onAuthStateChanged } from 'firebase/auth'; // Firebase auth listener
-import { auth } from '../firebaseConfig'; // auth object
+import { onAuthStateChanged } from 'firebase/auth'; 
+import { auth } from '../firebaseConfig'; 
+import { PlusCircle, Home, List, User } from 'lucide-react-native'; 
 
 // import screens
 import LoginScreen from '../screens/LoginScreen';
@@ -13,15 +15,20 @@ import ProfileScreen from '../screens/ProfileScreen';
 import DiningHallScreen from '../screens/DiningHallScreen';
 import DishScreen from '../screens/DishScreen';
 import MyListScreen from '../screens/MyListScreen';
+import MoodResultsScreen from '../screens/MoodResultsScreen';
+import ComparisonScreen from '../screens/ComparisonScreen';
+import SearchScreen from '../screens/SearchScreen'; 
+import CustomReviewScreen from '../screens/CustomReviewScreen'; 
+import ManualCreateScreen from '../screens/ManualCreateScreen'; // <-- NEW IMPORT
 
 // created navigator "engines"
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Create a new Stack navigator just for the "Home" flow
 const HomeStack = createNativeStackNavigator();
 const ListStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
+const ReviewStack = createNativeStackNavigator(); 
 
 const screenOptions = {
   headerStyle: { backgroundColor: '#FAF6F0' },
@@ -30,14 +37,38 @@ const screenOptions = {
   headerShadowVisible: false,
 };
 
+// --- Stack for the Review Flow ---
+function ReviewStackNavigator() {
+    return (
+        <ReviewStack.Navigator screenOptions={screenOptions}>
+            <ReviewStack.Screen 
+                name="SearchScreen" 
+                component={SearchScreen} 
+                options={{ headerShown: false }} 
+            />
+            {/* NEW: Manual creation is part of the review flow */}
+            <ReviewStack.Screen 
+                name="ManualCreate" 
+                component={ManualCreateScreen} 
+                options={{ title: 'Add New Dish' }} 
+            />
+            <ReviewStack.Screen 
+                name="CustomReview" 
+                component={CustomReviewScreen} 
+                options={{ title: 'Write Your Review' }}
+            />
+        </ReviewStack.Navigator>
+    );
+}
+
 // --- Stack for the "Home/Discover" Tab ---
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={screenOptions}>
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="DiningHall" component={DiningHallScreen} options={{ title: 'Dishes' }} />
-      <HomeStack.Screen name="Dish" component={DishScreen} options={{ title: 'Rate Dish' }} />
-      {/* TODO: Add HotspotMapScreen here */}
+      <HomeStack.Screen name="Dish" component={DishScreen} options={{ title: 'Dish Info' }} />
+      <HomeStack.Screen name="MoodResults" component={MoodResultsScreen} /> 
     </HomeStack.Navigator>
   );
 }
@@ -47,7 +78,7 @@ function ListStackNavigator() {
   return (
     <ListStack.Navigator screenOptions={screenOptions}>
       <ListStack.Screen name="MyListScreen" component={MyListScreen} options={{ headerShown: false }} />
-      {/* TODO: Add DishScreen here too so you can tap a ranked item */}
+      <ListStack.Screen name="Comparison" component={ComparisonScreen} options={{ title: 'Apero Ranking' }} /> 
     </ListStack.Navigator>
   );
 }
@@ -59,37 +90,76 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen 
         name="ProfileScreen" 
         component={ProfileScreen} 
-        options={{ headerShown: false }} // <-- ADD THIS
+        options={{ headerShown: false }}
       />
-      {/* TODO: Add FriendsListScreen here */}
     </ProfileStack.Navigator>
   );
 }
 
-// --- This is the NEW 3-Tab Bar ---
+// --- The 4-Tab Bar ---
 function AppTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false, // Each stack handles its own header
-        tabBarActiveTintColor: '#F47121', // Spritz Orange
-        tabBarInactiveTintColor: '#7D7D7D', // Stone Gray
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#007A7A', 
+        tabBarInactiveTintColor: '#7D7D7D', 
         tabBarStyle: { 
           backgroundColor: '#FFFFFF', borderTopWidth: 0,
           elevation: 10, shadowOpacity: 0.05,
         },
-        tabBarLabelStyle: { fontFamily: 'Inter_600SemiBold', fontSize: 10 }
-      }}
+        tabBarLabelStyle: { fontFamily: 'Inter_400Regular', fontSize: 11 }, 
+        tabBarIcon: ({ color }) => {
+            const iconSize = 22; 
+            if (route.name === 'Discover') {
+                return <Home color={color} size={iconSize} />;
+            } else if (route.name === 'My List') {
+                return <List color={color} size={iconSize} />;
+            } else if (route.name === 'Review') {
+                return <PlusCircle color={color} size={30} />; 
+            } else if (route.name === 'Profile') {
+                return <User color={color} size={iconSize} />;
+            }
+        },
+        tabBarItemStyle: route.name === 'Review' ? {
+            backgroundColor: 'transparent',
+            margin: 0, 
+            padding: 0,
+        } : {},
+        tabBarShowLabel: route.name !== 'Review', 
+      })}
     >
-      <Tab.Screen name="Home" component={HomeStackNavigator} />
-      <Tab.Screen name="My List" component={ListStackNavigator} />
-      <Tab.Screen name="Profile" component={ProfileStackNavigator} />
+      <Tab.Screen 
+        name="Discover" 
+        component={HomeStackNavigator} 
+        options={{ title: 'Discover' }}
+      />
+      <Tab.Screen 
+        name="My List" 
+        component={ListStackNavigator} 
+        options={{ title: 'My List' }}
+      />
+      {/* Central Review Button (links to SearchScreen) */}
+      <Tab.Screen 
+        name="Review" 
+        component={ReviewStackNavigator} 
+        options={{
+            tabBarLabel: 'Review',
+            tabBarActiveTintColor: '#007A7A', 
+            tabBarInactiveTintColor: '#007A7A', 
+            tabBarIconStyle: { marginTop: 0 },
+        }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileStackNavigator} 
+        options={{ title: 'Profile' }}
+      />
     </Tab.Navigator>
   );
 }
 
 // STACK for LOGGED OUT
-// stack with Login and Sign Up
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -100,29 +170,19 @@ function AuthStack() {
 }
 
 // MAIN NAVIGATOR 
-// decides which stack to show based on if a user is logged in
 export default function AppNavigator() {
-  const [user, setUser] = useState(null); // this variable golds the user's login state
+  const [user, setUser] = useState(null); 
 
-  // firebase listener
-  // runs on mount and whenever the auth state changes (login, logout, sign up).
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // Set the user state
+      setUser(currentUser);
     });
-
-    // when the component unmounts, cleans listener
     return () => unsubscribe();
   }, []);
 
-  // wrap everything in NavigationContainer
   return (
     <NavigationContainer>
       {user ? <AppTabs /> : <AuthStack />}
-      {/* core logic:
-          IF the 'user' state is not null, show the AppTabs
-          ELSE (if user is null), show the AuthStack
-      */}
     </NavigationContainer>
   );
 }

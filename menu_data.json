@@ -1,0 +1,38 @@
+[
+  {
+    "id": "wiley-popcornchicken-scraped",
+    "name": "Popcorn Chicken (Scraped)",
+    "category": "diningHall",
+    "locationName": "Wiley Dining Court",
+    "source": "scraped",
+    "tags": ["value", "protein"],
+    "diningHallId": "ceKykCG10Pn3SWP0L9z9T"
+  },
+  {
+    "id": "windsor-tacos",
+    "name": "Windsor Tacos (Scraped)",
+    "category": "diningHall",
+    "locationName": "Windsor Dining Court",
+    "source": "scraped",
+    "tags": ["celebration", "spicy"],
+    "diningHallId": "new-windsor-id"
+  },
+  {
+    "id": "hillenbrand-veganbowl",
+    "name": "Hillenbrand Vegan Bowl",
+    "category": "diningHall",
+    "locationName": "Hillenbrand Dining",
+    "source": "scraped",
+    "tags": ["healthy", "cozy"],
+    "diningHallId": "new-hillenbrand-id"
+  },
+  {
+    "id": "pappys-tripleburger",
+    "name": "Pappy's Triple Burger",
+    "category": "diningPoints",
+    "locationName": "Pappy's Grill & Sports Bar",
+    "source": "scraped",
+    "tags": ["value", "stressed"],
+    "diningHallId": "pappys-id"
+  }
+]
