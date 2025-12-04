@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { db, auth } from '../firebaseConfig';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
-import { Search, ChevronLeft, MapPin, Plus } from 'lucide-react-native';
+import { db } from '../firebaseConfig';
+import { collectionGroup, getDocs } from 'firebase/firestore';
+import { Search, Plus } from 'lucide-react-native';
 
 // Maps ID to the Display Name stored in the 'locations' array in Firestore
 const DINING_HALLS = [
@@ -28,68 +28,91 @@ export default function SearchScreen({ navigation }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedHall, setSelectedHall] = useState('all');
     const [searchResults, setSearchResults] = useState([]);
+    const [allDishes, setAllDishes] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // --- SEARCH LOGIC (GLOBAL) ---
-    const handleSearch = async (text) => {
-        setSearchTerm(text);
-        if (text.length < 2) {
-            setSearchResults([]);
-            return;
-        }
+    // Fetch all dishes once on mount
+    useEffect(() => {
+        fetchAllDishes();
+    }, []);
 
+    // Perform search when searchTerm or selectedHall changes
+    useEffect(() => {
+        handleSearch();
+    }, [searchTerm, selectedHall, allDishes]);
+
+    const fetchAllDishes = async () => {
         setLoading(true);
-        const lowerText = text.toLowerCase();
-        
         try {
-            // We now search the 'globalDishes' collection (The History Master List)
-            let q;
+            const dishesRef = collectionGroup(db, 'dishes');
+            const snapshot = await getDocs(dishesRef);
             
-            // Strategy: Search generic global dishes first
-            // We use a simple prefix search here. 
-            // Note: Firestore is case-sensitive. For a real app, you'd store a 'lowercaseName' field.
-            // For this prototype, we assume the input matches the casing or we rely on the client-side filter 
-            // if we pull a broader list. 
-            // To fix case-sensitivity simply, we will just pull dishes and filter in JS for this demo 
-            // (since our dataset is < 5000 items, it's okay for a prototype, but 'where' is better).
+            const dishes = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const parentRef = doc.ref.parent.parent;
+                
+                return {
+                    id: doc.id,
+                    name: data.name,
+                    category: data.category || 'diningHall',
+                    locations: data.locations || [parentRef?.id || 'Unknown'],
+                    parentId: parentRef?.id,
+                    parentCollection: parentRef?.parent?.id,
+                };
+            });
             
-            q = query(
-                collection(db, 'globalDishes'),
-                where('name', '>=', text),
-                where('name', '<=', text + '\uf8ff'),
-                limit(20)
-            );
-            
-            const snapshot = await getDocs(q);
-            let results = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-
-            // Client-side location filter (if specific hall selected)
-            if (selectedHall !== 'all') {
-                results = results.filter(dish => 
-                    dish.locations && dish.locations.includes(selectedHall)
-                );
-            }
-            
-            setSearchResults(results);
-            
+            setAllDishes(dishes);
         } catch (error) {
-            console.error("Search Error:", error);
+            console.error("Error fetching dishes:", error);
         }
         setLoading(false);
     };
 
+    const handleSearch = () => {
+        if (searchTerm.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        
+        let filtered = allDishes.filter(dish => 
+            dish.name.toLowerCase().includes(lowerSearchTerm)
+        );
+
+        // Filter by selected hall if not "all"
+        if (selectedHall !== 'all') {
+            filtered = filtered.filter(dish => {
+                // Check if the dish's locations array includes the selected hall
+                if (Array.isArray(dish.locations)) {
+                    return dish.locations.some(loc => 
+                        loc.toLowerCase().includes(selectedHall.toLowerCase())
+                    );
+                }
+                // Fallback: check if parentId matches
+                return dish.parentId?.toLowerCase().includes(selectedHall.toLowerCase());
+            });
+        }
+
+        setSearchResults(filtered);
+    };
+
     const navigateToReview = (dish) => {
-        // We pass the GLOBAL dish ID so reviews count toward the master score
+        // Determine the correct collection and parent ID
+        const collectionName = dish.parentCollection || 
+                               (dish.category === 'diningHall' ? 'diningHalls' : 'diningPoints');
+        
+        const diningHallId = dish.parentId || 'global';
+        
         navigation.navigate('CustomReview', {
             dishId: dish.id,
             dishName: dish.name,
-            collectionName: 'globalDishes', 
-            diningHallId: 'global', // Placeholder since it's a global dish
+            collectionName: collectionName,
+            diningHallId: diningHallId,
             dishCategory: dish.category || 'diningHall',
-            locationName: selectedHall === 'all' ? (dish.locations ? dish.locations[0] : 'Campus') : selectedHall
+            locationName: selectedHall === 'all' 
+                ? (dish.locations && dish.locations[0] ? dish.locations[0] : 'Campus') 
+                : selectedHall
         });
     };
 
@@ -99,10 +122,7 @@ export default function SearchScreen({ navigation }) {
                 styles.hallChip,
                 selectedHall === item.id && styles.hallChipActive
             ]}
-            onPress={() => {
-                setSelectedHall(item.id);
-                if (searchTerm.length >= 2) handleSearch(searchTerm);
-            }}
+            onPress={() => setSelectedHall(item.id)}
         >
             <Text style={[
                 styles.hallChipText,
@@ -111,13 +131,18 @@ export default function SearchScreen({ navigation }) {
         </TouchableOpacity>
     );
 
-    const renderDishItem = ({ item }) => (
-        <TouchableOpacity style={styles.card} onPress={() => navigateToReview(item)}>
+    const renderDishItem = ({ item, index }) => (
+        <TouchableOpacity 
+            style={styles.card} 
+            onPress={() => navigateToReview(item)}
+            key={`${item.id}-${index}`}
+        >
             <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
                 <Text style={styles.cardLocation}>
-                    {/* Show where it's usually found */}
-                    {item.locations ? item.locations.join(', ') : "Various Locations"}
+                    {Array.isArray(item.locations) 
+                        ? item.locations.join(', ') 
+                        : "Various Locations"}
                 </Text>
             </View>
             <View style={styles.actionIcon}>
@@ -154,7 +179,7 @@ export default function SearchScreen({ navigation }) {
                             style={styles.input}
                             placeholder={selectedHall === 'all' ? "Type a dish name..." : `Search ${DINING_HALLS.find(h=>h.id===selectedHall)?.name}...`}
                             value={searchTerm}
-                            onChangeText={handleSearch}
+                            onChangeText={setSearchTerm}
                             placeholderTextColor="#7D7D7D"
                             autoCorrect={false}
                         />
@@ -168,13 +193,13 @@ export default function SearchScreen({ navigation }) {
                     <FlatList
                         data={searchResults}
                         renderItem={renderDishItem}
-                        keyExtractor={(item, index) => item.id + index}
+                        keyExtractor={(item, index) => `${item.id}-${item.parentId}-${index}`}
                         contentContainerStyle={styles.listContainer}
                         ListEmptyComponent={() => (
                             <View style={styles.emptyContainer}>
                                 {searchTerm.length > 1 ? (
                                     <>
-                                        <Text style={styles.emptyText}>Dish not found in history?</Text>
+                                        <Text style={styles.emptyText}>Dish not found?</Text>
                                         <TouchableOpacity 
                                             style={styles.manualButton}
                                             onPress={() => navigation.navigate('ManualCreate')}
@@ -226,7 +251,7 @@ const styles = StyleSheet.create({
         height: 36,
     },
     hallChipActive: {
-        backgroundColor: '#F47121', // Orange
+        backgroundColor: '#F47121',
         borderColor: '#F47121',
     },
     hallChipText: {
@@ -273,6 +298,7 @@ const styles = StyleSheet.create({
     listContainer: {
         paddingHorizontal: 20,
         paddingTop: 10,
+        paddingBottom: 80,
     },
     card: {
         backgroundColor: '#FFFFFF',

@@ -5,8 +5,8 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
 import { db, auth } from '../firebaseConfig';
-import { collectionGroup, query, orderBy, getDocs } from 'firebase/firestore';
-import { ChefHat, PlusCircle } from 'lucide-react-native'; // <-- NEW ICON
+import { collectionGroup, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { ChefHat, PlusCircle } from 'lucide-react-native';
 
 // --- HELPER FUNCTION: Normalize ELO score to 1-10 range ---
 const normalizeScore = (score, minScore, maxScore) => {
@@ -17,23 +17,24 @@ const normalizeScore = (score, minScore, maxScore) => {
     return normalized.toFixed(1);
 };
 
-// --- NEW COMPONENT FOR RANKED ITEM ---
+// --- RANKED ITEM COMPONENT ---
 const RankedItem = ({ item, index, minScore, maxScore }) => {
     const displayScore = minScore !== undefined 
         ? normalizeScore(item.score, minScore, maxScore) 
         : (Math.round(item.score / 100)).toFixed(1); 
     
-    // Determine the location label
     const locationLabel = item.category === 'diningHall' ? 'Dining Hall' : 'Dining Points';
         
     return (
         <View style={listStyles.card}>
-            {/* 1. Rank Number (Left) */}
-            <Text style={listStyles.rankText}>#{index + 1}</Text>
+            {/* 1. Rank Number (Left) - Fixed width to prevent wrapping */}
+            <View style={listStyles.rankContainer}>
+                <Text style={listStyles.rankText}>#{index + 1}</Text>
+            </View>
             
             {/* 2. Dish Name and Location (Center) */}
             <View style={listStyles.cardContent}>
-                <Text style={listStyles.cardTitle}>{item.name}</Text>
+                <Text style={listStyles.cardTitle} numberOfLines={2}>{item.name}</Text>
                 <Text style={listStyles.cardLocation}>{locationLabel}</Text> 
             </View>
             
@@ -57,18 +58,36 @@ export default function MyListScreen({ navigation }) {
         setLoading(true);
         try {
             const dishesRef = collectionGroup(db, 'dishes');
+            // Only get dishes with scores that are NOT 1000 (which means they have real ratings)
             const q = query(
                 dishesRef, 
+                where('score', '!=', 1000),
                 orderBy('score', 'desc')
             );
             
             const snapshot = await getDocs(q);
-            const list = snapshot.docs
-                .map(doc => ({
+            
+            // Use a Map to ensure unique dishes by ID
+            const uniqueDishes = new Map();
+            
+            snapshot.docs.forEach(doc => {
+                const dishData = {
                     id: doc.id,
-                    ...doc.data()
-                }))
-                .filter(dish => dish.score > 0); 
+                    ...doc.data(),
+                    // Add parent info for potential navigation
+                    parentId: doc.ref.parent.parent.id,
+                    parentCollection: doc.ref.parent.parent.parent.id,
+                };
+                
+                // Only add if not already in map (first occurrence wins)
+                if (!uniqueDishes.has(doc.id)) {
+                    uniqueDishes.set(doc.id, dishData);
+                }
+            });
+
+            // Convert Map to array and filter out any remaining duplicates
+            const list = Array.from(uniqueDishes.values())
+                .filter(dish => dish.score > 0);
 
             setRankedDishes(list);
 
@@ -123,7 +142,7 @@ export default function MyListScreen({ navigation }) {
                     <Text style={styles.rankButtonText}>Start Apero Ranking</Text>
                 </TouchableOpacity>
                 
-                {/* --- NEW: Manual Review/Search Button --- */}
+                {/* --- Manual Review/Search Button --- */}
                 <TouchableOpacity 
                     style={styles.reviewButton} 
                     onPress={() => navigation.navigate('Review', { screen: 'SearchScreen' })}
@@ -149,7 +168,7 @@ export default function MyListScreen({ navigation }) {
                             minScore={minScore} 
                             maxScore={maxScore} 
                         />}
-                    keyExtractor={item => item.id}
+                    keyExtractor={(item, index) => `${item.id}-${item.parentId}-${index}`}
                     scrollEnabled={false}
                     contentContainerStyle={{ paddingHorizontal: 0, paddingBottom: 50 }}
                 />
@@ -162,7 +181,7 @@ export default function MyListScreen({ navigation }) {
 const listStyles = StyleSheet.create({
     card: {
         backgroundColor: '#FFFFFF', 
-        padding: 20, 
+        padding: 18, 
         marginVertical: 8, 
         borderRadius: 12,
         marginHorizontal: 20,
@@ -174,49 +193,56 @@ const listStyles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
+    rankContainer: {
+        minWidth: 60, // Fixed width to prevent wrapping
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
     rankText: { 
         fontFamily: 'BodoniModa_700Bold', 
-        fontSize: 24, 
-        color: '#F47121', // Orange Spritz
-        marginRight: 15,
-        width: 45, // Fixed width for alignment
-        textAlign: 'right', 
+        fontSize: 20, 
+        color: '#F47121',
+        textAlign: 'center',
     },
     cardContent: {
-        flex: 1, // Takes up remaining space
+        flex: 1,
         justifyContent: 'center',
+        marginRight: 12,
     },
     cardTitle: { 
         fontFamily: 'Inter_600SemiBold', 
-        fontSize: 18, 
-        color: '#4E4A40' 
+        fontSize: 16, 
+        color: '#4E4A40',
+        lineHeight: 22,
     },
     cardLocation: { 
         fontFamily: 'Inter_400Regular', 
         fontSize: 13, 
-        color: '#007A7A', // Blue Accent
-        marginTop: 2,
+        color: '#007A7A',
+        marginTop: 4,
     },
     // --- Score Chip Styles ---
     scoreChip: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        marginLeft: 15,
         paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingVertical: 8,
         borderRadius: 8,
-        backgroundColor: '#FFFBF8', // Light cream background
+        backgroundColor: '#E0F2F2',
+        minWidth: 70,
+        justifyContent: 'center',
     },
     scoreNumber: {
-        fontFamily: 'BodoniModa_700Bold', // Final Font Fix
-        fontSize: 28, 
-        color: '#007A7A', // Blue Accent Highlight
-        lineHeight: 28, 
+        fontFamily: 'BodoniModa_700Bold',
+        fontSize: 22, 
+        color: '#007A7A',
+        lineHeight: 22,
     },
     scoreMax: {
         fontFamily: 'Inter_600SemiBold',
-        fontSize: 16,
-        color: '#7D7D7D', // Stone Gray
+        fontSize: 13,
+        color: '#7D7D7D',
         marginLeft: 2,
         marginBottom: 2, 
     }
@@ -237,7 +263,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 10, // Reduced margin
+        marginBottom: 10,
         shadowColor: '#F47121',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -259,7 +285,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: 20, // Final margin for the group
+        marginBottom: 20,
         borderWidth: 2,
         borderColor: '#EAEAEA',
     },

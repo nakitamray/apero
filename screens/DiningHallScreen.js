@@ -16,7 +16,7 @@ import { collection, onSnapshot, query, orderBy, doc, getDoc } from 'firebase/fi
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { Clock, MapPin, ExternalLink } from 'lucide-react-native';
+import { Clock, MapPin, ExternalLink, TrendingUp, Star, Flame } from 'lucide-react-native';
 
 // --- TIME CONSTANTS ---
 const MEALS = ["Breakfast", "Lunch", "Dinner"];
@@ -27,6 +27,13 @@ const getMealForTime = (dateObj) => {
     if (hour < 11) return "Breakfast";
     if (hour < 16) return "Lunch";
     return "Dinner";
+};
+
+// --- HELPER: Normalize ELO score to 1-10 range ---
+const normalizeScoreGlobal = (score) => {
+    if (!score || score === 1000) return '5.0'; 
+    const normalized = 1 + 9 * ((score - 800) / (1400 - 800));
+    return Math.max(1, Math.min(10, normalized)).toFixed(1);
 };
 
 export default function DiningHallScreen({ route, navigation }) {
@@ -64,10 +71,10 @@ export default function DiningHallScreen({ route, navigation }) {
       if (isRetail) fetchLocationInfo();
   }, [diningHallId, collectionName, isRetail]);
 
-  // Fetch Dishes (For Dining Halls)
+  // Fetch Dishes
   useEffect(() => {
     const dishesCollectionRef = collection(db, collectionName, diningHallId, 'dishes');
-    const q = query(dishesCollectionRef, orderBy('averageRating', 'desc'));
+    const q = query(dishesCollectionRef, orderBy('score', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setRawDishes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -138,27 +145,65 @@ export default function DiningHallScreen({ route, navigation }) {
   };
 
   const handleOpenMenu = () => {
-      // Opens the specific URL scraped from the site
       const url = locationInfo.menuUrl || 'https://dining.purdue.edu/menus/';
       Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
   };
 
-  // Renderers
-  const renderDish = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.card}
-      onPress={() => navigation.navigate('Dish', { dishId: item.id, diningHallId, collectionName })}
-    >
-      <View style={styles.row}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-        <View style={styles.ratingBadge}>
-            <Text style={styles.ratingText}>
-                {item.score ? (item.score > 1000 ? ((item.score - 800) / 60).toFixed(1) : '5.0') : '5.0'}
-            </Text>
+  // --- IMPROVED DISH CARD RENDERER ---
+  const renderDish = ({ item, index }) => {
+    const displayScore = normalizeScoreGlobal(item.score);
+    const isTopRated = parseFloat(displayScore) >= 7.5;
+    const isTrending = parseFloat(displayScore) >= 6.5 && parseFloat(displayScore) < 7.5;
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.dishCard,
+          isTopRated && styles.dishCardTopRated,
+        ]}
+        onPress={() => navigation.navigate('Dish', { dishId: item.id, diningHallId, collectionName })}
+        activeOpacity={0.7}
+      >
+        {/* Left: Rank Badge */}
+        <View style={[
+          styles.rankBadge,
+          isTopRated && styles.rankBadgeTopRated,
+          isTrending && styles.rankBadgeTrending
+        ]}>
+          {isTopRated && <Flame size={16} color="#FFFFFF" />}
+          {isTrending && <TrendingUp size={16} color="#FFFFFF" />}
+          {!isTopRated && !isTrending && <Text style={styles.rankText}>#{index + 1}</Text>}
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+
+        {/* Center: Dish Info */}
+        <View style={styles.dishContent}>
+          <Text style={styles.dishTitle} numberOfLines={2}>{item.name}</Text>
+          
+          {item.tags && item.tags.length > 0 && (
+            <View style={styles.dishTags}>
+              {item.tags.slice(0, 3).map((tag, idx) => (
+                <Text key={idx} style={styles.dishTag}>#{tag}</Text>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Right: Score Display */}
+        <View style={styles.scoreContainer}>
+          <View style={[
+            styles.scoreChip,
+            isTopRated && styles.scoreChipTopRated,
+          ]}>
+            <Star size={14} color={isTopRated ? "#FFFFFF" : "#007A7A"} fill={isTopRated ? "#FFFFFF" : "none"} />
+            <Text style={[
+              styles.scoreText,
+              isTopRated && styles.scoreTextTopRated
+            ]}>{displayScore}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderSectionHeader = ({ section: { title } }) => (
     <View style={styles.sectionHeader}>
@@ -272,13 +317,109 @@ const styles = StyleSheet.create({
   mealTabActive: { backgroundColor: '#007A7A', borderColor: '#007A7A' },
   mealTabText: { fontFamily: 'Inter_600SemiBold', color: '#7D7D7D', fontSize: 13 },
   mealTabTextActive: { color: '#FFFFFF', fontFamily: 'Inter_700Bold' },
+  
+  // Section Headers
   sectionHeader: { marginTop: 15, marginBottom: 8, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#E0F2F2' },
   sectionHeaderText: { fontFamily: 'BodoniModa_700Bold', fontSize: 20, color: '#F47121' },
-  card: { backgroundColor: '#FFFFFF', padding: 15, marginBottom: 8, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16, color: '#4E4A40', flex: 1, marginRight: 10 },
-  ratingBadge: { backgroundColor: '#E0F2F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  ratingText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: '#007A7A' },
+  
+  // --- IMPROVED DISH CARDS ---
+  dishCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  dishCardTopRated: {
+    borderColor: '#F47121',
+    borderWidth: 2,
+    backgroundColor: '#FFFBF8',
+  },
+  
+  // Rank Badge
+  rankBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0F2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rankBadgeTopRated: {
+    backgroundColor: '#F47121',
+  },
+  rankBadgeTrending: {
+    backgroundColor: '#007A7A',
+  },
+  rankText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    color: '#007A7A',
+  },
+  
+  // Dish Content
+  dishContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  dishTitle: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 17,
+    color: '#4E4A40',
+    marginBottom: 6,
+    lineHeight: 22,
+  },
+  dishTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  dishTag: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    color: '#7D7D7D',
+    backgroundColor: '#FAF6F0',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  
+  // Score Container
+  scoreContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E0F2F2',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 4,
+  },
+  scoreChipTopRated: {
+    backgroundColor: '#007A7A',
+  },
+  scoreText: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#007A7A',
+  },
+  scoreTextTopRated: {
+    color: '#FFFFFF',
+  },
+  
   emptyContainer: { padding: 20, alignItems: 'center' },
   emptyText: { fontFamily: 'Inter_400Regular', color: '#7D7D7D' }
 });

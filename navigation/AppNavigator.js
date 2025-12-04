@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { onAuthStateChanged } from 'firebase/auth'; 
 import { auth } from '../firebaseConfig'; 
-import { PlusCircle, Home, List, User } from 'lucide-react-native'; 
+import { PlusCircle, Home, List, User, MapPin } from 'lucide-react-native'; 
 
-// import screens
+// Import screens
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -20,11 +20,14 @@ import ComparisonScreen from '../screens/ComparisonScreen';
 import SearchScreen from '../screens/SearchScreen'; 
 import CustomReviewScreen from '../screens/CustomReviewScreen'; 
 import ManualCreateScreen from '../screens/ManualCreateScreen';
+import HotspotMapScreen from '../screens/HotspotMapScreen';
 
-// import New Component
+// NEW FEATURE SCREENS
+import TasteDNAScreen from '../screens/TasteDNAScreen';
+import SocialFeedScreen from '../screens/SocialFeedScreen';
+
 import AnimatedSplash from '../components/AnimatedSplash';
 
-// created navigator "engines"
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -32,6 +35,7 @@ const HomeStack = createNativeStackNavigator();
 const ListStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 const ReviewStack = createNativeStackNavigator(); 
+const MapStack = createNativeStackNavigator();
 
 const screenOptions = {
   headerStyle: { backgroundColor: '#FAF6F0' },
@@ -40,7 +44,7 @@ const screenOptions = {
   headerShadowVisible: false,
 };
 
-// --- Stack for the Review Flow ---
+// --- Review Stack ---
 function ReviewStackNavigator() {
     return (
         <ReviewStack.Navigator screenOptions={screenOptions}>
@@ -63,7 +67,7 @@ function ReviewStackNavigator() {
     );
 }
 
-// --- Stack for the "Home/Discover" Tab ---
+// --- Home/Discover Stack ---
 function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={screenOptions}>
@@ -75,7 +79,30 @@ function HomeStackNavigator() {
   );
 }
 
-// --- Stack for the "My List" Tab ---
+// --- Hotspot Map Stack ---
+function MapStackNavigator() {
+  return (
+    <MapStack.Navigator screenOptions={screenOptions}>
+      <MapStack.Screen 
+        name="HotspotMap" 
+        component={HotspotMapScreen} 
+        options={{ headerShown: false }} 
+      />
+      <MapStack.Screen 
+        name="DiningHall" 
+        component={DiningHallScreen} 
+        options={{ title: 'Dishes' }} 
+      />
+      <MapStack.Screen 
+        name="Dish" 
+        component={DishScreen} 
+        options={{ title: 'Dish Info' }} 
+      />
+    </MapStack.Navigator>
+  );
+}
+
+// --- My List Stack ---
 function ListStackNavigator() {
   return (
     <ListStack.Navigator screenOptions={screenOptions}>
@@ -85,7 +112,7 @@ function ListStackNavigator() {
   );
 }
 
-// --- Stack for the "Profile" Tab ---
+// --- Enhanced Profile Stack (NEW: Includes TasteDNA and SocialFeed) ---
 function ProfileStackNavigator() {
   return (
     <ProfileStack.Navigator screenOptions={screenOptions}>
@@ -94,11 +121,21 @@ function ProfileStackNavigator() {
         component={ProfileScreen} 
         options={{ headerShown: false }}
       />
+      <ProfileStack.Screen 
+        name="TasteDNA" 
+        component={TasteDNAScreen} 
+        options={{ title: 'Your Taste DNA' }}
+      />
+      <ProfileStack.Screen 
+        name="SocialFeed" 
+        component={SocialFeedScreen} 
+        options={{ headerShown: false }}
+      />
     </ProfileStack.Navigator>
   );
 }
 
-// --- The 4-Tab Bar ---
+// --- The 5-Tab Bar ---
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -107,18 +144,30 @@ function AppTabs() {
         tabBarActiveTintColor: '#007A7A', 
         tabBarInactiveTintColor: '#7D7D7D', 
         tabBarStyle: { 
-          backgroundColor: '#FFFFFF', borderTopWidth: 0,
-          elevation: 10, shadowOpacity: 0.05,
+          backgroundColor: '#FFFFFF', 
+          borderTopWidth: 0,
+          elevation: 10, 
+          shadowOpacity: 0.05,
+          height: 85, // Increased for Samsung/Android devices
+          paddingBottom: 25, // Extra padding for gesture navigation
+          paddingTop: 8,
         },
-        tabBarLabelStyle: { fontFamily: 'Inter_400Regular', fontSize: 11 }, 
-        tabBarIcon: ({ color }) => {
-            const iconSize = 22; 
+        tabBarLabelStyle: { 
+          fontFamily: 'Inter_400Regular', 
+          fontSize: 11,
+          marginTop: -4,
+        }, 
+        tabBarIcon: ({ color, focused }) => {
+            const iconSize = focused ? 24 : 22;
+            
             if (route.name === 'Discover') {
                 return <Home color={color} size={iconSize} />;
+            } else if (route.name === 'Map') {
+                return <MapPin color={color} size={iconSize} />;
+            } else if (route.name === 'Review') {
+                return <PlusCircle color={color} size={focused ? 32 : 30} />;
             } else if (route.name === 'My List') {
                 return <List color={color} size={iconSize} />;
-            } else if (route.name === 'Review') {
-                return <PlusCircle color={color} size={30} />; 
             } else if (route.name === 'Profile') {
                 return <User color={color} size={iconSize} />;
             }
@@ -128,7 +177,7 @@ function AppTabs() {
             margin: 0, 
             padding: 0,
         } : {},
-        tabBarShowLabel: route.name !== 'Review', 
+        tabBarShowLabel: route.name !== 'Review',
       })}
     >
       <Tab.Screen 
@@ -137,19 +186,24 @@ function AppTabs() {
         options={{ title: 'Discover' }}
       />
       <Tab.Screen 
-        name="My List" 
-        component={ListStackNavigator} 
-        options={{ title: 'My List' }}
+        name="Map" 
+        component={MapStackNavigator} 
+        options={{ title: 'Hotspots' }}
       />
       <Tab.Screen 
         name="Review" 
         component={ReviewStackNavigator} 
         options={{
             tabBarLabel: 'Review',
-            tabBarActiveTintColor: '#007A7A', 
-            tabBarInactiveTintColor: '#007A7A', 
+            tabBarActiveTintColor: '#F47121',
+            tabBarInactiveTintColor: '#F47121', 
             tabBarIconStyle: { marginTop: 0 },
         }}
+      />
+      <Tab.Screen 
+        name="My List" 
+        component={ListStackNavigator} 
+        options={{ title: 'My List' }}
       />
       <Tab.Screen 
         name="Profile" 
@@ -170,11 +224,10 @@ function AuthStack() {
   );
 }
 
-// --- MAIN NAVIGATOR (Updated for Smooth Transition) ---
+// --- MAIN NAVIGATOR ---
 export default function AppNavigator() {
   const [user, setUser] = useState(null); 
   
-  // Transition States
   const [splashMounted, setSplashMounted] = useState(true);
   const splashOpacity = useRef(new Animated.Value(1)).current;
 
@@ -186,24 +239,21 @@ export default function AppNavigator() {
   }, []);
 
   const handleSplashFinish = () => {
-    // Smooth Fade Out (600ms)
     Animated.timing(splashOpacity, {
         toValue: 0,
         duration: 600, 
         useNativeDriver: true,
     }).start(() => {
-        setSplashMounted(false); // Unmount after fade completes
+        setSplashMounted(false);
     });
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#FAF6F0' }}>
-      {/* 1. Main App (Loads behind the splash) */}
       <NavigationContainer>
         {user ? <AppTabs /> : <AuthStack />}
       </NavigationContainer>
 
-      {/* 2. Animated Splash Overlay */}
       {splashMounted && (
         <Animated.View 
             style={[

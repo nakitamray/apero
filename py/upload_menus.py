@@ -1,4 +1,4 @@
-print("--- INTELLIGENT MENU UPLOADER STARTED ---")
+print("--- INTELLIGENT MENU UPLOADER (37 RATED DISHES) ---")
 
 import os
 import requests
@@ -6,7 +6,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import date, datetime
-import random # Imported for score variation
+import random
 
 # 1. SETUP FIREBASE
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -86,31 +86,18 @@ def analyze_dish(name):
     name_lower = name.lower()
     tags = []
     
-    # 1. COZY (Comfort food)
     if any(x in name_lower for x in ['soup', 'mac', 'cheese', 'pasta', 'stew', 'chili', 'mashed', 'potato', 'casserole', 'biscuits', 'gravy']):
         tags.append('cozy')
-        
-    # 2. SICK DAY (Light, warm, easy to eat)
     if any(x in name_lower for x in ['soup', 'broth', 'noodle', 'toast', 'tea', 'cracker', 'ginger', 'rice', 'plain']):
         tags.append('sick')
-        
-    # 3. HEALTHY (Greens, grilled, fresh)
     if any(x in name_lower for x in ['salad', 'grilled', 'roasted', 'steamed', 'vegetable', 'fruit', 'tofu', 'vegan', 'fresh', 'garden']):
         tags.append('healthy')
-        
-    # 4. SPICY (Heat)
     if any(x in name_lower for x in ['spicy', 'buffalo', 'jalapeno', 'cajun', 'curry', 'sriracha', 'hot', 'pepper', 'fiesta']):
         tags.append('spicy')
-        
-    # 5. SWEET (Desserts)
     if any(x in name_lower for x in ['cookie', 'cake', 'brownie', 'pie', 'pudding', 'chocolate', 'sugar', 'cinnamon', 'donut', 'muffin']):
         tags.append('sweet')
-        
-    # 6. PROTEIN (Meats & high protein veg)
     if any(x in name_lower for x in ['chicken', 'beef', 'pork', 'steak', 'turkey', 'fish', 'tuna', 'egg', 'sausage', 'bacon', 'tofu', 'beans']):
         tags.append('protein')
-        
-    # 7. VALUE (Filling items - heuristic)
     if any(x in name_lower for x in ['burger', 'pizza', 'sandwich', 'pasta', 'rice', 'burrito', 'bowl']):
         tags.append('value')
 
@@ -156,7 +143,13 @@ def fetch_menu(location_name):
                     })
     return dishes
 
+# Track how many dishes we've given real scores to
+rated_dishes_count = 0
+MAX_RATED_DISHES = 37
+
 def upload_dishes(location_name, dishes):
+    global rated_dishes_count
+    
     hall_id = HALL_MAPPING[location_name]
     today_str = date.today().strftime("%Y-%m-%d")
     print(f"   💾 Uploading {len(dishes)} dishes to {hall_id}...")
@@ -175,12 +168,15 @@ def upload_dishes(location_name, dishes):
         clean_id = "".join(c for c in dish['name'].lower() if c.isalnum() or c == " ").strip().replace(" ", "-")[:50]
         doc_ref = hall_ref.collection("dishes").document(clean_id)
         
-        # --- APPLY INTELLIGENCE ---
         auto_tags = analyze_dish(dish['name'])
         
-        # Randomize score slightly to make the leaderboard look alive
-        # Range: 950 - 1050 (Standard ELO is 1000)
-        simulated_score = random.randint(950, 1050)
+        # Decide if this dish gets a real score or stays at 1000
+        if rated_dishes_count < MAX_RATED_DISHES:
+            simulated_score = random.randint(950, 1050)
+            rated_dishes_count += 1
+            print(f"      ✅ Rated dish #{rated_dishes_count}: {dish['name']} (Score: {simulated_score})")
+        else:
+            simulated_score = 1000  # Default unrated score
 
         doc_data = {
             "name": dish['name'],
@@ -190,20 +186,12 @@ def upload_dishes(location_name, dishes):
             "currentStation": dish['station'],
             "mealsServed": firestore.ArrayUnion([dish['mealInfo']]), 
             "stations": firestore.ArrayUnion([dish['station']]),
-            
-            # MERGE LOGIC:
-            # We want to overwrite tags with our new auto-tags
-            "tags": auto_tags
+            "tags": auto_tags,
+            "score": simulated_score,
+            "averageRating": 5.0
         }
-        
-        # NOTE: In a real app, you wouldn't overwrite 'score' if it already exists.
-        # But for this demo phase, we want to populate "The Pulse" immediately.
-        # We will use set(..., merge=True), but we won't check for existence first to save reads.
-        # If you want to preserve user votes, comment out the 'score' line below.
-        doc_data["score"] = simulated_score 
-        doc_data["averageRating"] = 5.0
 
-        doc_ref.set(doc_data, merge=True)
+        batch.set(doc_ref, doc_data, merge=True)
         
         count += 1
         if count >= 400:
@@ -217,5 +205,9 @@ def upload_dishes(location_name, dishes):
 if __name__ == "__main__":
     for hall in HALL_MAPPING:
         items = fetch_menu(hall)
-        if items: upload_dishes(hall, items)
-    print("\n🏁 INTELLIGENT UPLOAD COMPLETE.")
+        if items: 
+            upload_dishes(hall, items)
+    
+    print(f"\n🏁 INTELLIGENT UPLOAD COMPLETE.")
+    print(f"📊 Total dishes with real ratings: {rated_dishes_count}")
+    print(f"📋 All other dishes have default score of 1000 (unrated)")
