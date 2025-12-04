@@ -64,28 +64,17 @@ query getLocationMenu($name: String!, $date: Date!) {
 }
 """
 
-# 3. ROBUST TIME CLEANER (UPDATED FOR ISO FORMAT)
+# 3. ROBUST TIME CLEANER
 def clean_time(time_str):
-    """
-    Parses various Purdue time formats into 'HH:MM' (24-hour).
-    Handles:
-      - ISO: '2025-12-04T07:00:00-05:00' -> '07:00'
-      - 12h: '5:00 PM' -> '17:00'
-    """
     if not time_str or not isinstance(time_str, str):
         return None
     
-    # CASE 1: ISO Format (The new one)
-    # "2025-12-04T07:00:00-05:00"
     if "T" in time_str:
         try:
-            # Split by 'T' to get "07:00:00-05:00"
-            # Then take the first 5 characters "07:00"
             return time_str.split("T")[1][:5]
         except:
             pass
 
-    # CASE 2: Old 12-Hour Format ("5:00 PM")
     s = time_str.upper().strip().replace(".", "")
     try:
         dt = datetime.strptime(s, "%I:%M %p")
@@ -95,7 +84,6 @@ def clean_time(time_str):
             dt = datetime.strptime(s, "%I:%M:%S %p")
             return dt.strftime("%H:%M")
         except ValueError:
-            print(f"      ⚠️ Could not parse time: '{time_str}'")
             return None
 
 # 4. FETCH & UPLOAD
@@ -149,6 +137,7 @@ def fetch_menu(location_name):
 
 def upload_dishes(location_name, dishes):
     hall_id = HALL_MAPPING[location_name]
+    today_str = date.today().strftime("%Y-%m-%d")
     print(f"   💾 Uploading {len(dishes)} dishes to {hall_id}...")
     
     hall_ref = db.collection("diningHalls").document(hall_id)
@@ -162,20 +151,23 @@ def upload_dishes(location_name, dishes):
     count = 0
 
     for dish in dishes:
+        # Create a consistent ID from the name
         clean_id = "".join(c for c in dish['name'].lower() if c.isalnum() or c == " ").strip().replace(" ", "-")[:50]
         doc_ref = hall_ref.collection("dishes").document(clean_id)
         
         meal_object = dish['mealInfo']
 
+        # UPDATE: storing "currentStation" separately for the menu view
         doc_ref.set({
             "name": dish['name'],
             "score": 1000, 
             "averageRating": 5.0,
             "category": "diningHall",
-            "tags": [],
             "lastServed": firestore.SERVER_TIMESTAMP,
+            "lastServedDate": today_str, # String for easier filtering on frontend
+            "currentStation": dish['station'], # The station it is at TODAY
             "mealsServed": firestore.ArrayUnion([meal_object]), 
-            "stations": firestore.ArrayUnion([dish['station']])
+            "stations": firestore.ArrayUnion([dish['station']]) # Keep history too
         }, merge=True)
         
         count += 1
