@@ -7,15 +7,19 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
-  Alert
+  Alert,
+  ActivityIndicator,
+  Linking,
+  RefreshControl,
+  Platform
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomHeader from '../components/CustomHeader';
 import { useFonts } from 'expo-font';
-import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'; // Added Inter_700Bold
+import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { PlusCircle } from 'lucide-react-native'; // For the new button
+import { PlusCircle, Clock, ChevronRight } from 'lucide-react-native';
 
-// --- FIREBASE IMPORTS ---
 import { db } from '../firebaseConfig';
 import { 
     collection, 
@@ -24,36 +28,31 @@ import {
     query, 
     orderBy, 
     limit,
-    where 
+    doc,
+    getDoc
 } from 'firebase/firestore';
 
-const MOODS = [
-  { key: 'cozy', label: 'Cozy', emoji: '🍲' },
-  { key: 'sick', label: 'Sick', emoji: '🤒' },
-  { key: 'celebration', label: 'Celebration', emoji: '🎉' },
-  { key: 'stressed', label: 'Stressed', emoji: '😫' },
-];
+const MEALS = ["Breakfast", "Lunch", "Dinner"];
 
-const PULSE_FILTERS = {
-    ALL: 'all',
-    DINING_HALL: 'diningHall',
-    DINING_POINTS: 'diningPoints'
+// Default "Safe" times for each meal
+const MEAL_DEFAULT_TIMES = {
+    "Breakfast": 9,
+    "Lunch": 13,
+    "Dinner": 18
 };
 
-// --- HELPER FUNCTION: Normalize ELO score to 1-10 range (Assumed Global Range) ---
-const ASSUMED_MIN_SCORE = 800; 
-const ASSUMED_MAX_SCORE = 1400;
+const getMealForTime = (dateObj) => {
+    const hour = dateObj.getHours(); 
+    if (hour < 11) return "Breakfast";
+    if (hour < 16) return "Lunch";
+    return "Dinner";
+};
 
 const normalizeScoreGlobal = (score) => {
-    if (score === undefined || score === 1000) return '5.0'; 
-    
-    const normalized = 1 + 9 * ((score - ASSUMED_MIN_SCORE) / (ASSUMED_MAX_SCORE - ASSUMED_MIN_SCORE));
-    if (normalized < 1.0) return '1.0';
-    if (normalized > 10.0) return '10.0';
-
-    return normalized.toFixed(1);
+    if (!score || score === 1000) return '5.0'; 
+    const normalized = 1 + 9 * ((score - 800) / (1400 - 800));
+    return Math.max(1, Math.min(10, normalized)).toFixed(1);
 };
-
 
 export default function HomeScreen({ navigation }) {
   let [fontsLoaded] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold, BodoniModa_700Bold });
@@ -62,333 +61,323 @@ export default function HomeScreen({ navigation }) {
   const [diningPoints, setDiningPoints] = useState([]); 
   const [pulse, setPulse] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [pulseFilter, setPulseFilter] = useState(PULSE_FILTERS.ALL); 
+  
+  // --- TIME STATE ---
+  const [viewingTime, setViewingTime] = useState(new Date()); 
+  const [selectedMeal, setSelectedMeal] = useState(getMealForTime(new Date()));
+  const [showPicker, setShowPicker] = useState(false);
+  const [isManualTime, setIsManualTime] = useState(true); 
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // 1. Fetch Dining Halls
-        const hallsRef = collection(db, 'diningHalls');
-        const hallsSnapshot = await getDocs(hallsRef);
-        const hallsList = hallsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          type: PULSE_FILTERS.DINING_HALL
-        }));
-        setDiningHalls(hallsList);
+  // Helper to fetch location name for Pulse items
+  const enrichPulseData = async (pulseSnapshot) => {
+      const enriched = await Promise.all(pulseSnapshot.docs.map(async (dishDoc) => {
+          const dishData = dishDoc.data();
+          const parentId = dishDoc.ref.parent.parent?.id;
+          const parentCollection = dishDoc.ref.parent.parent?.parent.id;
+          
+          let locationName = "Unknown Location";
+          
+          // Try to get location name from parent doc
+          if (parentId && parentCollection) {
+              if (dishData.locationName) {
+                  locationName = dishData.locationName;
+              } else {
+                  const parentDoc = await getDoc(doc(db, parentCollection, parentId));
+                  if (parentDoc.exists()) {
+                      locationName = parentDoc.data().name;
+                  }
+              }
+          }
 
-        // 2. Fetch Dining Points
-        const pointsRef = collection(db, 'diningPoints');
-        const pointsSnapshot = await getDocs(pointsRef);
-        const pointsList = pointsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            type: PULSE_FILTERS.DINING_POINTS
-        }));
-        setDiningPoints(pointsList);
-
-
-        // 3. Setup The Pulse Query (order by ELO score)
-        const dishesRef = collectionGroup(db, 'dishes');
-        let pulseQuery;
-
-        if (pulseFilter === PULSE_FILTERS.ALL) {
-            pulseQuery = query(
-                dishesRef, 
-                orderBy('score', 'desc'), 
-                limit(10)
-            );
-        } else {
-            pulseQuery = query(
-                dishesRef,
-                where('category', '==', pulseFilter), 
-                orderBy('score', 'desc'),
-                limit(10)
-            );
-        }
-
-        const pulseSnapshot = await getDocs(pulseQuery);
-        const pulseList = pulseSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            parentId: doc.ref.parent.parent.id, 
-            parentCollection: doc.ref.parent.parent.parent.id, 
-        })).filter(d => d.score > 0); 
-        
-        setPulse(pulseList);
-
-      } catch (error) {
-        console.error("Error fetching data: ", error);
-        Alert.alert("Data Error", "Could not fetch data. Check your Firebase indexes and console for errors.");
-      }
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [pulseFilter]);
-
-  const onMoodPress = (mood) => {
-    navigation.navigate('MoodResults', { 
-      moodTag: mood.key, 
-      moodLabel: mood.label 
-    });
+          return {
+              id: dishDoc.id,
+              ...dishData,
+              parentId,
+              parentCollection,
+              locationName 
+          };
+      }));
+      return enriched;
   };
 
-  const onHotspotPress = () => Alert.alert('Opening Hotspot Map... (Coming Soon!)');
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const hallsSnapshot = await getDocs(collection(db, 'diningHalls'));
+      setDiningHalls(hallsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-  const renderLocation = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('DiningHall', {
-        diningHallId: item.id,
-        name: item.name,
-        collectionName: item.type === PULSE_FILTERS.DINING_HALL ? 'diningHalls' : 'diningPoints' 
-      })}
-    >
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-        <Text style={styles.cardLocation}>{item.location}</Text>
-      </View>
-      <Text style={styles.arrowText}>{">"}</Text>
-    </TouchableOpacity>
-  );
+      const pointsSnapshot = await getDocs(collection(db, 'diningPoints'));
+      setDiningPoints(pointsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      const pulseQuery = query(collectionGroup(db, 'dishes'), orderBy('score', 'desc'), limit(150));
+      const pulseSnapshot = await getDocs(pulseQuery);
+      
+      const pulseList = await enrichPulseData(pulseSnapshot);
+      setPulse(pulseList);
+
+    } catch (error) {
+      console.error("Error:", error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const onTimeChange = (event, selectedDate) => {
+      setShowPicker(Platform.OS === 'ios'); 
+      if (selectedDate) {
+          setViewingTime(selectedDate);
+          setSelectedMeal(getMealForTime(selectedDate));
+          setIsManualTime(true); 
+      }
+  };
+
+  const handleMealPress = (meal) => {
+      setSelectedMeal(meal);
+      const newTime = new Date();
+      newTime.setHours(MEAL_DEFAULT_TIMES[meal], 0, 0, 0);
+      setViewingTime(newTime);
+      setIsManualTime(false); 
+  };
+
+  const filterDishes = (dishes) => {
+      const currentMinutes = viewingTime.getHours() * 60 + viewingTime.getMinutes();
+
+      return dishes.filter(dish => {
+          if (!dish.mealsServed) return true; 
+
+          return dish.mealsServed.some(m => {
+              const nameMatch = (m.name === selectedMeal) || 
+                                (selectedMeal === "Lunch" && m.name === "Late Lunch");
+              if (!nameMatch) return false;
+
+              if (m.startTime && m.endTime) {
+                  const [startH, startM] = m.startTime.split(':').map(Number);
+                  const [endH, endM] = m.endTime.split(':').map(Number);
+                  const startMinutes = startH * 60 + startM;
+                  const endMinutes = endH * 60 + endM;
+                  return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+              }
+              return true; 
+          });
+      });
+  };
+
+  const currentPulseList = filterDishes(pulse).slice(0, 5); 
+
+  const openHoursWebsite = () => {
+      Linking.openURL('https://dining.purdue.edu/menus/index.html');
+  };
+
+  if (!fontsLoaded) return null;
 
   const renderPulseItem = (item, index) => {
-    const typeLabel = item.category === PULSE_FILTERS.DINING_HALL ? 'Dining Hall' : 'Dining Points';
+    const isHall = item.category === 'diningHall';
+    const locationType = isHall ? "Dining Hall" : "Retail";
     
     return (
         <TouchableOpacity 
             key={item.id} 
             style={styles.card}
-            onPress={() => Alert.alert("Coming Soon!", "Tapping Pulse items will be enabled soon.")}
+            onPress={() => navigation.navigate('Dish', {
+                dishId: item.id,
+                diningHallId: item.parentId,
+                collectionName: item.parentCollection
+            })}
         >
-          <Text style={styles.rankText}>#{index + 1}</Text>
+          <View style={styles.rankBadge}>
+            <Text style={styles.rankText}>#{index + 1}</Text>
+          </View>
+          
           <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+            {/* Explicit Location Name + Type */}
             <Text style={styles.cardLocation}>
-              Score: {normalizeScoreGlobal(item.score)} / 10
+               at <Text style={{fontFamily: 'Inter_600SemiBold'}}>{item.locationName || "Unknown"}</Text> • {locationType}
             </Text>
           </View>
-          <View style={styles.whyTagChip}>
-            <Text style={styles.whyTagText}>
-              {typeLabel}
-            </Text>
+          
+          <View style={styles.scoreChip}>
+             <Text style={styles.scoreText}>{normalizeScoreGlobal(item.score)}</Text>
           </View>
         </TouchableOpacity>
     );
   };
-  
-  // --- NEW: Render Review button ---
-  const renderReviewButton = () => (
-    <TouchableOpacity 
-        style={styles.reviewButton} 
-        onPress={() => navigation.navigate('Review')}
+
+  const renderLocation = ({ item }) => (
+    <TouchableOpacity
+      style={styles.locationCard}
+      onPress={() => navigation.navigate('DiningHall', {
+        diningHallId: item.id,
+        name: item.name,
+        collectionName: item.type === 'diningHall' ? 'diningHalls' : 'diningPoints' 
+      })}
     >
-        <PlusCircle color="#007A7A" size={18} />
-        <Text style={styles.reviewButtonText}>Review a New Dish</Text>
+      <View style={styles.locationInfo}>
+        <Text style={styles.locationTitle}>{item.name}</Text>
+        <Text style={styles.locationSubtitle}>{item.location || "Purdue Campus"}</Text>
+      </View>
+      <ChevronRight size={20} color="#EAEAEA" />
     </TouchableOpacity>
   );
 
-
-  if (!fontsLoaded) return null;
+  const formattedTime = viewingTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <CustomHeader />
-      <ScrollView style={styles.container}>
-        
-        {/* --- MANUAL REVIEW BUTTON (Top Center) --- */}
-        <View style={{ paddingHorizontal: 20, marginTop: 15, marginBottom: 10 }}>
-            {renderReviewButton()}
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchData} />}
+      >
+        <View style={styles.topControls}>
+            <TouchableOpacity style={styles.reviewButton} onPress={() => navigation.navigate('Review')}>
+                <PlusCircle color="#FFFFFF" size={20} />
+                <Text style={styles.reviewButtonText}>Review a New Dish</Text>
+            </TouchableOpacity>
         </View>
 
-        {/* --- FOOD MOODS --- */}
-        <Text style={styles.headerTitle}>What's your mood?</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.moodScroll}>
-          {MOODS.map((mood) => (
-            <TouchableOpacity 
-              key={mood.key} 
-              style={styles.moodButton} 
-              onPress={() => onMoodPress(mood)}
-            >
-              <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-              <Text style={styles.moodText}>{mood.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* --- HOTSPOT MAP BUTTON --- */}
-        <TouchableOpacity style={styles.mapButton} onPress={onHotspotPress}>
-          <Text style={styles.mapButtonText}>📍 View Campus Hotspot Map</Text>
-        </TouchableOpacity>
-
-        {/* --- THE PULSE LEADERBOARD --- */}
-        <Text style={styles.headerTitle}>The Pulse</Text>
-        <Text style={styles.subHeader}>Live campus leaderboard</Text>
-
-        {/* --- PULSE FILTER BUTTONS --- */}
-        <View style={styles.filterContainer}>
-            {Object.entries(PULSE_FILTERS).map(([key, value]) => (
-                <TouchableOpacity
-                    key={key}
-                    style={[
-                        styles.filterButton,
-                        pulseFilter === value && styles.filterButtonActive,
-                    ]}
-                    onPress={() => setPulseFilter(value)}
+        <View style={styles.menuHeaderRow}>
+            <Text style={styles.sectionHeaderTitle}>Current Menu</Text>
+            
+            <View style={styles.utilityButtons}>
+                <TouchableOpacity 
+                    style={[styles.timeButton, !isManualTime && styles.timeButtonDisabled]} 
+                    onPress={() => {
+                        setIsManualTime(true);
+                        setShowPicker(true);
+                    }}
                 >
-                    <Text style={[
-                        styles.filterText,
-                        pulseFilter === value && styles.filterTextActive,
-                    ]}>
-                        {key.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                    <Clock size={14} color={isManualTime ? "#007A7A" : "#7D7D7D"} />
+                    <Text style={[styles.timeButtonText, !isManualTime && styles.timeTextDisabled]}>
+                        Time: <Text style={{fontWeight: 'bold'}}>{formattedTime}</Text>
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.hoursButton} onPress={openHoursWebsite}>
+                    <Text style={styles.hoursText}>View Hours</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+
+        {showPicker && (
+            <DateTimePicker
+                value={viewingTime}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={onTimeChange}
+            />
+        )}
+
+        <View style={styles.mealTabContainer}>
+            {MEALS.map(meal => (
+                <TouchableOpacity 
+                    key={meal} 
+                    style={[styles.mealTab, selectedMeal === meal && styles.mealTabActive]}
+                    onPress={() => handleMealPress(meal)}
+                >
+                    <Text style={[styles.mealTabText, selectedMeal === meal && styles.mealTabTextActive]}>
+                        {meal}
                     </Text>
                 </TouchableOpacity>
             ))}
         </View>
 
+        <Text style={styles.pulseHeader}>Top Rated for {selectedMeal}</Text>
+        
         {loading ? (
-            <Text style={styles.subHeader}>Loading Pulse...</Text>
+            <ActivityIndicator size="small" color="#F47121" style={{marginTop: 20}} />
+        ) : currentPulseList.length > 0 ? (
+            currentPulseList.map((item, index) => renderPulseItem(item, index))
         ) : (
-          pulse.map(renderPulseItem)
+            <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Nothing currently open/rated.</Text>
+                <Text style={styles.emptySubText}>Try changing the time or meal tab!</Text>
+            </View>
         )}
 
-        {/* --- DINING LOCATIONS LIST (Combined Halls and Points) --- */}
-        <Text style={styles.headerTitle}>Dining Locations</Text>
-        {loading ? (
-          <Text style={styles.subHeader}>Loading locations...</Text>
-        ) : (
-          <FlatList
-            data={[...diningHalls, ...diningPoints]}
-            renderItem={renderLocation}
-            keyExtractor={item => item.id}
-            scrollEnabled={false} 
-          />
-        )}
+        {/* --- DINING HALLS SECTION (With Margins) --- */}
+        <View style={styles.locationSection}>
+            <Text style={styles.sectionHeaderTitle}>Dining Halls</Text>
+            <FlatList
+                data={diningHalls}
+                renderItem={renderLocation}
+                keyExtractor={item => item.id}
+                scrollEnabled={false} 
+            />
+        </View>
+
+        {/* --- DINING POINTS SECTION (With Margins) --- */}
+        <View style={styles.locationSection}>
+            <Text style={styles.sectionHeaderTitle}>Dining Points</Text>
+            <FlatList
+                data={diningPoints}
+                renderItem={renderLocation}
+                keyExtractor={item => item.id}
+                scrollEnabled={false} 
+            />
+        </View>
+
+        <View style={{height: 50}} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// --- Styles (Refined) ---
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FAF6F0' },
   container: { flex: 1 },
-  headerTitle: {
-    fontFamily: 'BodoniModa_700Bold', fontSize: 28, color: '#4E4A40',
-    marginTop: 25, marginBottom: 15, paddingHorizontal: 20,
-  },
-  subHeader: {
-    fontFamily: 'Inter_400Regular', fontSize: 16, color: '#7D7D7D',
-    marginTop: -15, marginBottom: 15, paddingHorizontal: 20,
-  },
-  // --- NEW REVIEW BUTTON STYLES ---
+  topControls: { paddingHorizontal: 20, marginTop: 10, marginBottom: 5 },
+  
   reviewButton: {
-    backgroundColor: '#FFFFFF', 
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  reviewButtonText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
-    color: '#007A7A',
-    marginLeft: 10,
-  },
-  // --- Mood Styles ---
-  moodScroll: { paddingLeft: 20, paddingBottom: 10 },
-  moodButton: {
-    backgroundColor: '#FFFFFF', padding: 15, borderRadius: 12, alignItems: 'center',
-    width: 100, marginRight: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 3,
-  },
-  moodEmoji: { fontSize: 24 },
-  moodText: { fontFamily: 'Inter_600SemiBold', color: '#4E4A40', marginTop: 5 },
-  // --- Map Button ---
-  mapButton: {
-    backgroundColor: '#F47121', marginHorizontal: 20, marginTop: 15,
-    padding: 15, borderRadius: 12, alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
-  },
-  mapButtonText: { fontFamily: 'Inter_600SemiBold', color: '#FFFFFF', fontSize: 16 },
-  // --- CARD STYLES (Used for Dining Locations) ---
-  card: {
-    backgroundColor: '#FFFFFF', padding: 20, marginVertical: 8, borderRadius: 12,
-    marginHorizontal: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 3,
-    flexDirection: 'row', alignItems: 'center',
-  },
-  cardContent: { flex: 1, marginLeft: 15 }, 
-  cardTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 18, color: '#4E4A40' },
-  cardLocation: { 
-    fontFamily: 'Inter_400Regular', 
-    fontSize: 14, 
-    color: '#007A7A',
-    marginTop: 4 
-  },
-  arrowText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 24,
-    color: '#7D7D7D',
-    marginLeft: 'auto', 
-  },
-  // --- PULSE-SPECIFIC STYLES ---
-  rankText: { 
-    fontFamily: 'BodoniModa_700Bold', 
-    fontSize: 22, 
-    color: '#7D7D7D',
-    width: 35, 
-    textAlign: 'right', 
-  },
-  whyTagChip: {
-    backgroundColor: '#FAF6F0', 
-    paddingVertical: 5, 
-    paddingHorizontal: 10, 
-    borderRadius: 20,
-    marginLeft: 'auto', 
-  },
-  whyTagText: { 
-    fontFamily: 'Inter_600SemiBold', 
-    color: '#007A7A', 
-    fontSize: 12 
-  },
-  // --- FILTER STYLES ---
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    marginTop: 5,
-  },
-  filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
-  },
-  filterButtonActive: {
     backgroundColor: '#F47121', 
-    borderColor: '#F47121',
+    paddingVertical: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center',
+    shadowColor: '#F47121', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5
   },
-  filterText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: '#4E4A40',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-  },
+  reviewButtonText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#FFFFFF', marginLeft: 8 },
+
+  menuHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 15, marginBottom: 10 },
+  sectionHeaderTitle: { fontFamily: 'BodoniModa_700Bold', fontSize: 24, color: '#4E4A40' },
+  utilityButtons: { flexDirection: 'column', alignItems: 'flex-end', gap: 5 },
+  
+  timeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2F2', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
+  timeButtonDisabled: { backgroundColor: '#EAEAEA' }, 
+  timeButtonText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#007A7A', marginLeft: 6 },
+  timeTextDisabled: { color: '#7D7D7D' },
+
+  hoursButton: { paddingVertical: 4 },
+  hoursText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#7D7D7D', textDecorationLine: 'underline' },
+
+  mealTabContainer: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 15, gap: 8 },
+  mealTab: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 25, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAEAEA' },
+  mealTabActive: { backgroundColor: '#007A7A', borderColor: '#007A7A' },
+  mealTabText: { fontFamily: 'Inter_600SemiBold', color: '#7D7D7D', fontSize: 13 },
+  mealTabTextActive: { color: '#FFFFFF', fontFamily: 'Inter_700Bold' },
+
+  pulseHeader: { fontFamily: 'BodoniModa_700Bold', fontSize: 20, color: '#F47121', paddingHorizontal: 20, marginTop: 10, marginBottom: 10 },
+
+  card: { backgroundColor: '#FFFFFF', padding: 16, marginVertical: 6, borderRadius: 16, marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 3 },
+  rankBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFBF8', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  rankText: { fontFamily: 'BodoniModa_700Bold', fontSize: 18, color: '#F47121' },
+  cardContent: { flex: 1 },
+  cardTitle: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#4E4A40', marginBottom: 4 },
+  cardLocation: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#7D7D7D' },
+  scoreChip: { backgroundColor: '#E0F2F2', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  scoreText: { fontFamily: 'BodoniModa_700Bold', fontSize: 16, color: '#007A7A' },
+
+  // --- LOCATION SECTIONS with Spacing ---
+  locationSection: { marginTop: 15, marginBottom: 10 },
+  
+  locationCard: { backgroundColor: '#FFFFFF', padding: 20, marginVertical: 6, borderRadius: 16, marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 2 },
+  locationInfo: { flex: 1 },
+  locationTitle: { fontFamily: 'Inter_700Bold', fontSize: 17, color: '#4E4A40' },
+  locationSubtitle: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#7D7D7D', marginTop: 2 },
+
+  emptyContainer: { alignItems: 'center', marginTop: 20, marginBottom: 30, padding: 20, backgroundColor: 'rgba(255,255,255,0.5)', marginHorizontal: 20, borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA', borderStyle: 'dashed' },
+  emptyText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#7D7D7D' },
+  emptySubText: { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#007A7A', marginTop: 4 },
 });

@@ -42,3 +42,15 @@ yarn-error.*
 
 # firebase information
 fireBaseConfig.js
+
+# Python & Secrets 
+serviceAccountKey.json
+py/serviceAccountKey.json
+
+# Ignore Python cache files (clutter)
+__pycache__/
+*.pyc
+
+# Optional: If you create a virtual environment inside py/
+py/venv/
+py/env/
