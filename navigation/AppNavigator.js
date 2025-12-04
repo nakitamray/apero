@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -19,7 +19,10 @@ import MoodResultsScreen from '../screens/MoodResultsScreen';
 import ComparisonScreen from '../screens/ComparisonScreen';
 import SearchScreen from '../screens/SearchScreen'; 
 import CustomReviewScreen from '../screens/CustomReviewScreen'; 
-import ManualCreateScreen from '../screens/ManualCreateScreen'; // <-- NEW IMPORT
+import ManualCreateScreen from '../screens/ManualCreateScreen';
+
+// import New Component
+import AnimatedSplash from '../components/AnimatedSplash';
 
 // created navigator "engines"
 const Stack = createNativeStackNavigator();
@@ -46,7 +49,6 @@ function ReviewStackNavigator() {
                 component={SearchScreen} 
                 options={{ headerShown: false }} 
             />
-            {/* NEW: Manual creation is part of the review flow */}
             <ReviewStack.Screen 
                 name="ManualCreate" 
                 component={ManualCreateScreen} 
@@ -139,7 +141,6 @@ function AppTabs() {
         component={ListStackNavigator} 
         options={{ title: 'My List' }}
       />
-      {/* Central Review Button (links to SearchScreen) */}
       <Tab.Screen 
         name="Review" 
         component={ReviewStackNavigator} 
@@ -169,9 +170,13 @@ function AuthStack() {
   );
 }
 
-// MAIN NAVIGATOR 
+// --- MAIN NAVIGATOR (Updated for Smooth Transition) ---
 export default function AppNavigator() {
   const [user, setUser] = useState(null); 
+  
+  // Transition States
+  const [splashMounted, setSplashMounted] = useState(true);
+  const splashOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -180,9 +185,35 @@ export default function AppNavigator() {
     return () => unsubscribe();
   }, []);
 
+  const handleSplashFinish = () => {
+    // Smooth Fade Out (600ms)
+    Animated.timing(splashOpacity, {
+        toValue: 0,
+        duration: 600, 
+        useNativeDriver: true,
+    }).start(() => {
+        setSplashMounted(false); // Unmount after fade completes
+    });
+  };
+
   return (
-    <NavigationContainer>
-      {user ? <AppTabs /> : <AuthStack />}
-    </NavigationContainer>
+    <View style={{ flex: 1, backgroundColor: '#FAF6F0' }}>
+      {/* 1. Main App (Loads behind the splash) */}
+      <NavigationContainer>
+        {user ? <AppTabs /> : <AuthStack />}
+      </NavigationContainer>
+
+      {/* 2. Animated Splash Overlay */}
+      {splashMounted && (
+        <Animated.View 
+            style={[
+                StyleSheet.absoluteFill, 
+                { opacity: splashOpacity, zIndex: 9999 }
+            ]}
+        >
+            <AnimatedSplash onAnimationFinish={handleSplashFinish} />
+        </Animated.View>
+      )}
+    </View>
   );
 }

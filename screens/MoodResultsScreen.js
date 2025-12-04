@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { db } from '../firebaseConfig';
 import { collectionGroup, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { useFonts } from 'expo-font';
@@ -134,7 +134,8 @@ export default function MoodResultsScreen({ route, navigation }) {
       <FlatList
         data={dishes}
         renderItem={renderDish}
-        keyExtractor={item => item.id}
+        // FIX: Use a unique key by combining ID and index
+        keyExtractor={(item, index) => `${item.id}_${index}`}
         contentContainerStyle={{ padding: 20 }} 
         ListEmptyComponent={() => (
           <View style={styles.loadingContainer}>

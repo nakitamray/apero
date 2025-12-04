@@ -203,7 +203,8 @@ export default function HomeScreen({ navigation }) {
     
     return (
         <TouchableOpacity 
-            key={item.id} 
+            // FIX: Added index to key to prevent duplicates
+            key={`${item.id}-${index}`} 
             style={styles.card}
             onPress={() => navigation.navigate('Dish', {
                 dishId: item.id,

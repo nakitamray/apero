@@ -8,7 +8,6 @@ from firebase_admin import firestore
 # ==========================================
 # 1. SETUP FIREBASE
 # ==========================================
-# We look for the key in the same folder as this script
 current_dir = os.path.dirname(os.path.abspath(__file__))
 key_path = os.path.join(current_dir, "serviceAccountKey.json")
 
@@ -18,7 +17,6 @@ if not os.path.exists(key_path):
 
 try:
     cred = credentials.Certificate(key_path)
-    # Check if app is already initialized to avoid errors
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
@@ -41,7 +39,6 @@ def delete_collection(coll_ref, batch_size=50):
         print(f"   Deleting doc: {doc.id}")
         
         # ⚠️ RECURSIVE DELETE: Check for subcollections (like 'dishes')
-        # This is necessary because deleting a document does NOT delete its subcollections in Firestore
         subcollections = doc.reference.collections()
         for sub in subcollections:
             delete_collection(sub, batch_size)
@@ -55,7 +52,8 @@ def delete_collection(coll_ref, batch_size=50):
 # ==========================================
 # 3. EXECUTE CLEANUP
 # ==========================================
-COLLECTIONS_TO_WIPE = ["diningHalls", "diningPoints"]
+# UPDATE: Added 'globalDishes' to the wipe list
+COLLECTIONS_TO_WIPE = ["diningHalls", "diningPoints", "globalDishes"]
 
 print("\n⚠️  WARNING: This will delete ALL data in:", COLLECTIONS_TO_WIPE)
 print("This is required to clear old data formats before uploading new ones.")
@@ -67,6 +65,6 @@ if confirm == "DELETE":
         delete_collection(db.collection(col_name))
         print(f"✅ {col_name} cleared.")
     
-    print("\n✨ Database is clean. Now run 'upload_menus.py' to add real data!")
+    print("\n✨ Database is clean. Now run 'py/upload_history.py' to repopulate!")
 else:
     print("❌ Operation cancelled.")

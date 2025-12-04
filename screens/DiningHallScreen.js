@@ -38,7 +38,7 @@ export default function DiningHallScreen({ route, navigation }) {
   const [rawDishes, setRawDishes] = useState([]);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [locationInfo, setLocationInfo] = useState({ address: '', location: '', menuUrl: '' });
+  const [locationInfo, setLocationInfo] = useState({ address: '', hours: '', menuUrl: '' });
 
   // Time State
   const [viewingTime, setViewingTime] = useState(new Date()); 
@@ -50,7 +50,7 @@ export default function DiningHallScreen({ route, navigation }) {
     if (name) navigation.setOptions({ title: name });
   }, [name, navigation]);
 
-  // Fetch Location Info (Address/MenuUrl)
+  // Fetch Location Info
   useEffect(() => {
       const fetchLocationInfo = async () => {
           try {
@@ -64,7 +64,7 @@ export default function DiningHallScreen({ route, navigation }) {
       if (isRetail) fetchLocationInfo();
   }, [diningHallId, collectionName, isRetail]);
 
-  // Fetch Dishes
+  // Fetch Dishes (For Dining Halls)
   useEffect(() => {
     const dishesCollectionRef = collection(db, collectionName, diningHallId, 'dishes');
     const q = query(dishesCollectionRef, orderBy('averageRating', 'desc'));
@@ -84,7 +84,6 @@ export default function DiningHallScreen({ route, navigation }) {
 
       let filteredDishes = rawDishes;
 
-      // Only filter by time for Dining Halls
       if (!isRetail) {
           const currentMinutes = viewingTime.getHours() * 60 + viewingTime.getMinutes();
           filteredDishes = rawDishes.filter(dish => {
@@ -106,7 +105,7 @@ export default function DiningHallScreen({ route, navigation }) {
 
       const grouped = {};
       filteredDishes.forEach(dish => {
-        const station = dish.currentStation || (isRetail ? "Menu" : "Other");
+        const station = dish.currentStation || "Menu";
         if (!grouped[station]) grouped[station] = [];
         grouped[station].push(dish);
       });
@@ -139,6 +138,7 @@ export default function DiningHallScreen({ route, navigation }) {
   };
 
   const handleOpenMenu = () => {
+      // Opens the specific URL scraped from the site
       const url = locationInfo.menuUrl || 'https://dining.purdue.edu/menus/';
       Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
   };
@@ -173,13 +173,16 @@ export default function DiningHallScreen({ route, navigation }) {
                   <View style={styles.retailInfoRow}>
                       <MapPin size={18} color="#F47121" />
                       <Text style={styles.retailInfoText}>
-                          {locationInfo.address || locationInfo.location || "Campus Location"}
+                          {locationInfo.address || "Campus Location"}
                       </Text>
                   </View>
                   <View style={styles.retailInfoRow}>
                       <Clock size={18} color="#007A7A" />
-                      <Text style={styles.retailInfoText}>Open Today</Text>
+                      <Text style={styles.retailInfoText}>
+                          {locationInfo.hours || "Open Today"}
+                      </Text>
                   </View>
+
                   <TouchableOpacity style={styles.menuButton} onPress={handleOpenMenu}>
                       <Text style={styles.menuButtonText}>View Menu Online</Text>
                       <ExternalLink size={16} color="#FFFFFF" style={{marginLeft: 6}} />
@@ -247,16 +250,20 @@ export default function DiningHallScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FAF6F0' },
   headerContainer: { marginBottom: 10, paddingTop: 5 },
+  
+  // Retail Header
   retailHeaderContainer: { marginBottom: 15, paddingTop: 5, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#EAEAEA' },
   retailInfoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   retailInfoText: { fontFamily: 'Inter_600SemiBold', fontSize: 15, color: '#4E4A40', marginLeft: 10, flex: 1 },
   menuButton: { flexDirection: 'row', backgroundColor: '#F47121', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginTop: 10, shadowColor: '#F47121', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
   menuButtonText: { fontFamily: 'Inter_700Bold', fontSize: 15, color: '#FFFFFF' },
+
+  // Dining Hall Controls
   timeControlRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   menuLabel: { fontFamily: 'BodoniModa_700Bold', fontSize: 20, color: '#4E4A40' },
   utilityButtons: { flexDirection: 'row', alignItems: 'center' },
   timeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2F2', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
-  timeButtonDisabled: { backgroundColor: '#EAEAEA' },
+  timeButtonDisabled: { backgroundColor: '#EAEAEA' }, 
   timeButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#007A7A', marginLeft: 6 },
   timeTextDisabled: { color: '#7D7D7D' },
   mealTabContainer: { flexDirection: 'row', gap: 8, marginBottom: 5 },
