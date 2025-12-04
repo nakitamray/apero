@@ -5,6 +5,7 @@ import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
 import { db } from '../firebaseConfig';
 import { collectionGroup, getDocs } from 'firebase/firestore';
+import CustomHeader from '../components/CustomHeader';
 import { Search, Plus } from 'lucide-react-native';
 
 // Maps ID to the Display Name stored in the 'locations' array in Firestore
@@ -154,7 +155,9 @@ export default function SearchScreen({ navigation }) {
     if (!fontsLoaded) return null;
 
     return (
+        
         <SafeAreaView style={styles.safeArea}>
+            <CustomHeader />
             <View style={styles.container}>
                 {/* --- HEADER --- */}
                 <Text style={styles.headerTitle}>Find a Dish</Text>

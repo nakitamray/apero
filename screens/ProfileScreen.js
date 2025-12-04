@@ -197,11 +197,7 @@ export default function ProfileScreen({ navigation }) {
                 <Users size={48} color="#EAEAEA" />
                 <Text style={styles.comingSoonTitle}>Friends Feature Coming Soon!</Text>
                 <Text style={styles.comingSoonText}>
-                  Soon you'll be able to:
-                  {'\n'}• Add friends and see what they're eating
-                  {'\n'}• Share your favorite dishes
-                  {'\n'}• Get recommendations from friends
-                  {'\n'}• Compare taste profiles
+                  {'\n'}• TODO
                 </Text>
               </View>
             </View>

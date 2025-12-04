@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
 import { MapPin, TrendingUp, Users, Clock, Flame } from 'lucide-react-native';
-
+import CustomHeader from '../components/CustomHeader';
 const { width } = Dimensions.get('window');
 
 // Mock coordinates for Purdue dining locations (you'd replace with real coordinates)
@@ -127,6 +127,7 @@ export default function HotspotMapScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+        <CustomHeader />
       <ScrollView contentContainerStyle={styles.container}>
         
         {/* Header */}

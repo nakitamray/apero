@@ -202,14 +202,14 @@ export default function TasteDNAScreen({ navigation }) {
         <View style={styles.header}>
           <Brain size={32} color="#F47121" />
           <Text style={styles.title}>Your Taste DNA</Text>
-          <Text style={styles.subtitle}>AI-powered insights into your food preferences</Text>
+          <Text style={styles.subtitle}>AI Food Preferences</Text>
         </View>
 
         {/* DNA Profile Card */}
         <View style={styles.dnaCard}>
           <View style={styles.dnaHeader}>
             <Sparkles size={24} color="#007A7A" />
-            <Text style={styles.dnaTitle}>Your Unique Food Profile</Text>
+            <Text style={styles.dnaTitle}>Your Food Profile</Text>
           </View>
 
           {/* Adventurousness Meter */}
