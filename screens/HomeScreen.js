@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
-  Alert,
   ActivityIndicator,
   Linking,
   RefreshControl,
@@ -18,7 +17,7 @@ import CustomHeader from '../components/CustomHeader';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { PlusCircle, Clock, ChevronRight } from 'lucide-react-native';
+import { PlusCircle, Clock, ChevronRight, XCircle } from 'lucide-react-native';
 
 import { db } from '../firebaseConfig';
 import { 
@@ -32,6 +31,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 
+// --- CONSTANTS ---
 const MEALS = ["Breakfast", "Lunch", "Dinner"];
 
 // Default "Safe" times for each meal
@@ -40,6 +40,17 @@ const MEAL_DEFAULT_TIMES = {
     "Lunch": 13,
     "Dinner": 18
 };
+
+// Define the available Food Moods (Lowercase for aesthetic)
+const MOODS = [
+    { id: 'cozy', label: 'cozy', emoji: '🧸', tag: 'cozy' },
+    { id: 'sick', label: 'sick day', emoji: '🤒', tag: 'sick' },
+    { id: 'healthy', label: 'healthy', emoji: '🥗', tag: 'healthy' },
+    { id: 'spicy', label: 'spicy', emoji: '🌶️', tag: 'spicy' },
+    { id: 'sweet', label: 'sweet', emoji: '🍩', tag: 'sweet' },
+    { id: 'value', label: 'value', emoji: '💸', tag: 'value' },
+    { id: 'protein', label: 'gains', emoji: '💪', tag: 'protein' },
+];
 
 const getMealForTime = (dateObj) => {
     const hour = dateObj.getHours(); 
@@ -130,16 +141,17 @@ export default function HomeScreen({ navigation }) {
       if (selectedDate) {
           setViewingTime(selectedDate);
           setSelectedMeal(getMealForTime(selectedDate));
-          setIsManualTime(true); 
+          setIsManualTime(true); // User explicitly picked a time, so we grey out tabs
       }
   };
 
   const handleMealPress = (meal) => {
+      // Re-activate tabs and reset time to the meal's default
       setSelectedMeal(meal);
       const newTime = new Date();
       newTime.setHours(MEAL_DEFAULT_TIMES[meal], 0, 0, 0);
       setViewingTime(newTime);
-      setIsManualTime(false); 
+      setIsManualTime(false); // Enable tabs again
   };
 
   const filterDishes = (dishes) => {
@@ -173,6 +185,18 @@ export default function HomeScreen({ navigation }) {
 
   if (!fontsLoaded) return null;
 
+  // --- RENDER FUNCTIONS ---
+
+  const renderMoodItem = ({ item }) => (
+    <TouchableOpacity 
+        style={styles.moodItem}
+        onPress={() => navigation.navigate('MoodResults', { moodTag: item.tag, moodLabel: item.label })}
+    >
+        <Text style={styles.moodEmoji}>{item.emoji}</Text>
+        <Text style={styles.moodLabel}>{item.label}</Text>
+    </TouchableOpacity>
+  );
+
   const renderPulseItem = (item, index) => {
     const isHall = item.category === 'diningHall';
     const locationType = isHall ? "Dining Hall" : "Retail";
@@ -193,7 +217,6 @@ export default function HomeScreen({ navigation }) {
           
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-            {/* Explicit Location Name + Type */}
             <Text style={styles.cardLocation}>
                at <Text style={{fontFamily: 'Inter_600SemiBold'}}>{item.locationName || "Unknown"}</Text> • {locationType}
             </Text>
@@ -219,7 +242,7 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.locationTitle}>{item.name}</Text>
         <Text style={styles.locationSubtitle}>{item.location || "Purdue Campus"}</Text>
       </View>
-      <ChevronRight size={20} color="#EAEAEA" />
+      <ChevronRight size={24} color="#007A7A" />
     </TouchableOpacity>
   );
 
@@ -240,8 +263,23 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
         </View>
 
+        {/* --- MOOD SELECTOR --- */}
+        <View style={styles.moodSection}>
+            <Text style={styles.sectionHeaderTitle}>What's your vibe?</Text>
+            <FlatList
+                data={MOODS}
+                renderItem={renderMoodItem}
+                keyExtractor={item => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.moodListContainer}
+            />
+        </View>
+
+        {/* --- TIME & MENU HEADER --- */}
         <View style={styles.menuHeaderRow}>
-            <Text style={styles.sectionHeaderTitle}>Current Menu</Text>
+            {/* Reduced Title Size to prevent collision */}
+            <Text style={styles.menuSectionTitle}>Current Menu</Text>
             
             <View style={styles.utilityButtons}>
                 <TouchableOpacity 
@@ -273,21 +311,31 @@ export default function HomeScreen({ navigation }) {
             />
         )}
 
-        <View style={styles.mealTabContainer}>
+        {/* --- MEAL TABS (Greyed out if Manual Time is active) --- */}
+        <View style={[styles.mealTabContainer, isManualTime && styles.mealTabContainerDisabled]}>
             {MEALS.map(meal => (
                 <TouchableOpacity 
                     key={meal} 
-                    style={[styles.mealTab, selectedMeal === meal && styles.mealTabActive]}
+                    style={[
+                        styles.mealTab, 
+                        // Only show active color if NOT in manual time mode
+                        (selectedMeal === meal && !isManualTime) && styles.mealTabActive 
+                    ]}
                     onPress={() => handleMealPress(meal)}
                 >
-                    <Text style={[styles.mealTabText, selectedMeal === meal && styles.mealTabTextActive]}>
+                    <Text style={[
+                        styles.mealTabText, 
+                        (selectedMeal === meal && !isManualTime) && styles.mealTabTextActive
+                    ]}>
                         {meal}
                     </Text>
                 </TouchableOpacity>
             ))}
         </View>
 
-        <Text style={styles.pulseHeader}>Top Rated for {selectedMeal}</Text>
+        <Text style={styles.pulseHeader}>
+            {isManualTime ? `The Pulse: At ${formattedTime}` : `The Pulse: ${selectedMeal}`}
+        </Text>
         
         {loading ? (
             <ActivityIndicator size="small" color="#F47121" style={{marginTop: 20}} />
@@ -300,7 +348,7 @@ export default function HomeScreen({ navigation }) {
             </View>
         )}
 
-        {/* --- DINING HALLS SECTION (With Margins) --- */}
+        {/* --- DINING HALLS SECTION --- */}
         <View style={styles.locationSection}>
             <Text style={styles.sectionHeaderTitle}>Dining Halls</Text>
             <FlatList
@@ -311,7 +359,7 @@ export default function HomeScreen({ navigation }) {
             />
         </View>
 
-        {/* --- DINING POINTS SECTION (With Margins) --- */}
+        {/* --- DINING POINTS SECTION --- */}
         <View style={styles.locationSection}>
             <Text style={styles.sectionHeaderTitle}>Dining Points</Text>
             <FlatList
@@ -340,8 +388,68 @@ const styles = StyleSheet.create({
   },
   reviewButtonText: { fontFamily: 'Inter_700Bold', fontSize: 16, color: '#FFFFFF', marginLeft: 8 },
 
-  menuHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 15, marginBottom: 10 },
-  sectionHeaderTitle: { fontFamily: 'BodoniModa_700Bold', fontSize: 24, color: '#4E4A40' },
+  // --- MOOD SECTOR STYLES ---
+  moodSection: {
+      marginTop: 25,
+      marginBottom: 10,
+  },
+  moodListContainer: {
+      paddingHorizontal: 20, // Match the rest of the layout
+      paddingBottom: 10,
+  },
+  moodItem: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12, // Space between items
+      backgroundColor: '#FFFFFF',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: '#EAEAEA',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      elevation: 2,
+  },
+  moodEmoji: {
+      fontSize: 24,
+      marginBottom: 4,
+  },
+  moodLabel: {
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 12,
+      color: '#4E4A40',
+  },
+
+  // --- GENERAL HEADERS ---
+  menuHeaderRow: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      paddingHorizontal: 20, 
+      marginTop: 25, // More breathing room
+      marginBottom: 15 
+  },
+  
+  // Standard orange title for Halls/Points
+  sectionHeaderTitle: { 
+      fontFamily: 'BodoniModa_700Bold', 
+      fontSize: 28, 
+      color: '#F47121', 
+      marginHorizontal: 20, 
+      marginBottom: 10, 
+  },
+
+  // Specific smaller title for "Current Menu" to avoid button overlap
+  menuSectionTitle: {
+      fontFamily: 'BodoniModa_700Bold', 
+      fontSize: 24, // Smaller to prevent collision
+      color: '#F47121', 
+      flex: 1, // Allow text to wrap if absolutely needed
+  },
+
   utilityButtons: { flexDirection: 'column', alignItems: 'flex-end', gap: 5 },
   
   timeButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E0F2F2', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
@@ -352,13 +460,17 @@ const styles = StyleSheet.create({
   hoursButton: { paddingVertical: 4 },
   hoursText: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#7D7D7D', textDecorationLine: 'underline' },
 
+  // --- MEAL TABS ---
   mealTabContainer: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 15, gap: 8 },
+  // Opacity applied when "manual time" is active
+  mealTabContainerDisabled: { opacity: 0.4 }, 
+  
   mealTab: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 25, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#EAEAEA' },
   mealTabActive: { backgroundColor: '#007A7A', borderColor: '#007A7A' },
   mealTabText: { fontFamily: 'Inter_600SemiBold', color: '#7D7D7D', fontSize: 13 },
   mealTabTextActive: { color: '#FFFFFF', fontFamily: 'Inter_700Bold' },
 
-  pulseHeader: { fontFamily: 'BodoniModa_700Bold', fontSize: 20, color: '#F47121', paddingHorizontal: 20, marginTop: 10, marginBottom: 10 },
+  pulseHeader: { fontFamily: 'BodoniModa_700Bold', fontSize: 20, color: '#4E4A40', paddingHorizontal: 20, marginTop: 10, marginBottom: 10 },
 
   card: { backgroundColor: '#FFFFFF', padding: 16, marginVertical: 6, borderRadius: 16, marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 3 },
   rankBadge: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFBF8', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
@@ -369,8 +481,7 @@ const styles = StyleSheet.create({
   scoreChip: { backgroundColor: '#E0F2F2', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   scoreText: { fontFamily: 'BodoniModa_700Bold', fontSize: 16, color: '#007A7A' },
 
-  // --- LOCATION SECTIONS with Spacing ---
-  locationSection: { marginTop: 15, marginBottom: 10 },
+  locationSection: { marginTop: 25, marginBottom: 10 }, 
   
   locationCard: { backgroundColor: '#FFFFFF', padding: 20, marginVertical: 6, borderRadius: 16, marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 2 },
   locationInfo: { flex: 1 },
