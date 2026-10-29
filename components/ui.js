@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -9,20 +10,22 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { colors, fonts, lift } from '../theme';
+import { colors, fonts, lift, tints } from '../theme';
 import { formatScore } from '../lib/score';
-import { StampFrame, Sticker, TornEdge, WAVES } from './art';
+import { PLATTERS, StampFrame, Sticker, TornEdge, WAVES } from './art';
 
-// ticking-fabric pinstripes behind every screen
-export function Linen() {
+// ticking-fabric pinstripes on white, cycling turquoise / orange / lemon
+const PINS = ['rgba(31, 179, 204, 0.22)', 'rgba(255, 123, 28, 0.18)', 'rgba(255, 212, 59, 0.38)'];
+
+export function Pinstripes() {
   const { width } = useWindowDimensions();
   const count = Math.ceil(width / 26);
   return (
-    <View style={[StyleSheet.absoluteFill, styles.linen]} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       {Array.from({ length: count }, (_, i) => (
         <View key={i} style={[styles.pin, { left: i * 26 + 10 }]}>
-          <View style={styles.pinLine} />
-          <View style={styles.pinLine} />
+          <View style={[styles.pinLine, { backgroundColor: PINS[i % 3] }]} />
+          <View style={[styles.pinLine, { backgroundColor: PINS[i % 3] }]} />
         </View>
       ))}
     </View>
@@ -31,8 +34,8 @@ export function Linen() {
 
 export function Screen({ children, style }) {
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.linen }, style]}>
-      <Linen />
+    <View style={[{ flex: 1, backgroundColor: colors.page }, style]}>
+      <Pinstripes />
       {children}
     </View>
   );
@@ -87,10 +90,10 @@ export function SectionHeader({ label, title, action, onAction }) {
   );
 }
 
-// a scrap of paper. tilt + tape make lists feel pasted in rather than stamped out
-export function Paper({ children, style, outer, onPress, tilt = 0, tape, tint = colors.paper }) {
+// a scrap of tinted paper. the tilt makes lists feel pasted in by hand
+export function Paper({ children, style, outer, onPress, tilt = 0, tint, index = 0 }) {
   const [down, setDown] = useState(false);
-  const body = [styles.paper, { backgroundColor: tint }, style];
+  const body = [styles.paper, { backgroundColor: tint || tints[index % tints.length] }, style];
   const wrap = [{ transform: [{ rotate: `${tilt}deg` }, { scale: down ? 0.985 : 1 }] }, outer];
   return (
     <View style={wrap}>
@@ -101,20 +104,25 @@ export function Paper({ children, style, outer, onPress, tilt = 0, tape, tint = 
       ) : (
         <View style={body}>{children}</View>
       )}
-      {tape && (
-        <View style={styles.tape} pointerEvents="none">
-          <Sticker name="tape" width={74} rotate={tilt > 0 ? -4 : 3} />
-        </View>
-      )}
+    </View>
+  );
+}
+
+// painted majolica platter for the bigger info blocks
+export function Platter({ children, tone = 'blue', style, outer }) {
+  return (
+    <View style={[lift, outer]}>
+      <Image source={PLATTERS[tone]} resizeMode="stretch" style={styles.platterArt} />
+      <View style={[styles.platter, style]}>{children}</View>
     </View>
   );
 }
 
 export function Button({ label, onPress, kind = 'primary', disabled, loading, icon, style }) {
   const look = {
-    primary: { bg: colors.cobalt, fg: colors.paper, border: colors.cobalt },
-    citrus: { bg: colors.orange, fg: colors.paper, border: colors.orange },
-    light: { bg: colors.paper, fg: colors.cobalt, border: colors.hairline },
+    primary: { bg: colors.deep, fg: colors.paper, border: colors.deep },
+    citrus: { bg: colors.persimmon, fg: colors.paper, border: colors.persimmon },
+    light: { bg: colors.lagoon, fg: colors.deep, border: colors.lagoon },
   }[kind];
   return (
     <Pressable
@@ -209,7 +217,7 @@ export function Field({ label, style, ...props }) {
 export function Empty({ title, body, children }) {
   return (
     <View style={styles.empty}>
-      <Sticker name="tin" width={170} rotate={-6} />
+      <Sticker name="vase" width={110} rotate={-4} />
       <Title size={26} style={{ marginTop: 14, textAlign: 'center' }}>
         {title}
       </Title>
@@ -228,9 +236,8 @@ export function Loading() {
 }
 
 export const styles = StyleSheet.create({
-  linen: { backgroundColor: colors.linen },
   pin: { position: 'absolute', top: 0, bottom: 0, flexDirection: 'row', gap: 3 },
-  pinLine: { width: 1, height: '100%', backgroundColor: 'rgba(31, 179, 204, 0.16)' },
+  pinLine: { width: 1, height: '100%' },
   piece: { position: 'absolute', zIndex: 3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   label: { fontFamily: fonts.medium, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase' },
@@ -256,7 +263,8 @@ export const styles = StyleSheet.create({
   },
   link: { fontFamily: fonts.medium, color: colors.cobalt, fontSize: 13, letterSpacing: 0.5, marginBottom: 6 },
   paper: { borderRadius: 6, padding: 16, ...lift },
-  tape: { position: 'absolute', top: -12, alignSelf: 'center' },
+  platter: { paddingHorizontal: '11%', paddingVertical: 40, minHeight: 150, justifyContent: 'center' },
+  platterArt: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   button: {
     borderRadius: 999,
     borderWidth: 1,
@@ -272,7 +280,7 @@ export const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 7,
     paddingHorizontal: 15,
-    backgroundColor: colors.paper,
+    backgroundColor: '#F6FBFC',
   },
   chipActive: { backgroundColor: colors.lemon, borderColor: colors.lemon },
   chipText: { fontFamily: fonts.body, fontSize: 14, color: colors.ink },

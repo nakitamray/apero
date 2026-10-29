@@ -15,8 +15,14 @@ const ART = {
   tin: { src: require('../assets/art/tin.png'), ratio: 1.538 },
   starfish: { src: require('../assets/art/starfish.png'), ratio: 1.039 },
   tile: { src: require('../assets/art/tile.png'), ratio: 1 },
-  tape: { src: require('../assets/art/tape.png'), ratio: 4.5 },
+  vase: { src: require('../assets/art/vase.png'), ratio: 0.528 },
   swash: { src: require('../assets/art/swash.png'), ratio: 13.636 },
+};
+
+export const PLATTERS = {
+  blue: require('../assets/art/platter_blue.png'),
+  orange: require('../assets/art/platter_orange.png'),
+  lemon: require('../assets/art/platter_lemon.png'),
 };
 
 export const WAVES = {
@@ -41,7 +47,7 @@ export function Sticker({ name, width, rotate = 0, flip, style }) {
 }
 
 // ragged bottom edge where the blue header is "torn" off
-export function TornEdge({ width, color = colors.linen, height = 16, seed = 3 }) {
+export function TornEdge({ width, color = colors.page, height = 16, seed = 3 }) {
   let x = 0;
   let r = seed;
   const rand = () => {

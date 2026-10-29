@@ -1,10 +1,11 @@
 // sardine blues, lemons, blood oranges, majolica
 export const colors = {
-  linen: '#F2F7FB',
+  page: '#FFFFFF',
   paper: '#FFFDF7',
   mist: '#DCE8F5',
   sky: '#7FB0DE',
   cobalt: '#2456B8',
+  deep: '#0B3B8C',
   ink: '#13285E',
   muted: '#5F6F92',
   aqua: '#1FB3CC',
@@ -13,10 +14,15 @@ export const colors = {
   lemon: '#FFD43B',
   butter: '#FFF5C9',
   orange: '#FF7B1C',
+  persimmon: '#E8510C',
+  peach: '#FFE3CF',
   blood: '#D9441E',
   pink: '#F2938C',
   hairline: 'rgba(36, 86, 184, 0.22)',
 };
+
+// cards rotate through these so a list never goes flat white
+export const tints = ['#FFF5C9', '#D6F1F5', '#FFE3CF', '#E1EBFA'];
 
 export const fonts = {
   display: 'GrandParadiso',

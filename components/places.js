@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../theme';
-import { priceTag } from '../data/campuses';
+import { getCampus, priceTag } from '../data/campuses';
 import { bestTrip, describeTrip, money, totalCost } from '../lib/trip';
-import { Paper } from './ui';
+import { Paper, Plate } from './ui';
 import { Sticker } from './art';
 import { tiltFor } from './rows';
 
@@ -25,8 +25,8 @@ export function SpotCard({ spot, campus, modes, onPress, index = 0, width = 196 
   return (
     <Paper
       onPress={onPress}
+      index={index}
       tilt={tiltFor(index)}
-      tape={index % 2 === 0}
       outer={{ width, marginRight: 14, marginTop: 14 }}
       style={styles.card}
     >
@@ -46,28 +46,43 @@ export function SpotCard({ spot, campus, modes, onPress, index = 0, width = 196 
   );
 }
 
-export function PlaceRow({ place, campus, modes, activity, onPress, index = 0 }) {
+export function PlaceRow({ place, campus, modes, activity, stats, worldwide, onPress, index = 0 }) {
   const isSpot = place.kind === 'spot';
-  const trip = isSpot ? bestTrip(place, campus, modes) : null;
+  const trip = isSpot && !worldwide ? bestTrip(place, campus, modes) : null;
   return (
     <Paper
       onPress={onPress}
+      index={index}
       tilt={tiltFor(index)}
       outer={{ marginHorizontal: 20, marginBottom: 12 }}
       style={styles.row}
     >
       <View style={{ flex: 1 }}>
         <Text style={styles.rowName}>{place.name}</Text>
-        <Text style={styles.meta}>{isSpot ? `${place.cuisine} · ${place.area}` : place.area}</Text>
-        {isSpot && (
+        <Text style={styles.meta}>
+          {worldwide ? getCampus(place.campusId).name : isSpot ? `${place.cuisine} · ${place.area}` : place.area}
+        </Text>
+        {isSpot && !worldwide && (
           <Text style={styles.trip}>
             {describeTrip(trip)}
             {trip ? ` · about ${money(totalCost(place, trip))} all in` : ''}
           </Text>
         )}
         {activity > 0 && <Text style={styles.busy}>{activity} rated here today</Text>}
+        {stats?.ratingCount > 0 && (
+          <Text style={styles.ratings}>
+            {stats.ratingCount} rating{stats.ratingCount === 1 ? '' : 's'}
+            {isSpot ? ` · ${priceTag(place.price)}` : ''}
+          </Text>
+        )}
       </View>
-      {isSpot ? <PriceTag price={place.price} /> : <Sticker name={stickerFor(place.id)} width={44} rotate={8} />}
+      {stats?.ratingCount > 0 ? (
+        <Plate score={stats.score} />
+      ) : isSpot ? (
+        <PriceTag price={place.price} />
+      ) : (
+        <Sticker name={stickerFor(place.id)} width={44} rotate={8} />
+      )}
     </Paper>
   );
 }
@@ -86,6 +101,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     letterSpacing: 0.2,
   },
+  ratings: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 },
   busy: { fontFamily: fonts.medium, fontSize: 12, color: colors.orange, marginTop: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   price: {

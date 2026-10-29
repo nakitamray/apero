@@ -12,7 +12,7 @@ export const tiltFor = (i) => [-0.6, 0.4, -0.2, 0.7][i % 4];
 
 export function DishRow({ dish, rank, score, subtitle, onPress, badge, index = 0 }) {
   return (
-    <Paper onPress={onPress} tilt={tiltFor(index)} outer={styles.rowOuter} style={styles.dishRow}>
+    <Paper onPress={onPress} index={index} tilt={tiltFor(index)} outer={styles.rowOuter} style={styles.dishRow}>
       {rank != null && <Text style={styles.rank}>{rank}</Text>}
       <View style={{ flex: 1 }}>
         <Text style={styles.dishName} numberOfLines={2}>
@@ -51,8 +51,8 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
 
   return (
     <Paper
+      index={index + 1}
       tilt={tiltFor(index + 1)}
-      tape={index % 3 === 0}
       outer={[styles.rowOuter, { marginBottom: 18 }]}
       style={{ padding: 18 }}
     >
@@ -106,7 +106,7 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
 const styles = StyleSheet.create({
   rowOuter: { marginHorizontal: 20, marginBottom: 12 },
   dishRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
-  rank: { fontFamily: fonts.display, fontSize: 34, color: colors.orange, minWidth: 26, textAlign: 'center' },
+  rank: { fontFamily: fonts.display, fontSize: 34, color: colors.persimmon, minWidth: 26, textAlign: 'center' },
   dishName: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink, lineHeight: 21 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2 },
   reviewTop: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },

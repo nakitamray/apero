@@ -32,10 +32,10 @@ const ReviewStack = createNativeStackNavigator();
 const ListStack = createNativeStackNavigator();
 const MeStack = createNativeStackNavigator();
 
-const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.linen } };
+const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.page } };
 
 const stackOptions = {
-  headerStyle: { backgroundColor: colors.linen },
+  headerStyle: { backgroundColor: colors.page },
   headerTintColor: colors.cobalt,
   headerTitleStyle: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
   headerShadowVisible: false,
@@ -104,7 +104,13 @@ function MeTab() {
   );
 }
 
-const TAB_ICONS = { TodayTab: Sun, ExploreTab: Compass, ListTab: ListOrdered, MeTab: User };
+// each tab gets its own color; the active one sits on a soft pill of the same hue
+const TABS = {
+  TodayTab: { Icon: Sun, color: colors.persimmon, wash: colors.peach },
+  ExploreTab: { Icon: Compass, color: colors.teal, wash: colors.lagoon },
+  ListTab: { Icon: ListOrdered, color: '#B8860B', wash: colors.butter },
+  MeTab: { Icon: User, color: colors.cobalt, wash: colors.mist },
+};
 
 function ReviewButton({ onPress }) {
   return (
@@ -122,13 +128,18 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.cobalt,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
-        tabBarIcon: ({ color, focused }) => {
-          const Icon = TAB_ICONS[route.name];
-          return Icon ? <Icon color={color} size={22} strokeWidth={focused ? 2 : 1.5} /> : null;
+        tabBarActiveTintColor: TABS[route.name]?.color,
+        tabBarIcon: ({ focused }) => {
+          const tab = TABS[route.name];
+          if (!tab) return null;
+          return (
+            <View style={[styles.iconPill, focused ? { backgroundColor: tab.wash } : { opacity: 0.7 }]}>
+              <tab.Icon color={tab.color} size={21} strokeWidth={focused ? 2 : 1.6} />
+            </View>
+          );
         },
       })}
     >
@@ -176,6 +187,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   tabLabel: { fontFamily: fonts.medium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase' },
+  iconPill: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 999 },
   reviewWrap: { flex: 1, alignItems: 'center' },
   reviewButton: { marginTop: -24, alignItems: 'center', justifyContent: 'center' },
   plus: {
