@@ -18,6 +18,10 @@ export default function SignUpScreen({ navigation }) {
   const [busy, setBusy] = useState(false);
 
   const signUp = async () => {
+    if (!auth) {
+      Alert.alert('Accounts are off on this build', 'You can still look around in the demo.');
+      return;
+    }
     setBusy(true);
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);

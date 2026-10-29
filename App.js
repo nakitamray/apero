@@ -20,13 +20,13 @@ export default function App() {
   });
   const [showSplash, setShowSplash] = useState(true);
 
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.linen }} />;
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.page }} />;
 
   return (
     <SafeAreaProvider>
       <SessionProvider>
         <StatusBar style="dark" />
-        <View style={{ flex: 1, backgroundColor: colors.linen }}>
+        <View style={{ flex: 1, backgroundColor: colors.page }}>
           <AppNavigator />
           {showSplash && <Splash onDone={() => setShowSplash(false)} />}
         </View>

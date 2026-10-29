@@ -3,12 +3,13 @@ import { Linking, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bus, Car, Footprints, MapPin, Plus } from 'lucide-react-native';
 import { useSession } from '../context/Session';
-import { getPlace, priceTag } from '../data/campuses';
-import { placeDishes } from '../lib/api';
+import { getCampus, getPlace, priceTag } from '../data/campuses';
+import { getPlaceStats, placeDishes, placeReviews } from '../lib/api';
 import { currentMeal, todayKey } from '../lib/time';
-import { mealCost, money, tripOptions } from '../lib/trip';
-import { Button, Chip, Empty, Label, Loading, Paper, Screen, Title } from '../components/ui';
-import { DishRow } from '../components/rows';
+import { bestTrip, directionsUrl, mealCost, money, tripOptions } from '../lib/trip';
+import { Button, Chip, Empty, Label, Loading, Plate, Platter, Screen, Title } from '../components/ui';
+import { DishRow, ReviewCard, makeLike } from '../components/rows';
+import MapEmbed from '../components/MapEmbed';
 import { Sticker } from '../components/art';
 import { colors, fonts } from '../theme';
 
@@ -24,7 +25,7 @@ const byScore = (a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeComp
 
 function TripTable({ place, campus, modes }) {
   return (
-    <Paper tilt={-0.6} tape tint={colors.butter} outer={{ marginTop: 22 }} style={{ gap: 10, paddingTop: 20 }}>
+    <Platter tone="orange" outer={{ marginTop: 22 }} style={{ gap: 10 }}>
       <Label>Getting there · meal about {money(mealCost(place))}</Label>
       {tripOptions(place, campus).map((o) => {
         const Icon = MODE_ICONS[o.mode];
@@ -41,14 +42,60 @@ function TripTable({ place, campus, modes }) {
         );
       })}
       <Text style={styles.tripNote}>Rough numbers, round trip. Faded rows are ways you said you don't get around.</Text>
-    </Paper>
+    </Platter>
+  );
+}
+
+// Yelp-style summary: one score from everyone who's rated anything here, plus how the verdicts split
+function EveryonesRating({ stats }) {
+  if (!stats?.ratingCount) {
+    return (
+      <Platter tone="lemon" outer={{ marginTop: 22 }}>
+        <Label>Everyone's rating</Label>
+        <Text style={styles.statsLine}>No ratings yet. Rate something here and you'll be the first.</Text>
+      </Platter>
+    );
+  }
+  const total = stats.love + stats.fine + stats.meh || 1;
+  const rows = [
+    ['Loved it', stats.love, colors.persimmon],
+    ['It was fine', stats.fine, colors.lemon],
+    ['Not for me', stats.meh, colors.aqua],
+  ];
+  return (
+    <Platter tone="lemon" outer={{ marginTop: 22 }} style={styles.statsBox}>
+      <View style={{ alignItems: 'center' }}>
+        <Plate score={stats.score} size={88} />
+        <Text style={styles.statsCount}>
+          {stats.ratingCount} rating{stats.ratingCount === 1 ? '' : 's'}
+        </Text>
+      </View>
+      <View style={{ flex: 1, gap: 8 }}>
+        <Label>Everyone's rating</Label>
+        {rows.map(([label, n, color]) => (
+          <View key={label}>
+            <View style={styles.splitRow}>
+              <Text style={styles.splitLabel}>{label}</Text>
+              <Text style={styles.splitN}>{n}</Text>
+            </View>
+            <View style={styles.splitTrack}>
+              <View style={[styles.splitFill, { width: `${(n / total) * 100}%`, backgroundColor: color }]} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </Platter>
   );
 }
 
 export default function PlaceScreen({ navigation, route }) {
   const place = getPlace(route.params.placeId);
-  const { campus, modes } = useSession();
+  // could be another school's place (from the worldwide list), so use its own campus
+  const campus = getCampus(place.campusId);
+  const { modes, user } = useSession();
   const [dishes, setDishes] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [picked, setPicked] = useState(null);
 
   useFocusEffect(
@@ -56,8 +103,16 @@ export default function PlaceScreen({ navigation, route }) {
       placeDishes(place.id)
         .then(setDishes)
         .catch(() => setDishes([]));
+      getPlaceStats(place.id)
+        .then(setStats)
+        .catch(() => setStats(null));
+      placeReviews(place.id, 3)
+        .then(setReviews)
+        .catch(() => setReviews([]));
     }, [place.id]),
   );
+
+  const like = makeLike(setReviews, user.uid);
 
   const today = todayKey();
   const servedToday = (dishes || []).filter((d) => d.lastServedDate === today);
@@ -91,10 +146,27 @@ export default function PlaceScreen({ navigation, route }) {
   const addDish = () =>
     navigation.navigate('ReviewTab', { screen: 'AddDish', params: { placeId: place.id }, initial: false });
 
-  const directions = () =>
-    Linking.openURL(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name} ${campus.city}`)}`,
-    );
+  const trip = place.kind === 'spot' ? bestTrip(place, campus, modes) : null;
+  const directions = () => Linking.openURL(directionsUrl(place, campus, trip?.mode || modes[0]));
+
+  if (reviews.length) {
+    sections = [
+      {
+        title: 'What people say',
+        data: reviews,
+        renderItem: ({ item, index }) => (
+          <ReviewCard
+            review={item}
+            index={index}
+            uid={user.uid}
+            onLike={like}
+            onPressDish={() => navigation.navigate('Dish', { dishId: item.dishId })}
+          />
+        ),
+      },
+      ...sections,
+    ];
+  }
 
   const header = (
     <View style={styles.head}>
@@ -110,10 +182,16 @@ export default function PlaceScreen({ navigation, route }) {
         <Text style={styles.areaText}>{place.area}</Text>
       </View>
 
+      <EveryonesRating stats={stats} />
+
+      <View style={styles.map}>
+        <MapEmbed place={place} campus={campus} />
+      </View>
+
       {place.kind === 'spot' && <TripTable place={place} campus={campus} modes={modes} />}
 
       <View style={styles.buttons}>
-        <Button label="Directions" kind="light" onPress={directions} style={{ flex: 1 }} />
+        <Button label="Get directions" kind="primary" onPress={directions} style={{ flex: 1 }} />
         <Button
           label="Add a dish"
           kind="citrus"
@@ -177,6 +255,21 @@ const styles = StyleSheet.create({
   tripNote: { fontFamily: fonts.note, fontSize: 15, color: colors.muted, lineHeight: 19 },
   buttons: { flexDirection: 'row', gap: 12, marginTop: 22 },
   meals: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 22 },
+  statsBox: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  statsCount: { fontFamily: fonts.medium, fontSize: 11, letterSpacing: 1.2, color: colors.muted, marginTop: 4 },
+  statsLine: { fontFamily: fonts.note, fontSize: 17, color: colors.ink, marginTop: 6 },
+  splitRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  splitLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
+  splitN: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  splitTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: 'rgba(11, 59, 140, 0.12)',
+    overflow: 'hidden',
+    marginTop: 3,
+  },
+  splitFill: { height: '100%', borderRadius: 4 },
+  map: { marginTop: 22, borderRadius: 12, overflow: 'hidden', borderWidth: 3, borderColor: colors.deep },
   station: {
     fontFamily: fonts.display,
     fontSize: 28,

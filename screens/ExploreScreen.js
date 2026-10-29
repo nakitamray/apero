@@ -3,7 +3,8 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
-import { activityToday } from '../lib/api';
+import { activityToday, campusPlaceStats, topPlacesWorld } from '../lib/api';
+import { getPlace } from '../data/campuses';
 import { MODES, bestTrip, totalCost } from '../lib/trip';
 import { Chip, CollageHeader, Label, Note, Screen, Title } from '../components/ui';
 import { PlaceRow } from '../components/places';
@@ -12,6 +13,7 @@ import { colors } from '../theme';
 const KINDS = [
   { id: 'hall', label: 'Dining halls' },
   { id: 'spot', label: 'Cheap eats' },
+  { id: 'world', label: 'Worldwide' },
 ];
 
 const SORTS = [
@@ -31,6 +33,8 @@ export default function ExploreScreen({ navigation, route }) {
   const [kind, setKind] = useState(route.params?.kind || 'hall');
   const [sort, setSort] = useState('near');
   const [activity, setActivity] = useState({});
+  const [stats, setStats] = useState({});
+  const [world, setWorld] = useState([]);
 
   useEffect(() => {
     if (route.params?.kind) setKind(route.params.kind);
@@ -41,10 +45,17 @@ export default function ExploreScreen({ navigation, route }) {
       activityToday(campus.id)
         .then(setActivity)
         .catch(() => setActivity({}));
+      campusPlaceStats(campus.id)
+        .then(setStats)
+        .catch(() => setStats({}));
+      topPlacesWorld(20)
+        .then((rows) => setWorld(rows.filter((p) => getPlace(p.id))))
+        .catch(() => setWorld([]));
     }, [campus.id]),
   );
 
-  const places = campus.places.filter((p) => p.kind === kind);
+  const places = kind === 'world' ? world.map((p) => getPlace(p.id)) : campus.places.filter((p) => p.kind === kind);
+  const statsFor = (id) => (kind === 'world' ? world.find((p) => p.id === id) : stats[id]);
   if (kind === 'spot') {
     const trip = (p) => bestTrip(p, campus, modes);
     const reachable = (p) => (trip(p) ? 0 : 1);
@@ -54,8 +65,10 @@ export default function ExploreScreen({ navigation, route }) {
       busy: (a, b) => (activity[b.id] || 0) - (activity[a.id] || 0),
     };
     places.sort(sorters[sort]);
-  } else {
-    places.sort((a, b) => (activity[b.id] || 0) - (activity[a.id] || 0));
+  } else if (kind === 'hall') {
+    places.sort(
+      (a, b) => (stats[b.id]?.score ?? 0) - (stats[a.id]?.score ?? 0) || (activity[b.id] || 0) - (activity[a.id] || 0),
+    );
   }
 
   const header = (
@@ -76,6 +89,11 @@ export default function ExploreScreen({ navigation, route }) {
             <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
           ))}
         </View>
+        {kind === 'world' && (
+          <Note size={16} style={styles.note}>
+            The best rated places on every campus on apero, from everyone who's rated them.
+          </Note>
+        )}
         {kind === 'spot' && (
           <>
             <View style={[styles.chips, { marginTop: 10 }]}>
@@ -111,7 +129,9 @@ export default function ExploreScreen({ navigation, route }) {
             index={index}
             campus={campus}
             modes={modes}
-            activity={activity[item.id]}
+            activity={kind === 'world' ? 0 : activity[item.id]}
+            stats={statsFor(item.id)}
+            worldwide={kind === 'world'}
             onPress={() => navigation.navigate('Place', { placeId: item.id })}
           />
         )}

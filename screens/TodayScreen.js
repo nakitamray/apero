@@ -14,6 +14,7 @@ import {
   Loading,
   Note,
   Paper,
+  Platter,
   Screen,
   SectionHeader,
   Tag,
@@ -24,7 +25,7 @@ import { SpotCard } from '../components/places';
 import { colors, fonts } from '../theme';
 
 export default function TodayScreen({ navigation }) {
-  const { campus, modes, name, user } = useSession();
+  const { campus, modes, name, user, demo, logOut } = useSession();
   const insets = useSafeAreaInsets();
   const [top, setTop] = useState([]);
   const [feed, setFeed] = useState([]);
@@ -72,7 +73,8 @@ export default function TodayScreen({ navigation }) {
           height={insets.top + 120}
           pieces={[
             { name: 'spritz', size: 78, rotate: 6, right: 24, top: insets.top + 20 },
-            { name: 'lemonSlice', size: 54, rotate: 0, right: 98, top: insets.top + 86 },
+            { name: 'vase', size: 58, rotate: -6, right: 110, top: insets.top + 40 },
+            { name: 'lemonSlice', size: 50, rotate: 0, right: 92, top: insets.top + 112 },
             { name: 'sardine', size: 150, rotate: -8, left: -30, top: insets.top + 96 },
           ]}
         />
@@ -86,6 +88,15 @@ export default function TodayScreen({ navigation }) {
           </Title>
           <Note style={{ color: colors.muted }}>Here's what's good today.</Note>
         </View>
+
+        {demo && (
+          <Paper tint={colors.lemon} tilt={-0.8} outer={styles.demo} onPress={logOut}>
+            <Text style={styles.demoText}>
+              You're poking around the demo, so nothing here is saved.{' '}
+              <Text style={styles.demoLink}>Make an account →</Text>
+            </Text>
+          </Paper>
+        )}
 
         <SectionHeader label="What sounds good" title="Pick a mood" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -124,14 +135,14 @@ export default function TodayScreen({ navigation }) {
         {busiest.length > 0 && (
           <>
             <SectionHeader label="Where people are eating" title="Busy today" />
-            <Paper tilt={-0.5} tint={colors.butter} outer={{ marginHorizontal: 20 }} style={{ gap: 10 }}>
+            <Platter tone="lemon" outer={{ marginHorizontal: 20 }} style={{ gap: 10 }}>
               {busiest.map((p) => (
                 <Text key={p.id} style={styles.busyItem} onPress={() => openPlace(p)}>
                   <Text style={styles.busyCount}>{busy[p.id]} </Text>
                   {p.name}
                 </Text>
               ))}
-            </Paper>
+            </Platter>
           </>
         )}
 
@@ -171,6 +182,9 @@ export default function TodayScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   hello: { paddingHorizontal: 22, marginTop: 30 },
+  demo: { marginHorizontal: 20, marginTop: 18 },
+  demoText: { fontFamily: fonts.body, fontSize: 14, color: colors.ink, lineHeight: 20 },
+  demoLink: { fontFamily: fonts.medium, color: colors.deep },
   chips: { paddingHorizontal: 22, gap: 8 },
   spots: { paddingHorizontal: 22, paddingBottom: 10 },
   busyItem: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },

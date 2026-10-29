@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { useSession } from '../context/Session';
 import { Button, CollageHeader, Field, Note, Screen } from '../components/ui';
 import { colors, fonts } from '../theme';
 
@@ -28,8 +29,13 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const { startDemo } = useSession();
 
   const logIn = async () => {
+    if (!auth) {
+      Alert.alert('Accounts are off on this build', 'You can still look around in the demo.');
+      return;
+    }
     setBusy(true);
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -63,6 +69,7 @@ export default function LoginScreen({ navigation }) {
               disabled={!email || !password}
               style={{ marginTop: 8 }}
             />
+            <Button label="Just looking? Try the demo" kind="light" onPress={startDemo} style={{ marginTop: 12 }} />
             <Pressable onPress={() => navigation.navigate('SignUp')} style={styles.switch}>
               <Text style={styles.switchText}>
                 New here? <Text style={styles.switchLink}>Make an account</Text>

@@ -8,7 +8,7 @@ import { getPlace } from '../data/campuses';
 import { myRankings, topDishes, userReviews } from '../lib/api';
 import { reasonLabel } from '../lib/tags';
 import { dayStreak, timeAgo } from '../lib/time';
-import { Button, CollageHeader, Label, Loading, Paper, Plate, Screen, Title } from '../components/ui';
+import { Button, CollageHeader, Label, Loading, Plate, Platter, Screen, Title } from '../components/ui';
 import { DishRow } from '../components/rows';
 import { colors, fonts, lift } from '../theme';
 
@@ -53,7 +53,7 @@ function tasteFrom(reviews, campus) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const { user, name, campus, logOut } = useSession();
+  const { user, name, campus, demo, logOut } = useSession();
   const insets = useSafeAreaInsets();
   const [reviews, setReviews] = useState(null);
   const [tryNext, setTryNext] = useState([]);
@@ -108,7 +108,7 @@ export default function ProfileScreen({ navigation }) {
             </View>
 
             {total > 0 && (
-              <Paper tape tilt={-0.5} outer={styles.block} style={{ paddingTop: 22 }}>
+              <Platter tone="blue" outer={styles.block}>
                 <Label style={{ marginBottom: 14 }}>Your taste</Label>
                 <Bar label="Loved it" share={taste.verdicts.love / total} color={colors.orange} />
                 <Bar label="It was fine" share={taste.verdicts.fine / total} color={colors.lemon} />
@@ -132,7 +132,7 @@ export default function ProfileScreen({ navigation }) {
                   You've tried <Text style={styles.em}>{taste.triedHere}</Text> of {campus.places.length} places at{' '}
                   {campus.short}.
                 </Text>
-              </Paper>
+              </Platter>
             )}
 
             {tryNext.length > 0 && (
@@ -174,7 +174,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.block}>
           <Button label="Campus & getting around" kind="light" onPress={() => navigation.navigate('Settings')} />
-          <Button label="Log out" kind="light" onPress={logOut} style={{ marginTop: 12 }} />
+          <Button label={demo ? 'Leave the demo' : 'Log out'} kind="light" onPress={logOut} style={{ marginTop: 12 }} />
         </View>
       </ScrollView>
     </Screen>

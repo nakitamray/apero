@@ -2,6 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    function ratingFields() { return ['ratingSum', 'ratingCount', 'score', 'love', 'fine', 'meh']; }
 
     match /users/{uid} {
       allow read: if signedIn();
@@ -17,7 +18,14 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.addedBy == request.auth.uid;
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingSum', 'ratingCount', 'score']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(ratingFields());
+    }
+
+    // per-place totals behind "everyone's rating"; created by the first review at that place
+    match /places/{placeId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(ratingFields().concat(['campusId', 'name']));
     }
 
     match /reviews/{reviewId} {
