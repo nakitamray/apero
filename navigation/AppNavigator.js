@@ -1,269 +1,185 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { onAuthStateChanged } from 'firebase/auth'; 
-import { auth } from '../firebaseConfig'; 
-import { PlusCircle, Home, List, User, MapPin } from 'lucide-react-native'; 
+import { Compass, ListOrdered, Plus, Sun, User } from 'lucide-react-native';
+import { useSession } from '../context/Session';
+import { colors, fonts } from '../theme';
 
-// Import screens
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
-import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import DiningHallScreen from '../screens/DiningHallScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import TodayScreen from '../screens/TodayScreen';
+import ExploreScreen from '../screens/ExploreScreen';
+import PlaceScreen from '../screens/PlaceScreen';
 import DishScreen from '../screens/DishScreen';
+import MoodScreen from '../screens/MoodScreen';
+import FeedScreen from '../screens/FeedScreen';
+import PickDishScreen from '../screens/PickDishScreen';
+import AddDishScreen from '../screens/AddDishScreen';
+import WriteReviewScreen from '../screens/WriteReviewScreen';
+import CompareScreen from '../screens/CompareScreen';
 import MyListScreen from '../screens/MyListScreen';
-import MoodResultsScreen from '../screens/MoodResultsScreen';
-import ComparisonScreen from '../screens/ComparisonScreen';
-import SearchScreen from '../screens/SearchScreen'; 
-import CustomReviewScreen from '../screens/CustomReviewScreen'; 
-import ManualCreateScreen from '../screens/ManualCreateScreen';
-import HotspotMapScreen from '../screens/HotspotMapScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
-// NEW FEATURE SCREENS
-import TasteDNAScreen from '../screens/TasteDNAScreen';
-import SocialFeedScreen from '../screens/SocialFeedScreen';
-
-import AnimatedSplash from '../components/AnimatedSplash';
-
-const Stack = createNativeStackNavigator();
+const Root = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
-const HomeStack = createNativeStackNavigator();
+const TodayStack = createNativeStackNavigator();
+const ExploreStack = createNativeStackNavigator();
+const ReviewStack = createNativeStackNavigator();
 const ListStack = createNativeStackNavigator();
-const ProfileStack = createNativeStackNavigator();
-const ReviewStack = createNativeStackNavigator(); 
-const MapStack = createNativeStackNavigator();
+const MeStack = createNativeStackNavigator();
 
-const screenOptions = {
-  headerStyle: { backgroundColor: '#FAF6F0' },
-  headerTintColor: '#4E4A40',
-  headerTitleStyle: { fontFamily: 'Inter_600SemiBold' },
+const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.paper } };
+
+const stackOptions = {
+  headerStyle: { backgroundColor: colors.paper },
+  headerTintColor: colors.ink,
+  headerTitleStyle: { fontFamily: fonts.display, fontSize: 18 },
   headerShadowVisible: false,
+  headerBackButtonDisplayMode: 'minimal',
 };
 
-// --- Review Stack ---
-function ReviewStackNavigator() {
-    return (
-        <ReviewStack.Navigator screenOptions={screenOptions}>
-            <ReviewStack.Screen 
-                name="SearchScreen" 
-                component={SearchScreen} 
-                options={{ headerShown: false }} 
-            />
-            <ReviewStack.Screen 
-                name="ManualCreate" 
-                component={ManualCreateScreen} 
-                options={{ title: 'Add New Dish' }} 
-            />
-            <ReviewStack.Screen 
-                name="CustomReview" 
-                component={CustomReviewScreen} 
-                options={{ title: 'Write Your Review' }}
-            />
-        </ReviewStack.Navigator>
-    );
-}
+const noHeader = { headerShown: false };
 
-// --- Home/Discover Stack ---
-function HomeStackNavigator() {
+// every tab can open a place or a dish, so each stack gets these
+const detailScreens = (Stack) => [
+  <Stack.Screen key="Place" name="Place" component={PlaceScreen} options={{ title: '' }} />,
+  <Stack.Screen key="Dish" name="Dish" component={DishScreen} options={{ title: '' }} />,
+];
+
+function TodayTab() {
   return (
-    <HomeStack.Navigator screenOptions={screenOptions}>
-      <HomeStack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
-      <HomeStack.Screen name="DiningHall" component={DiningHallScreen} options={{ title: 'Dishes' }} />
-      <HomeStack.Screen name="Dish" component={DishScreen} options={{ title: 'Dish Info' }} />
-      <HomeStack.Screen name="MoodResults" component={MoodResultsScreen} /> 
-    </HomeStack.Navigator>
+    <TodayStack.Navigator screenOptions={stackOptions}>
+      <TodayStack.Screen name="Today" component={TodayScreen} options={noHeader} />
+      {detailScreens(TodayStack)}
+      <TodayStack.Screen name="Mood" component={MoodScreen} />
+      <TodayStack.Screen name="Feed" component={FeedScreen} options={{ title: 'Campus feed' }} />
+    </TodayStack.Navigator>
   );
 }
 
-// --- Hotspot Map Stack ---
-function MapStackNavigator() {
+function ExploreTab() {
   return (
-    <MapStack.Navigator screenOptions={screenOptions}>
-      <MapStack.Screen 
-        name="HotspotMap" 
-        component={HotspotMapScreen} 
-        options={{ headerShown: false }} 
-      />
-      <MapStack.Screen 
-        name="DiningHall" 
-        component={DiningHallScreen} 
-        options={{ title: 'Dishes' }} 
-      />
-      <MapStack.Screen 
-        name="Dish" 
-        component={DishScreen} 
-        options={{ title: 'Dish Info' }} 
-      />
-    </MapStack.Navigator>
+    <ExploreStack.Navigator screenOptions={stackOptions}>
+      <ExploreStack.Screen name="Explore" component={ExploreScreen} options={noHeader} />
+      {detailScreens(ExploreStack)}
+    </ExploreStack.Navigator>
   );
 }
 
-// --- My List Stack ---
-function ListStackNavigator() {
+function ReviewTab() {
   return (
-    <ListStack.Navigator screenOptions={screenOptions}>
-      <ListStack.Screen name="MyListScreen" component={MyListScreen} options={{ headerShown: false }} />
-      <ListStack.Screen name="Comparison" component={ComparisonScreen} options={{ title: 'Apero Ranking' }} /> 
+    <ReviewStack.Navigator screenOptions={stackOptions}>
+      <ReviewStack.Screen name="PickDish" component={PickDishScreen} options={noHeader} />
+      <ReviewStack.Screen name="AddDish" component={AddDishScreen} options={{ title: 'Add a dish' }} />
+      <ReviewStack.Screen name="WriteReview" component={WriteReviewScreen} options={{ title: 'How was it?' }} />
+      <ReviewStack.Screen name="Compare" component={CompareScreen} options={{ title: 'This or that', gestureEnabled: false }} />
+    </ReviewStack.Navigator>
+  );
+}
+
+function ListTab() {
+  return (
+    <ListStack.Navigator screenOptions={stackOptions}>
+      <ListStack.Screen name="MyList" component={MyListScreen} options={noHeader} />
+      {detailScreens(ListStack)}
     </ListStack.Navigator>
   );
 }
 
-// --- Enhanced Profile Stack (NEW: Includes TasteDNA and SocialFeed) ---
-function ProfileStackNavigator() {
+function MeTab() {
   return (
-    <ProfileStack.Navigator screenOptions={screenOptions}>
-      <ProfileStack.Screen 
-        name="ProfileScreen" 
-        component={ProfileScreen} 
-        options={{ headerShown: false }}
-      />
-      <ProfileStack.Screen 
-        name="TasteDNA" 
-        component={TasteDNAScreen} 
-        options={{ title: 'Your Taste DNA' }}
-      />
-      <ProfileStack.Screen 
-        name="SocialFeed" 
-        component={SocialFeedScreen} 
-        options={{ headerShown: false }}
-      />
-    </ProfileStack.Navigator>
+    <MeStack.Navigator screenOptions={stackOptions}>
+      <MeStack.Screen name="Profile" component={ProfileScreen} options={noHeader} />
+      <MeStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Campus & getting around' }} />
+      {detailScreens(MeStack)}
+    </MeStack.Navigator>
   );
 }
 
-// --- The 5-Tab Bar ---
-function AppTabs() {
+const TAB_ICONS = { TodayTab: Sun, ExploreTab: Compass, ListTab: ListOrdered, MeTab: User };
+
+function ReviewButton({ onPress }) {
+  return (
+    <Pressable onPress={onPress} style={styles.reviewWrap} accessibilityLabel="Rate a dish">
+      <View style={styles.reviewButton}>
+        <Plus color={colors.ink} size={28} strokeWidth={2.5} />
+      </View>
+    </Pressable>
+  );
+}
+
+function Tabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#007A7A', 
-        tabBarInactiveTintColor: '#7D7D7D', 
-        tabBarStyle: { 
-          backgroundColor: '#FFFFFF', 
-          borderTopWidth: 0,
-          elevation: 10, 
-          shadowOpacity: 0.05,
-          height: 85, // Increased for Samsung/Android devices
-          paddingBottom: 25, // Extra padding for gesture navigation
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: { 
-          fontFamily: 'Inter_400Regular', 
-          fontSize: 11,
-          marginTop: -4,
-        }, 
+        tabBarActiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({ color, focused }) => {
-            const iconSize = focused ? 24 : 22;
-            
-            if (route.name === 'Discover') {
-                return <Home color={color} size={iconSize} />;
-            } else if (route.name === 'Map') {
-                return <MapPin color={color} size={iconSize} />;
-            } else if (route.name === 'Review') {
-                return <PlusCircle color={color} size={focused ? 32 : 30} />;
-            } else if (route.name === 'My List') {
-                return <List color={color} size={iconSize} />;
-            } else if (route.name === 'Profile') {
-                return <User color={color} size={iconSize} />;
-            }
+          const Icon = TAB_ICONS[route.name];
+          return Icon ? <Icon color={color} size={22} strokeWidth={focused ? 2.5 : 2} /> : null;
         },
-        tabBarItemStyle: route.name === 'Review' ? {
-            backgroundColor: 'transparent',
-            margin: 0, 
-            padding: 0,
-        } : {},
-        tabBarShowLabel: route.name !== 'Review',
       })}
     >
-      <Tab.Screen 
-        name="Discover" 
-        component={HomeStackNavigator} 
-        options={{ title: 'Discover' }}
+      <Tab.Screen name="TodayTab" component={TodayTab} options={{ title: 'Today' }} />
+      <Tab.Screen name="ExploreTab" component={ExploreTab} options={{ title: 'Explore' }} />
+      <Tab.Screen
+        name="ReviewTab"
+        component={ReviewTab}
+        options={{ title: '', tabBarButton: (props) => <ReviewButton onPress={props.onPress} /> }}
       />
-      <Tab.Screen 
-        name="Map" 
-        component={MapStackNavigator} 
-        options={{ title: 'Hotspots' }}
-      />
-      <Tab.Screen 
-        name="Review" 
-        component={ReviewStackNavigator} 
-        options={{
-            tabBarLabel: 'Review',
-            tabBarActiveTintColor: '#F47121',
-            tabBarInactiveTintColor: '#F47121', 
-            tabBarIconStyle: { marginTop: 0 },
-        }}
-      />
-      <Tab.Screen 
-        name="My List" 
-        component={ListStackNavigator} 
-        options={{ title: 'My List' }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileStackNavigator} 
-        options={{ title: 'Profile' }}
-      />
+      <Tab.Screen name="ListTab" component={ListTab} options={{ title: 'My list' }} />
+      <Tab.Screen name="MeTab" component={MeTab} options={{ title: 'Me' }} />
     </Tab.Navigator>
   );
 }
 
-// STACK for LOGGED OUT
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} />
-    </Stack.Navigator>
-  );
-}
-
-// --- MAIN NAVIGATOR ---
 export default function AppNavigator() {
-  const [user, setUser] = useState(null); 
-  
-  const [splashMounted, setSplashMounted] = useState(true);
-  const splashOpacity = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleSplashFinish = () => {
-    Animated.timing(splashOpacity, {
-        toValue: 0,
-        duration: 600, 
-        useNativeDriver: true,
-    }).start(() => {
-        setSplashMounted(false);
-    });
-  };
+  const { user, profile, loading } = useSession();
+  if (loading) return null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FAF6F0' }}>
-      <NavigationContainer>
-        {user ? <AppTabs /> : <AuthStack />}
-      </NavigationContainer>
-
-      {splashMounted && (
-        <Animated.View 
-            style={[
-                StyleSheet.absoluteFill, 
-                { opacity: splashOpacity, zIndex: 9999 }
-            ]}
-        >
-            <AnimatedSplash onAnimationFinish={handleSplashFinish} />
-        </Animated.View>
-      )}
-    </View>
+    <NavigationContainer theme={navTheme}>
+      <Root.Navigator screenOptions={noHeader}>
+        {!user ? (
+          <>
+            <Root.Screen name="Login" component={LoginScreen} />
+            <Root.Screen name="SignUp" component={SignUpScreen} />
+          </>
+        ) : !profile?.campusId ? (
+          <Root.Screen name="Onboarding" component={SettingsScreen} initialParams={{ onboarding: true }} />
+        ) : (
+          <Root.Screen name="Main" component={Tabs} />
+        )}
+      </Root.Navigator>
+    </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: colors.paper,
+    borderTopWidth: 2,
+    borderTopColor: colors.ink,
+    height: 86,
+    paddingTop: 8,
+  },
+  tabLabel: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' },
+  reviewWrap: { flex: 1, alignItems: 'center' },
+  reviewButton: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    marginTop: -20,
+    backgroundColor: colors.aperol,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

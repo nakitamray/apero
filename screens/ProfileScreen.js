@@ -1,595 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import CustomHeader from '../components/CustomHeader';
-import { useFonts } from 'expo-font';
-import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { BodoniModa_700Bold } from '@expo-google-fonts/bodoni-moda';
-import { auth, db } from '../firebaseConfig';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { Users, Trophy, TrendingUp, Calendar, Heart, Flame, Award, ChevronRight } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronRight } from 'lucide-react-native';
+import { useSession } from '../context/Session';
+import { getPlace } from '../data/campuses';
+import { myRankings, topDishes, userReviews } from '../lib/api';
+import { reasonLabel } from '../lib/tags';
+import { dayStreak, timeAgo } from '../lib/time';
+import { Awning, Button, Card, Kicker, Loading, ScoreBadge, Title } from '../components/ui';
+import { DishRow } from '../components/rows';
+import { colors, fonts } from '../theme';
+
+function Stat({ value, label }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function Bar({ label, share, color }) {
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <View style={styles.barLabelRow}>
+        <Text style={styles.barLabel}>{label}</Text>
+        <Text style={styles.barPct}>{Math.round(share * 100)}%</Text>
+      </View>
+      <View style={styles.barTrack}>
+        <View style={[styles.barFill, { width: `${Math.max(share * 100, 3)}%`, backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+}
+
+function tasteFrom(reviews, campus) {
+  const reasons = {};
+  const places = {};
+  const verdicts = { love: 0, fine: 0, meh: 0 };
+  reviews.forEach((r) => {
+    r.tags?.forEach((t) => (reasons[t] = (reasons[t] || 0) + 1));
+    places[r.placeId] = (places[r.placeId] || 0) + 1;
+    verdicts[r.verdict] = (verdicts[r.verdict] || 0) + 1;
+  });
+  const topReasons = Object.entries(reasons)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  const favoriteId = Object.keys(places).sort((a, b) => places[b] - places[a])[0];
+  const triedHere = Object.keys(places).filter((id) => getPlace(id)?.campusId === campus.id).length;
+  return { topReasons, favorite: getPlace(favoriteId), places, verdicts, triedHere };
+}
 
 export default function ProfileScreen({ navigation }) {
-  let [fontsLoaded] = useFonts({ 
-    BodoniModa_700Bold, 
-    Inter_400Regular,
-    Inter_600SemiBold,
-    Inter_700Bold 
-  });
+  const { user, name, campus, logOut } = useSession();
+  const insets = useSafeAreaInsets();
+  const [reviews, setReviews] = useState(null);
+  const [tryNext, setTryNext] = useState([]);
 
-  const user = auth.currentUser;
-  const [stats, setStats] = useState({
-    totalReviews: 0,
-    totalComparisons: 0,
-    topDish: null,
-    favoriteLocation: null,
-    streak: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [recentActivity, setRecentActivity] = useState([]);
+  useFocusEffect(
+    useCallback(() => {
+      Promise.all([userReviews(user.uid), myRankings(user.uid), topDishes(campus.id, 15)])
+        .then(([mine, ranked, top]) => {
+          setReviews(mine);
+          const rated = new Set(ranked.map((r) => r.dishId));
+          setTryNext(top.filter((d) => !rated.has(d.id)).slice(0, 3));
+        })
+        .catch(() => setReviews([]));
+    }, [user.uid, campus.id]),
+  );
 
-  useEffect(() => {
-    if (user) {
-      fetchUserStats();
-    }
-  }, [user]);
-
-  const fetchUserStats = async () => {
-    setLoading(true);
-    try {
-      const userId = user.uid;
-
-      // Fetch total reviews
-      const reviewsQuery = query(
-        collection(db, 'reviews'),
-        where('userId', '==', userId)
-      );
-      const reviewsSnap = await getDocs(reviewsQuery);
-      const totalReviews = reviewsSnap.size;
-
-      // Fetch total comparisons
-      const comparisonsQuery = query(
-        collection(db, 'users', userId, 'comparisons')
-      );
-      const comparisonsSnap = await getDocs(comparisonsQuery);
-      const totalComparisons = comparisonsSnap.size;
-
-      // Fetch recent activity (mock for now)
-      const recentQuery = query(
-        collection(db, 'reviews'),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      );
-      const recentSnap = await getDocs(recentQuery);
-      const recentList = recentSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setStats({
-        totalReviews,
-        totalComparisons,
-        topDish: recentList[0]?.dishName || 'None yet',
-        favoriteLocation: 'Ford Dining Court', // Mock data
-        streak: 3, // Mock data - days in a row
-      });
-
-      setRecentActivity(recentList);
-
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
-    }
-    setLoading(false);
-  };
-
-  if (!fontsLoaded) return null;
+  const total = reviews?.length || 0;
+  const taste = reviews ? tasteFrom(reviews, campus) : null;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <CustomHeader />
-      <ScrollView contentContainerStyle={styles.container}>
-        
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </Text>
-            </View>
-            <View style={styles.streakBadge}>
-              <Flame size={14} color="#FFFFFF" />
-              <Text style={styles.streakText}>{stats.streak}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}</Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            
-            <View style={styles.badgeRow}>
-              <View style={styles.badge}>
-                <Trophy size={14} color="#F47121" />
-                <Text style={styles.badgeText}>Foodie</Text>
-              </View>
-              <View style={styles.badge}>
-                <Award size={14} color="#007A7A" />
-                <Text style={styles.badgeText}>Explorer</Text>
-              </View>
-            </View>
-          </View>
+    <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
+      <Awning height={insets.top + 70} />
+      <View style={styles.head}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{name[0].toUpperCase()}</Text>
         </View>
+        <Title size={30} style={{ marginTop: 10 }}>
+          {name}
+        </Title>
+        <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
+          <Text style={styles.campusText}>{campus.name}</Text>
+          <ChevronRight size={16} color={colors.cobalt} />
+        </Pressable>
+      </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#F47121" style={{ marginTop: 40 }} />
-        ) : (
-          <>
-            {/* Stats Grid */}
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <View style={styles.statIcon}>
-                  <Heart size={24} color="#F47121" />
-                </View>
-                <Text style={styles.statNumber}>{stats.totalReviews}</Text>
-                <Text style={styles.statLabel}>Reviews</Text>
-              </View>
+      {!reviews ? (
+        <Loading />
+      ) : (
+        <>
+          <View style={styles.stats}>
+            <Stat value={total} label="reviews" />
+            <Stat value={Object.keys(taste.places).length} label="places" />
+            <Stat value={dayStreak(reviews.map((r) => r.createdAt).filter(Boolean))} label="day streak" />
+          </View>
 
-              <View style={styles.statCard}>
-                <View style={styles.statIcon}>
-                  <TrendingUp size={24} color="#007A7A" />
-                </View>
-                <Text style={styles.statNumber}>{stats.totalComparisons}</Text>
-                <Text style={styles.statLabel}>Comparisons</Text>
-              </View>
+          {total > 0 && (
+            <Card outer={styles.block}>
+              <Kicker style={{ marginBottom: 12 }}>Your taste</Kicker>
+              <Bar label="Loved it" share={taste.verdicts.love / total} color={colors.aperol} />
+              <Bar label="It was fine" share={taste.verdicts.fine / total} color={colors.sky} />
+              <Bar label="Not for me" share={taste.verdicts.meh / total} color={colors.sand} />
 
-              <View style={styles.statCard}>
-                <View style={styles.statIcon}>
-                  <Flame size={24} color="#FF4136" />
-                </View>
-                <Text style={styles.statNumber}>{stats.streak}</Text>
-                <Text style={styles.statLabel}>Day Streak</Text>
-              </View>
-            </View>
-
-            {/* Dining Wrapped Preview */}
-            <TouchableOpacity 
-              style={styles.wrappedCard}
-              onPress={() => {
-                // TODO: Navigate to full Dining Wrapped screen
-                alert('Coming Soon! Your Dining Wrapped will show:\n• Your most-reviewed dishes\n• Favorite dining hall\n• Total dishes tried\n• Food personality type\n• And more!');
-              }}
-            >
-              <View style={styles.wrappedHeader}>
-                <Calendar size={24} color="#F47121" />
-                <View style={styles.wrappedInfo}>
-                  <Text style={styles.wrappedTitle}>Your Dining Wrapped 2025</Text>
-                  <Text style={styles.wrappedSubtitle}>See your year in food</Text>
-                </View>
-                <ChevronRight size={24} color="#007A7A" />
-              </View>
-              
-              <View style={styles.wrappedPreview}>
-                <View style={styles.wrappedStat}>
-                  <Text style={styles.wrappedNumber}>{stats.totalReviews + stats.totalComparisons}</Text>
-                  <Text style={styles.wrappedLabel}>Total Activities</Text>
-                </View>
-                <View style={styles.wrappedStat}>
-                  <Text style={styles.wrappedNumber}>{stats.favoriteLocation.split(' ')[0]}</Text>
-                  <Text style={styles.wrappedLabel}>Favorite Hall</Text>
-                </View>
-                <View style={styles.wrappedStat}>
-                  <Text style={styles.wrappedNumber} numberOfLines={1}>
-                    {stats.topDish.split(' ').slice(0, 2).join(' ')}
-                  </Text>
-                  <Text style={styles.wrappedLabel}>Top Dish</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Friends Section (Coming Soon) */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Users size={20} color="#007A7A" />
-                <Text style={styles.sectionTitle}>Friends</Text>
-              </View>
-              
-              <View style={styles.comingSoonCard}>
-                <Users size={48} color="#EAEAEA" />
-                <Text style={styles.comingSoonTitle}>Friends Feature Coming Soon!</Text>
-                <Text style={styles.comingSoonText}>
-                  {'\n'}• TODO
+              {taste.topReasons.length > 0 && (
+                <Text style={styles.line}>
+                  You care most about{' '}
+                  <Text style={styles.em}>{taste.topReasons.map(([id]) => reasonLabel(id).toLowerCase()).join(', ')}</Text>.
                 </Text>
-              </View>
-            </View>
+              )}
+              {taste.favorite && (
+                <Text style={styles.line}>
+                  Your spot: <Text style={styles.em}>{taste.favorite.name}</Text>.
+                </Text>
+              )}
+              <Text style={styles.line}>
+                You've tried <Text style={styles.em}>{taste.triedHere}</Text> of {campus.places.length} places at {campus.short}.
+              </Text>
+            </Card>
+          )}
 
-            {/* Recent Activity */}
-            {recentActivity.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
-                
-                {recentActivity.map(activity => (
-                  <View key={activity.id} style={styles.activityCard}>
-                    <View style={styles.activityIcon}>
-                      <Heart size={16} color="#F47121" fill="#F47121" />
-                    </View>
-                    <View style={styles.activityContent}>
-                      <Text style={styles.activityTitle}>Reviewed "{activity.dishName}"</Text>
-                      <Text style={styles.activityTime}>
-                        {activity.createdAt?.toDate?.()?.toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }) || 'Recently'}
-                      </Text>
-                    </View>
-                    <View style={styles.activityScore}>
-                      <Text style={styles.activityScoreText}>
-                        {activity.initialScore ? ((activity.initialScore - 800) / 60).toFixed(1) : 'N/A'}
-                      </Text>
-                    </View>
+          {tryNext.length > 0 && (
+            <>
+              <Text style={styles.section}>Try next</Text>
+              {tryNext.map((d) => (
+                <DishRow key={d.id} dish={d} onPress={() => navigation.navigate('Dish', { dishId: d.id })} />
+              ))}
+            </>
+          )}
+
+          {total > 0 && (
+            <>
+              <Text style={styles.section}>Lately</Text>
+              {reviews.slice(0, 5).map((r) => (
+                <Pressable key={r.id} style={styles.recent} onPress={() => navigation.navigate('Dish', { dishId: r.dishId })}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.recentDish}>{r.dishName}</Text>
+                    <Text style={styles.recentMeta}>
+                      {r.placeName} · {timeAgo(r.createdAt)}
+                    </Text>
                   </View>
-                ))}
-              </View>
-            )}
+                  <ScoreBadge score={r.score} size={40} />
+                </Pressable>
+              ))}
+            </>
+          )}
+        </>
+      )}
 
-            {/* Quick Actions */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Explore Features</Text>
-              
-              <TouchableOpacity 
-                style={styles.actionCard}
-                onPress={() => navigation.navigate('TasteDNA')}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: '#E0F2F2' }]}>
-                  <Text style={styles.actionEmoji}>🧬</Text>
-                </View>
-                <View style={styles.actionTextContainer}>
-                  <Text style={styles.actionText}>Your Taste DNA</Text>
-                  <Text style={styles.actionSubtext}>AI-powered recommendations</Text>
-                </View>
-                <ChevronRight size={20} color="#7D7D7D" />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.actionCard}
-                onPress={() => navigation.navigate('SocialFeed')}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: '#FFFBF8' }]}>
-                  <Text style={styles.actionEmoji}>📱</Text>
-                </View>
-                <View style={styles.actionTextContainer}>
-                  <Text style={styles.actionText}>Food Feed</Text>
-                  <Text style={styles.actionSubtext}>Share & discover with friends</Text>
-                </View>
-                <ChevronRight size={20} color="#7D7D7D" />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.actionCard}
-                onPress={() => navigation.navigate('My List')}
-              >
-                <Trophy size={20} color="#F47121" />
-                <Text style={styles.actionText}>View My Rankings</Text>
-                <ChevronRight size={20} color="#7D7D7D" />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.block}>
+        <Button label="Campus & getting around" kind="plain" onPress={() => navigation.navigate('Settings')} />
+        <Button label="Log out" kind="ink" onPress={logOut} style={{ marginTop: 14 }} />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FAF6F0' },
-  container: { paddingBottom: 40 },
-  
-  // Profile Header
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 16,
-  },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  head: { alignItems: 'center', marginTop: -40 },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#007A7A',
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colors.cobalt,
+    borderWidth: 3,
+    borderColor: colors.ink,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  avatarText: {
-    fontFamily: 'BodoniModa_700Bold',
-    fontSize: 32,
-    color: '#FFFFFF',
-  },
-  streakBadge: {
-    position: 'absolute',
-    bottom: -5,
-    right: -5,
-    backgroundColor: '#FF4136',
-    borderRadius: 15,
+  avatarText: { fontFamily: fonts.displayItalic, fontSize: 40, color: colors.paper },
+  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
+  campusText: { fontFamily: fonts.medium, fontSize: 14, color: colors.cobalt },
+  stats: { flexDirection: 'row', marginHorizontal: 20, marginTop: 24, borderTopWidth: 2, borderBottomWidth: 2, borderColor: colors.ink },
+  stat: { flex: 1, alignItems: 'center', paddingVertical: 14 },
+  statValue: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
+  statLabel: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted },
+  block: { marginHorizontal: 20, marginTop: 24 },
+  barLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  barLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
+  barPct: { fontFamily: fonts.mono, fontSize: 12, color: colors.muted },
+  barTrack: { height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: colors.ink, overflow: 'hidden', backgroundColor: colors.paper },
+  barFill: { height: '100%' },
+  line: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginTop: 10, lineHeight: 21 },
+  em: { fontFamily: fonts.displayItalic, color: colors.blood },
+  section: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginHorizontal: 20, marginTop: 30, marginBottom: 12 },
+  recent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 3,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  streakText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 22,
-    color: '#4E4A40',
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#7D7D7D',
-    marginBottom: 10,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FAF6F0',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    gap: 5,
-  },
-  badgeText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    color: '#4E4A40',
-  },
-  
-  // Stats Grid
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginHorizontal: 20,
-    marginTop: 20,
-    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1.5,
+    borderBottomColor: colors.sand,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statIcon: {
-    marginBottom: 8,
-  },
-  statNumber: {
-    fontFamily: 'BodoniModa_700Bold',
-    fontSize: 28,
-    color: '#4E4A40',
-  },
-  statLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: '#7D7D7D',
-    marginTop: 4,
-  },
-  
-  // Dining Wrapped Card
-  wrappedCard: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 20,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#F47121',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 2,
-    borderColor: '#F47121',
-  },
-  wrappedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  wrappedInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  wrappedTitle: {
-    fontFamily: 'BodoniModa_700Bold',
-    fontSize: 20,
-    color: '#4E4A40',
-  },
-  wrappedSubtitle: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#7D7D7D',
-  },
-  wrappedPreview: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EAEAEA',
-  },
-  wrappedStat: {
-    alignItems: 'center',
-  },
-  wrappedNumber: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 24,
-    color: '#F47121',
-  },
-  wrappedLabel: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    color: '#7D7D7D',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  
-  // Sections
-  section: {
-    marginHorizontal: 20,
-    marginTop: 30,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontFamily: 'BodoniModa_700Bold',
-    fontSize: 22,
-    color: '#4E4A40',
-  },
-  
-  // Coming Soon Card
-  comingSoonCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 30,
-    borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#EAEAEA',
-    borderStyle: 'dashed',
-  },
-  comingSoonTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 18,
-    color: '#4E4A40',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  comingSoonText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    color: '#7D7D7D',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  
-  // Recent Activity
-  activityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  activityIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFFBF8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  activityContent: {
-    flex: 1,
-  },
-  activityTitle: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-    color: '#4E4A40',
-    marginBottom: 2,
-  },
-  activityTime: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: '#7D7D7D',
-  },
-  activityScore: {
-    backgroundColor: '#E0F2F2',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  activityScoreText: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 16,
-    color: '#007A7A',
-  },
-  
-  // Action Cards
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    gap: 12,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionEmoji: {
-    fontSize: 24,
-  },
-  actionTextContainer: {
-    flex: 1,
-  },
-  actionText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 16,
-    color: '#4E4A40',
-  },
-  actionSubtext: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: '#7D7D7D',
-    marginTop: 2,
-  },
+  recentDish: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  recentMeta: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted, marginTop: 2 },
 });
