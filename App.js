@@ -3,13 +3,9 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
-import { Fraunces_600SemiBold_Italic } from '@expo-google-fonts/fraunces/600SemiBold_Italic';
-import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
-import { DMSans_500Medium } from '@expo-google-fonts/dm-sans/500Medium';
-import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
-import { SpaceMono_400Regular } from '@expo-google-fonts/space-mono/400Regular';
-import { SpaceMono_700Bold } from '@expo-google-fonts/space-mono/700Bold';
+import { Jost_400Regular } from '@expo-google-fonts/jost/400Regular';
+import { Jost_500Medium } from '@expo-google-fonts/jost/500Medium';
+import { CormorantGaramond_500Medium_Italic } from '@expo-google-fonts/cormorant-garamond/500Medium_Italic';
 import { SessionProvider } from './context/Session';
 import AppNavigator from './navigation/AppNavigator';
 import Splash from './components/Splash';
@@ -17,23 +13,20 @@ import { colors } from './theme';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Fraunces_700Bold,
-    Fraunces_600SemiBold_Italic,
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_700Bold,
-    SpaceMono_400Regular,
-    SpaceMono_700Bold,
+    GrandParadiso: require('./assets/fonts/GrandParadiso-Regular.ttf'),
+    Jost_400Regular,
+    Jost_500Medium,
+    CormorantGaramond_500Medium_Italic,
   });
   const [showSplash, setShowSplash] = useState(true);
 
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.linen }} />;
 
   return (
     <SafeAreaProvider>
       <SessionProvider>
         <StatusBar style="dark" />
-        <View style={{ flex: 1, backgroundColor: colors.paper }}>
+        <View style={{ flex: 1, backgroundColor: colors.linen }}>
           <AppNavigator />
           {showSplash && <Splash onDone={() => setShowSplash(false)} />}
         </View>

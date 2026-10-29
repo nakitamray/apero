@@ -1,109 +1,88 @@
 import React from 'react';
-import { View } from 'react-native';
-import Svg, { Circle, Ellipse, G, Path, Polygon, Rect, Line } from 'react-native-svg';
+import { Image, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '../theme';
 
-export function Sardine({ width = 120, flip = false, color = colors.cobalt, style }) {
+// painted cut-outs (assets/art). ratio = width / height
+const ART = {
+  sardine: { src: require('../assets/art/sardine.png'), ratio: 3.211 },
+  lemon: { src: require('../assets/art/lemon.png'), ratio: 1.064 },
+  lemonSlice: { src: require('../assets/art/lemon_slice.png'), ratio: 1.017 },
+  orangeSlice: { src: require('../assets/art/orange_slice.png'), ratio: 1.014 },
+  bloodOrange: { src: require('../assets/art/blood_orange.png'), ratio: 1.027 },
+  spritz: { src: require('../assets/art/spritz.png'), ratio: 0.733 },
+  plate: { src: require('../assets/art/plate.png'), ratio: 1 },
+  tin: { src: require('../assets/art/tin.png'), ratio: 1.538 },
+  starfish: { src: require('../assets/art/starfish.png'), ratio: 1.039 },
+  tile: { src: require('../assets/art/tile.png'), ratio: 1 },
+  tape: { src: require('../assets/art/tape.png'), ratio: 4.5 },
+  swash: { src: require('../assets/art/swash.png'), ratio: 13.636 },
+};
+
+export const WAVES = {
+  cobalt: require('../assets/art/waves.png'),
+  aqua: require('../assets/art/waves_aqua.png'),
+  orange: require('../assets/art/waves_orange.png'),
+};
+
+export function Sticker({ name, width, rotate = 0, flip, style }) {
+  const art = ART[name];
   return (
-    <Svg width={width} height={width / 3} viewBox="0 0 120 40" style={[flip && { transform: [{ scaleX: -1 }] }, style]}>
-      <Path
-        d="M6 20 C 18 7, 66 5, 94 16 L 114 5 L 106 20 L 114 35 L 94 24 C 66 35, 18 33, 6 20 Z"
-        fill={color}
-        stroke={colors.ink}
-        strokeWidth={2}
-        strokeLinejoin="round"
-      />
-      <Path d="M14 23 C 34 30, 66 30, 90 22" stroke={colors.mist} strokeWidth={3} strokeLinecap="round" fill="none" />
-      <Path d="M24 13 C 44 10, 70 11, 88 16" stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" fill="none" opacity={0.5} />
-      <Path d="M30 12 C 35 18, 35 24, 30 29" stroke={colors.ink} strokeWidth={1.8} fill="none" />
-      <Circle cx={18} cy={18} r={3.2} fill={colors.lemon} stroke={colors.ink} strokeWidth={1.2} />
-      <Circle cx={18} cy={18} r={1.3} fill={colors.ink} />
-    </Svg>
+    <Image
+      source={art.src}
+      style={[
+        { width, height: width / art.ratio },
+        { transform: [{ rotate: `${rotate}deg` }, ...(flip ? [{ scaleX: -1 }] : [])] },
+        style,
+      ]}
+      resizeMode="contain"
+    />
   );
 }
 
-export function OrangeSlice({ size = 48, style }) {
-  const r = 22;
-  const spokes = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4);
-  return (
-    <Svg width={size} height={size} viewBox="0 0 50 50" style={style}>
-      <Circle cx={25} cy={25} r={r + 1} fill={colors.aperol} stroke={colors.ink} strokeWidth={2} />
-      <Circle cx={25} cy={25} r={r - 3} fill={colors.card} />
-      <Circle cx={25} cy={25} r={r - 5} fill={colors.peach} />
-      {spokes.map((a) => (
-        <Line
-          key={a}
-          x1={25}
-          y1={25}
-          x2={25 + Math.cos(a) * (r - 5)}
-          y2={25 + Math.sin(a) * (r - 5)}
-          stroke={colors.card}
-          strokeWidth={2}
-        />
-      ))}
-      <Circle cx={25} cy={25} r={2.5} fill={colors.card} />
-    </Svg>
-  );
-}
-
-export function Spritz({ size = 90, style }) {
-  return (
-    <Svg width={size} height={size * 1.25} viewBox="0 0 80 100" style={style}>
-      <Line x1={52} y1={4} x2={44} y2={46} stroke={colors.cobalt} strokeWidth={3} strokeLinecap="round" />
-      <Path d="M14 22 C 14 50, 26 62, 40 62 C 54 62, 66 50, 66 22 Z" fill={colors.card} stroke={colors.ink} strokeWidth={2.5} />
-      <Path d="M17 34 C 19 52, 28 59, 40 59 C 52 59, 61 52, 63 34 Z" fill={colors.aperol} />
-      <Rect x={26} y={36} width={9} height={9} rx={2} fill={colors.card} opacity={0.7} transform="rotate(-12 30 40)" />
-      <Rect x={42} y={40} width={8} height={8} rx={2} fill={colors.card} opacity={0.6} transform="rotate(18 46 44)" />
-      <Path d="M40 62 L 40 88" stroke={colors.ink} strokeWidth={2.5} strokeLinecap="round" />
-      <Ellipse cx={40} cy={90} rx={16} ry={3.5} fill={colors.card} stroke={colors.ink} strokeWidth={2.5} />
-      <G transform="translate(52 10)">
-        <Circle cx={10} cy={12} r={11} fill={colors.aperol} stroke={colors.ink} strokeWidth={2} />
-        <Circle cx={10} cy={12} r={7.5} fill={colors.peach} />
-        <Path d="M10 4.5 L10 19.5 M2.5 12 L17.5 12 M4.7 6.7 L15.3 17.3 M15.3 6.7 L4.7 17.3" stroke={colors.card} strokeWidth={1.4} />
-      </G>
-    </Svg>
-  );
-}
-
-// squiggle line, like the water lines on an old menu
-export function Wave({ width = 200, color = colors.cobalt, style }) {
-  const segments = Math.ceil(width / 20);
-  let d = 'M0 6';
-  for (let i = 0; i < segments; i += 1) d += ` q 5 -6 10 0 t 10 0`;
-  return (
-    <Svg width={width} height={12} viewBox={`0 0 ${width} 12`} style={style}>
-      <Path d={d} stroke={color} strokeWidth={2} fill="none" strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-export function Starburst({ size = 64, color = colors.blood, points = 14, style, children }) {
-  const pts = [];
-  for (let i = 0; i < points * 2; i += 1) {
-    const r = i % 2 === 0 ? 30 : 25;
-    const a = (Math.PI * i) / points - Math.PI / 2;
-    pts.push(`${32 + Math.cos(a) * r},${32 + Math.sin(a) * r}`);
+// ragged bottom edge where the blue header is "torn" off
+export function TornEdge({ width, color = colors.linen, height = 16, seed = 3 }) {
+  let x = 0;
+  let r = seed;
+  const rand = () => {
+    r = (r * 9301 + 49297) % 233280;
+    return r / 233280;
+  };
+  let d = `M0 ${height} L0 ${height * 0.5}`;
+  while (x < width) {
+    x += 6 + rand() * 12;
+    d += ` L${x.toFixed(1)} ${(height * (0.15 + rand() * 0.7)).toFixed(1)}`;
   }
+  d += ` L${width} ${height} Z`;
   return (
-    <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]}>
-      <Svg width={size} height={size} viewBox="0 0 64 64" style={{ position: 'absolute' }}>
-        <Polygon points={pts.join(' ')} fill={color} stroke={colors.ink} strokeWidth={1.5} />
+    <Svg width={width} height={height} style={{ marginTop: -height + 1 }}>
+      <Path d={d} fill={color} />
+    </Svg>
+  );
+}
+
+// postage stamp outline with perforated edges
+export function StampFrame({ width, height, color = colors.paper, children, style }) {
+  const r = 3.2;
+  const step = 9;
+  const holes = (len, horizontal, offset) => {
+    let d = '';
+    for (let p = step / 2; p < len; p += step) {
+      const cx = horizontal ? p : offset;
+      const cy = horizontal ? offset : p;
+      d += `M${cx - r} ${cy} a${r} ${r} 0 1 0 ${r * 2} 0 a${r} ${r} 0 1 0 ${-r * 2} 0 `;
+    }
+    return d;
+  };
+  const outline = `M0 0 H${width} V${height} H0 Z`;
+  const cut =
+    holes(width, true, 0) + holes(width, true, height) + holes(height, false, 0) + holes(height, false, width);
+  return (
+    <View style={[{ width, height }, style]}>
+      <Svg width={width} height={height} style={{ position: 'absolute' }}>
+        <Path d={outline + cut} fill={color} fillRule="evenodd" />
       </Svg>
       {children}
     </View>
-  );
-}
-
-// the scalloped edge on the bottom of a cabana awning
-export function Scallops({ width, color = colors.aperol, size = 22 }) {
-  const count = Math.ceil(width / size);
-  let d = `M0 0 L${count * size} 0`;
-  for (let i = count; i > 0; i -= 1) {
-    d += ` A ${size / 2} ${size / 2} 0 0 1 ${(i - 1) * size} 0`;
-  }
-  return (
-    <Svg width={width} height={size / 2 + 2} viewBox={`0 0 ${width} ${size / 2 + 2}`}>
-      <Path d={d} fill={color} stroke={colors.ink} strokeWidth={2} />
-    </Svg>
   );
 }

@@ -1,29 +1,35 @@
-// palette pulled from spritz-on-the-terrace: cabana stripes, sardine blues, citrus
+// sardine blues, lemons, blood oranges, majolica
 export const colors = {
-  paper: '#FBF1DE',
-  card: '#FFFAF0',
-  sand: '#F3DDB5',
-  peach: '#FCC48A',
-  aperol: '#F7841F',
-  blood: '#E4521B',
-  lemon: '#F5C342',
-  ink: '#16295C',
-  cobalt: '#2F5FC4',
-  sky: '#8DB8EA',
-  mist: '#E2ECF7',
-  muted: '#5E6A8C',
-  line: '#16295C',
+  linen: '#F2F7FB',
+  paper: '#FFFDF7',
+  mist: '#DCE8F5',
+  sky: '#7FB0DE',
+  cobalt: '#2456B8',
+  ink: '#13285E',
+  muted: '#5F6F92',
+  aqua: '#1FB3CC',
+  teal: '#0B7F94',
+  lagoon: '#C9F0F4',
+  lemon: '#FFD43B',
+  butter: '#FFF5C9',
+  orange: '#FF7B1C',
+  blood: '#D9441E',
+  pink: '#F2938C',
+  hairline: 'rgba(36, 86, 184, 0.22)',
 };
 
 export const fonts = {
-  display: 'Fraunces_700Bold',
-  displayItalic: 'Fraunces_600SemiBold_Italic',
-  body: 'DMSans_400Regular',
-  medium: 'DMSans_500Medium',
-  bold: 'DMSans_700Bold',
-  mono: 'SpaceMono_400Regular',
-  monoBold: 'SpaceMono_700Bold',
+  display: 'GrandParadiso',
+  body: 'Jost_400Regular',
+  medium: 'Jost_500Medium',
+  note: 'CormorantGaramond_500Medium_Italic',
 };
 
-// the "printed" look: thick ink outline (the hard shadow lives in components/ui.js Lifted)
-export const outline = { borderWidth: 2, borderColor: colors.line };
+// soft paper shadow, like a cut-out lying on the table
+export const lift = {
+  shadowColor: '#13285E',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 3,
+};
