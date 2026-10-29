@@ -40,17 +40,12 @@ yarn-error.*
 /ios
 /android
 
-# firebase information
-fireBaseConfig.js
-
-# Python & Secrets 
+# firebase keys
+firebaseConfig.js
 serviceAccountKey.json
-py/serviceAccountKey.json
 
-# Ignore Python cache files (clutter)
+# python
 __pycache__/
 *.pyc
-
-# Optional: If you create a virtual environment inside py/
 py/venv/
 py/env/

@@ -1,70 +1,30 @@
-print("--- CLEANUP STARTED ---")
+"""Wipe dishes, reviews and user rankings. Asks first.
 
-import os
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+Handy when testing. Does not touch Firebase Auth accounts.
+"""
 
-# ==========================================
-# 1. SETUP FIREBASE
-# ==========================================
-current_dir = os.path.dirname(os.path.abspath(__file__))
-key_path = os.path.join(current_dir, "serviceAccountKey.json")
+from common import connect
 
-if not os.path.exists(key_path):
-    print(f"❌ ERROR: serviceAccountKey.json not found at: {key_path}")
-    exit()
+COLLECTIONS = ["dishes", "reviews", "users"]
 
-try:
-    cred = credentials.Certificate(key_path)
-    if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    print("✅ Connected to Firebase Database!")
-except Exception as e:
-    print(f"❌ FIREBASE CONNECTION ERROR: {e}")
-    exit()
 
-# ==========================================
-# 2. DELETE FUNCTION (Recursive)
-# ==========================================
-def delete_collection(coll_ref, batch_size=50):
-    docs = list(coll_ref.limit(batch_size).stream())
-    deleted = 0
+def delete_collection(ref, batch_size=200):
+    while True:
+        docs = list(ref.limit(batch_size).stream())
+        if not docs:
+            return
+        for doc in docs:
+            for sub in doc.reference.collections():
+                delete_collection(sub, batch_size)
+            doc.reference.delete()
 
-    if len(docs) == 0:
-        return
 
-    for doc in docs:
-        print(f"   Deleting doc: {doc.id}")
-        
-        # ⚠️ RECURSIVE DELETE: Check for subcollections (like 'dishes')
-        subcollections = doc.reference.collections()
-        for sub in subcollections:
-            delete_collection(sub, batch_size)
-
-        doc.reference.delete()
-        deleted += 1
-
-    if deleted >= batch_size:
-        return delete_collection(coll_ref, batch_size)
-
-# ==========================================
-# 3. EXECUTE CLEANUP
-# ==========================================
-# UPDATE: Added 'globalDishes' to the wipe list
-COLLECTIONS_TO_WIPE = ["diningHalls", "diningPoints", "globalDishes"]
-
-print("\n⚠️  WARNING: This will delete ALL data in:", COLLECTIONS_TO_WIPE)
-print("This is required to clear old data formats before uploading new ones.")
-confirm = input("Type 'DELETE' to confirm: ")
-
-if confirm == "DELETE":
-    for col_name in COLLECTIONS_TO_WIPE:
-        print(f"\n🗑️  Wiping collection: {col_name}...")
-        delete_collection(db.collection(col_name))
-        print(f"✅ {col_name} cleared.")
-    
-    print("\n✨ Database is clean. Now run 'py/upload_history.py' to repopulate!")
-else:
-    print("❌ Operation cancelled.")
+if __name__ == "__main__":
+    print("This deletes everything in:", ", ".join(COLLECTIONS))
+    if input("Type DELETE to keep going: ") == "DELETE":
+        db = connect()
+        for name in COLLECTIONS:
+            delete_collection(db.collection(name))
+            print(f"cleared {name}")
+    else:
+        print("cancelled")
