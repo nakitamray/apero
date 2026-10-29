@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>apero</title>
+    <meta name="description" content="Rate what you ate on campus, rank it, and find cheap eats nearby." />
+    <link rel="icon" href="img/orange_slice.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Jost:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="wordmark" href="#top">apero</a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#campuses">Campuses</a>
+        <a class="pill ghost" href="app/">Log in</a>
+        <a class="pill" href="#demo" data-demo>Try the demo</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" id="demo">
+        <div class="waves" aria-hidden="true"></div>
+
+        <div class="hero-copy">
+          <p class="label">A food diary for college campuses</p>
+          <h1>Rate what you ate. Find where to eat next.</h1>
+          <p class="lede">
+            apero is for the dining hall and the cheap spot down the street. Rate a dish, answer a couple of
+            “this or that” questions, and it lands in your own ranked list. Everyone's ratings add up to a campus
+            score, so you always know what's worth the walk.
+          </p>
+          <div class="buttons">
+            <a class="pill big" href="app/?demo=1" data-demo>Try the demo</a>
+            <a class="pill big ghost" href="app/">Log in</a>
+          </div>
+          <p class="note">The demo runs with sample data, so tap around. Nothing you do there is saved.</p>
+        </div>
+
+        <div class="stage">
+          <img class="sticker s-sardine" src="img/sardine.png" alt="" />
+          <img class="sticker s-lemon" src="img/lemon.png" alt="" />
+          <img class="sticker s-spritz" src="img/spritz.png" alt="" />
+          <img class="sticker s-vase" src="img/vase.png" alt="" />
+          <img class="sticker s-orange" src="img/blood_orange.png" alt="" />
+          <img class="sticker s-tile" src="img/tile.png" alt="" />
+
+          <div class="phone">
+            <div class="island"></div>
+            <iframe title="apero demo" src="app/?demo=1" loading="lazy"></iframe>
+          </div>
+          <p class="hint">this is the real app. go ahead, tap it</p>
+        </div>
+      </section>
+
+      <section class="how" id="how">
+        <p class="label">How it works</p>
+        <h2>Like a food diary that ranks itself</h2>
+        <div class="platters">
+          <article class="platter blue">
+            <img src="img/orange_slice.png" alt="" class="mini" />
+            <h3>Rate it</h3>
+            <p>Loved it, fine, or not for me. Then pick between it and a few things you've already had, and it slots into your list.</p>
+          </article>
+          <article class="platter orange">
+            <img src="img/sardine.png" alt="" class="mini wide" />
+            <h3>Find it</h3>
+            <p>Dining halls plus cheap eats near campus, with a map, directions, and what the trip costs whether you walk, ride the bus, or drive.</p>
+          </article>
+          <article class="platter lemon">
+            <img src="img/plate.png" alt="" class="mini" />
+            <h3>See everyone's take</h3>
+            <p>Every place gets one score from everyone who's eaten there, plus the best rated spots on every campus.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="campuses" id="campuses">
+        <p class="label">Starting with</p>
+        <h2>Thirteen campuses</h2>
+        <ul class="chips">
+          <li>Purdue</li>
+          <li>UCLA</li>
+          <li>USC</li>
+          <li>UC Berkeley</li>
+          <li>Stanford</li>
+          <li>UC Irvine</li>
+          <li>UC Riverside</li>
+          <li>MIT</li>
+          <li>NYU</li>
+          <li>Carnegie Mellon</li>
+          <li>University of Washington</li>
+          <li>UIUC</li>
+          <li>Embry-Riddle</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <img src="img/tin.png" alt="" />
+      <p>made by Nakita</p>
+    </footer>
+
+    <script>
+      // on a phone the mockup is pointless, so the demo buttons just open the app full screen
+      const small = window.matchMedia('(max-width: 860px)');
+      document.querySelectorAll('[data-demo]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          if (small.matches) {
+            e.preventDefault();
+            window.location.href = 'app/?demo=1';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -13,7 +13,10 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Rating**: pick a verdict (loved it / it was fine / not for me), say why, then answer a couple of "which did you like more?" questions. That places the dish in your list, like a binary search, so your scores stay consistent with each other.
 - **My list**: your personal ranking, filterable by verdict.
 - **Feed**: reviews from your campus. You can like and share them.
+- **Places**: every dining hall and spot has one score from everyone who's rated anything there (and how the loved it / fine / not for me votes split), a map, directions that match how you get around, and the latest reviews.
+- **Worldwide**: the best rated places on every campus.
 - **Me**: your stats, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
+- **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
 ## Look
 
@@ -33,6 +36,16 @@ Firestore needs the rules and indexes in this repo:
 firebase deploy --only firestore:rules,firestore:indexes
 ```
 
+## Website
+
+`website/` is a landing page that shows the real app running inside a phone, in demo mode, with buttons to log in or try it.
+
+```bash
+npm run build:site
+```
+
+That builds the app for the web into `site/app/` and copies the landing page next to it. Upload the whole `site/` folder anywhere (paths are relative, so a sub-folder of your own site works too). Without a `firebaseConfig.js` the build is demo-only and logging in is turned off.
+
 ## Data
 
 Campuses and places live in `data/campuses.js`. Adding a school means adding an entry there: its dining halls, a handful of student-budget spots with a rough distance from campus, and its transit system.
@@ -44,6 +57,7 @@ Firestore collections:
 | `users/{uid}` | name, campus, how you get around |
 | `users/{uid}/rankings/{dishId}` | your verdict + ranking for each dish |
 | `dishes/{dishId}` | name, place, tags, and the running average of everyone's scores |
+| `places/{placeId}` | everyone's score for a dining hall or spot, plus the verdict split |
 | `reviews/{id}` | each review (verdict, reasons, note, likes) |
 
 Dishes get in two ways: people add them from the app, and for Purdue the dining court menus are pulled in every day by a script.
@@ -59,6 +73,10 @@ python py/reset_database.py          # wipe dishes/reviews/users (asks first)
 ```
 
 They need a `py/serviceAccountKey.json` from the Firebase console (it's gitignored).
+
+## Art
+
+The painted stickers, plates and wave bands in `assets/art` come from `tools/art/assets.py`, a small watercolor painter (numpy + scipy + Pillow). `python tools/art/assets.py vase` repaints one piece; with no arguments it repaints everything.
 
 ## Notes
 
