@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
-import { Button, Field } from '../components/ui';
+import { Button, Field, Note, Screen } from '../components/ui';
 import { AuthHeader, styles } from './LoginScreen';
 
 const ERRORS = {
@@ -30,28 +30,38 @@ export default function SignUpScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
-        <AuthHeader />
-        <View style={styles.form}>
-          <Text style={styles.tagline}>Make an account. Takes a minute.</Text>
-          <Field label="First name" value={name} onChangeText={setName} autoCapitalize="words" />
-          <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-          <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-          <Button
-            label="Create account"
-            onPress={signUp}
-            loading={busy}
-            disabled={!name.trim() || !email || !password}
-            style={{ marginTop: 8 }}
-          />
-          <Pressable onPress={() => navigation.goBack()} style={styles.switch}>
-            <Text style={styles.switchText}>
-              Have an account? <Text style={styles.switchLink}>Log in</Text>
-            </Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <Screen>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
+          <AuthHeader />
+          <View style={styles.form}>
+            <Note size={24} style={styles.tagline}>
+              Make an account. Takes a minute.
+            </Note>
+            <Field label="First name" value={name} onChangeText={setName} autoCapitalize="words" />
+            <Field
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+            <Button
+              label="Create account"
+              onPress={signUp}
+              loading={busy}
+              disabled={!name.trim() || !email || !password}
+              style={{ marginTop: 8 }}
+            />
+            <Pressable onPress={() => navigation.goBack()} style={styles.switch}>
+              <Text style={styles.switchText}>
+                Have an account? <Text style={styles.switchLink}>Log in</Text>
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }

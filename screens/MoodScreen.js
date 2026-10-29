@@ -1,11 +1,10 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList } from 'react-native';
 import { useSession } from '../context/Session';
 import { moodDishes } from '../lib/api';
 import { moodLabel } from '../lib/tags';
-import { Empty, Loading } from '../components/ui';
+import { Empty, Loading, Screen } from '../components/ui';
 import { DishRow } from '../components/rows';
-import { colors } from '../theme';
 
 export default function MoodScreen({ navigation, route }) {
   const { mood } = route.params;
@@ -20,20 +19,26 @@ export default function MoodScreen({ navigation, route }) {
       .catch(() => setDishes([]));
   }, [campus.id, mood]);
 
-  if (!dishes) return <Loading />;
+  if (!dishes)
+    return (
+      <Screen>
+        <Loading />
+      </Screen>
+    );
 
   return (
-    <FlatList
-      style={styles.screen}
-      data={dishes}
-      keyExtractor={(d) => d.id}
-      contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
-      renderItem={({ item }) => <DishRow dish={item} onPress={() => navigation.navigate('Dish', { dishId: item.id })} />}
-      ListEmptyComponent={<Empty title="Nothing tagged like that yet" body="When people add dishes they can tag the mood." />}
-    />
+    <Screen>
+      <FlatList
+        data={dishes}
+        keyExtractor={(d) => d.id}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
+        renderItem={({ item, index }) => (
+          <DishRow dish={item} index={index} onPress={() => navigation.navigate('Dish', { dishId: item.id })} />
+        )}
+        ListEmptyComponent={
+          <Empty title="Nothing tagged like that yet" body="When people add dishes they can tag the mood." />
+        }
+      />
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-});

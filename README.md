@@ -15,6 +15,10 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Feed**: reviews from your campus. You can like and share them.
 - **Me**: your stats, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
 
+## Look
+
+Euro summer collage: painted sardines, lemons, blood oranges and majolica plates cut out like stickers (`assets/art`), turquoise and orange lino-wave headers, paper scraps on pinstripe linen. Headlines are set in Grand Paradiso, body text in Jost, little notes in Cormorant Garamond italic.
+
 ## Running it
 
 ```bash

@@ -1,11 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSession } from '../context/Session';
 import { campusFeed } from '../lib/api';
-import { Empty, Loading } from '../components/ui';
+import { Empty, Loading, Screen } from '../components/ui';
 import { ReviewCard, makeLike } from '../components/rows';
-import { colors } from '../theme';
 
 export default function FeedScreen({ navigation }) {
   const { campus, user } = useSession();
@@ -25,32 +24,37 @@ export default function FeedScreen({ navigation }) {
 
   const like = makeLike(setFeed, user.uid);
 
-  if (!feed) return <Loading />;
+  if (!feed)
+    return (
+      <Screen>
+        <Loading />
+      </Screen>
+    );
 
   return (
-    <FlatList
-      style={styles.screen}
-      data={feed}
-      keyExtractor={(r) => r.id}
-      refreshing={refreshing}
-      onRefresh={() => {
-        setRefreshing(true);
-        load();
-      }}
-      contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
-      renderItem={({ item }) => (
-        <ReviewCard
-          review={item}
-          uid={user.uid}
-          onLike={like}
-          onPressDish={() => navigation.navigate('Dish', { dishId: item.dishId })}
-        />
-      )}
-      ListEmptyComponent={<Empty title={`Nobody at ${campus.short} has posted yet`} body="Your review could be the first one." />}
-    />
+    <Screen>
+      <FlatList
+        data={feed}
+        keyExtractor={(r) => r.id}
+        refreshing={refreshing}
+        onRefresh={() => {
+          setRefreshing(true);
+          load();
+        }}
+        contentContainerStyle={{ paddingTop: 22, paddingBottom: 40 }}
+        renderItem={({ item, index }) => (
+          <ReviewCard
+            index={index}
+            review={item}
+            uid={user.uid}
+            onLike={like}
+            onPressDish={() => navigation.navigate('Dish', { dishId: item.dishId })}
+          />
+        )}
+        ListEmptyComponent={
+          <Empty title={`Nobody at ${campus.short} has posted yet`} body="Your review could be the first one." />
+        }
+      />
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-});

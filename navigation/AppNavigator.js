@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Compass, ListOrdered, Plus, Sun, User } from 'lucide-react-native';
+import { Compass, ListOrdered, Sun, User } from 'lucide-react-native';
+import { Sticker } from '../components/art';
 import { useSession } from '../context/Session';
 import { colors, fonts } from '../theme';
 
@@ -31,12 +32,12 @@ const ReviewStack = createNativeStackNavigator();
 const ListStack = createNativeStackNavigator();
 const MeStack = createNativeStackNavigator();
 
-const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.paper } };
+const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colors.linen } };
 
 const stackOptions = {
-  headerStyle: { backgroundColor: colors.paper },
-  headerTintColor: colors.ink,
-  headerTitleStyle: { fontFamily: fonts.display, fontSize: 18 },
+  headerStyle: { backgroundColor: colors.linen },
+  headerTintColor: colors.cobalt,
+  headerTitleStyle: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
   headerShadowVisible: false,
   headerBackButtonDisplayMode: 'minimal',
 };
@@ -75,7 +76,11 @@ function ReviewTab() {
       <ReviewStack.Screen name="PickDish" component={PickDishScreen} options={noHeader} />
       <ReviewStack.Screen name="AddDish" component={AddDishScreen} options={{ title: 'Add a dish' }} />
       <ReviewStack.Screen name="WriteReview" component={WriteReviewScreen} options={{ title: 'How was it?' }} />
-      <ReviewStack.Screen name="Compare" component={CompareScreen} options={{ title: 'This or that', gestureEnabled: false }} />
+      <ReviewStack.Screen
+        name="Compare"
+        component={CompareScreen}
+        options={{ title: 'This or that', gestureEnabled: false }}
+      />
     </ReviewStack.Navigator>
   );
 }
@@ -105,7 +110,8 @@ function ReviewButton({ onPress }) {
   return (
     <Pressable onPress={onPress} style={styles.reviewWrap} accessibilityLabel="Rate a dish">
       <View style={styles.reviewButton}>
-        <Plus color={colors.ink} size={28} strokeWidth={2.5} />
+        <Sticker name="orangeSlice" width={62} />
+        <Text style={styles.plus}>+</Text>
       </View>
     </Pressable>
   );
@@ -116,13 +122,13 @@ function Tabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
+        tabBarActiveTintColor: colors.cobalt,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
         tabBarIcon: ({ color, focused }) => {
           const Icon = TAB_ICONS[route.name];
-          return Icon ? <Icon color={color} size={22} strokeWidth={focused ? 2.5 : 2} /> : null;
+          return Icon ? <Icon color={color} size={22} strokeWidth={focused ? 2 : 1.5} /> : null;
         },
       })}
     >
@@ -164,22 +170,26 @@ export default function AppNavigator() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.paper,
-    borderTopWidth: 2,
-    borderTopColor: colors.ink,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
     height: 86,
     paddingTop: 8,
   },
-  tabLabel: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' },
+  tabLabel: { fontFamily: fonts.medium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase' },
   reviewWrap: { flex: 1, alignItems: 'center' },
-  reviewButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    marginTop: -20,
-    backgroundColor: colors.aperol,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
+  reviewButton: { marginTop: -24, alignItems: 'center', justifyContent: 'center' },
+  plus: {
+    position: 'absolute',
+    fontFamily: fonts.display,
+    fontSize: 40,
+    lineHeight: 46,
+    color: colors.cobalt,
+    backgroundColor: colors.paper,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    textAlign: 'center',
+    overflow: 'hidden',
+    textAlignVertical: 'center',
   },
 });

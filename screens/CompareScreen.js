@@ -3,9 +3,9 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '../context/Session';
 import { myRankings, saveReview } from '../lib/api';
 import { MAX_QUESTIONS, eloForPosition, toTen } from '../lib/score';
-import { Button, Kicker, Loading, ScoreBadge, Title } from '../components/ui';
-import { OrangeSlice } from '../components/art';
-import { colors, fonts } from '../theme';
+import { Button, Label, Loading, Note, Plate, Screen, Title } from '../components/ui';
+import { Sticker } from '../components/art';
+import { colors, fonts, lift } from '../theme';
 
 // Binary search through your own same-verdict list: each answer halves where the new dish can go.
 export default function CompareScreen({ navigation, route }) {
@@ -41,23 +41,31 @@ export default function CompareScreen({ navigation, route }) {
     saveReview({ uid: user.uid, userName: name, dish, verdict, elo, tags, note })
       .then(() => setFinalScore(toTen(elo)))
       .catch(() => {
-        Alert.alert("Couldn't save", 'Your review didn\'t go through. Try again in a sec.');
+        Alert.alert("Couldn't save", "Your review didn't go through. Try again in a sec.");
         navigation.goBack();
       })
       .finally(() => setSaving(false));
   }, [done]);
 
-  if (!ranked || saving || (done && finalScore == null)) return <Loading />;
+  if (!ranked || saving || (done && finalScore == null)) {
+    return (
+      <Screen>
+        <Loading />
+      </Screen>
+    );
+  }
 
   if (finalScore != null) {
     return (
-      <View style={[styles.screen, styles.center]}>
-        <OrangeSlice size={70} />
-        <Kicker style={{ marginTop: 18 }}>Saved to your list</Kicker>
-        <Title size={30} style={{ textAlign: 'center', marginVertical: 8 }}>
+      <Screen style={styles.center}>
+        <View>
+          <Sticker name="lemon" width={96} rotate={-14} style={styles.lemonSticker} />
+          <Plate score={finalScore} size={150} />
+        </View>
+        <Label style={{ marginTop: 22 }}>Saved to your list</Label>
+        <Title size={42} style={{ textAlign: 'center', marginTop: 4 }}>
           {dish.name}
         </Title>
-        <ScoreBadge score={finalScore} size={96} />
         <Button
           label="See my list"
           onPress={() => {
@@ -66,8 +74,13 @@ export default function CompareScreen({ navigation, route }) {
           }}
           style={{ marginTop: 30, alignSelf: 'stretch' }}
         />
-        <Button label="Rate another" kind="plain" onPress={() => navigation.popToTop()} style={{ marginTop: 14, alignSelf: 'stretch' }} />
-      </View>
+        <Button
+          label="Rate another"
+          kind="light"
+          onPress={() => navigation.popToTop()}
+          style={{ marginTop: 14, alignSelf: 'stretch' }}
+        />
+      </Screen>
     );
   }
 
@@ -86,26 +99,49 @@ export default function CompareScreen({ navigation, route }) {
   };
 
   return (
-    <View style={[styles.screen, styles.center]}>
-      <Kicker>Question {asked + 1}</Kicker>
-      <Title size={28} style={{ marginBottom: 24, textAlign: 'center' }}>
+    <Screen style={styles.center}>
+      <Label>Question {asked + 1}</Label>
+      <Title size={42} style={{ marginBottom: 26, textAlign: 'center' }}>
         Which did you like more?
       </Title>
 
-      <Choice title={dish.name} place={dish.placeName} onPress={() => pick(true)} tint={colors.peach} />
-      <Text style={styles.or}>or</Text>
-      <Choice title={other.dishName} place={other.placeName} onPress={() => pick(false)} tint={colors.mist} />
+      <Choice
+        title={dish.name}
+        place={dish.placeName}
+        onPress={() => pick(true)}
+        tint="#FFE3CF"
+        art="bloodOrange"
+        tilt={-1}
+      />
+      <Note size={26} style={styles.or}>
+        or
+      </Note>
+      <Choice
+        title={other.dishName}
+        place={other.placeName}
+        onPress={() => pick(false)}
+        tint={colors.lagoon}
+        art="sardine"
+        tilt={0.8}
+      />
 
       <Pressable onPress={tie} style={{ marginTop: 26 }} hitSlop={10}>
         <Text style={styles.skip}>Too close to call</Text>
       </Pressable>
-    </View>
+    </Screen>
   );
 }
 
-function Choice({ title, place, onPress, tint }) {
+function Choice({ title, place, onPress, tint, art, tilt }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.choice, { backgroundColor: tint }, pressed && styles.pressed]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.choice,
+        { backgroundColor: tint, transform: [{ rotate: `${tilt}deg` }, { scale: pressed ? 0.98 : 1 }] },
+      ]}
+    >
+      <Sticker name={art} width={art === 'sardine' ? 120 : 56} rotate={tilt * 8} style={styles.choiceArt} />
       <Text style={styles.choiceTitle}>{title}</Text>
       <Text style={styles.choicePlace}>{place}</Text>
     </Pressable>
@@ -113,20 +149,19 @@ function Choice({ title, place, onPress, tint }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper, padding: 24 },
-  center: { justifyContent: 'center', alignItems: 'center' },
+  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
+  lemonSticker: { position: 'absolute', right: -50, top: -30, zIndex: 2 },
   choice: {
     alignSelf: 'stretch',
-    borderWidth: 2,
-    borderColor: colors.ink,
-    borderRadius: 16,
-    paddingVertical: 26,
+    borderRadius: 8,
+    paddingVertical: 28,
     paddingHorizontal: 18,
     alignItems: 'center',
+    ...lift,
   },
-  pressed: { transform: [{ scale: 0.98 }] },
-  choiceTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, textAlign: 'center' },
-  choicePlace: { fontFamily: fonts.mono, fontSize: 12, color: colors.muted, marginTop: 6 },
-  or: { fontFamily: fonts.displayItalic, fontSize: 22, color: colors.aperol, marginVertical: 12 },
+  choiceArt: { position: 'absolute', top: -18, right: 10 },
+  choiceTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 34, color: colors.ink, textAlign: 'center' },
+  choicePlace: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 6 },
+  or: { color: colors.orange, marginVertical: 12 },
   skip: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, textDecorationLine: 'underline' },
 });

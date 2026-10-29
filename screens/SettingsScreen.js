@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
 import { auth } from '../firebaseConfig';
 import { useSession } from '../context/Session';
 import { CAMPUSES, getCampus } from '../data/campuses';
 import { MODES, defaultModes } from '../lib/trip';
-import { Button, Chip, Kicker, Title } from '../components/ui';
+import { Button, Chip, CollageHeader, Label, Note, Screen, Title } from '../components/ui';
 import { colors, fonts } from '../theme';
 
 // used twice: first-run setup after sign up, and later from the profile tab
@@ -41,78 +41,92 @@ export default function SettingsScreen({ navigation, route }) {
   };
 
   const transit = getCampus(campusId)?.transit;
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={styles.screen} edges={onboarding ? ['top', 'bottom'] : ['bottom']}>
-      <ScrollView contentContainerStyle={styles.body}>
+    <Screen>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
         {onboarding && (
-          <>
-            <Kicker>Step 1 of 1</Kicker>
-            <Title size={34} style={{ marginBottom: 6 }}>
-              Where do you eat?
-            </Title>
-            <Text style={styles.lede}>Pick your campus. You can switch any time from your profile.</Text>
-          </>
+          <CollageHeader
+            height={insets.top + 150}
+            tone="orange"
+            pieces={[
+              { name: 'lemon', size: 90, rotate: 12, right: 22, top: insets.top + 40 },
+              { name: 'sardine', size: 170, rotate: -6, right: 90, top: insets.top + 118 },
+            ]}
+          />
         )}
+        <View style={styles.body}>
+          {onboarding && (
+            <>
+              <Title size={46}>Where do you eat?</Title>
+              <Note style={styles.lede}>Pick your campus. You can switch any time from your profile.</Note>
+            </>
+          )}
 
-        <Kicker style={styles.label}>Campus</Kicker>
-        {CAMPUSES.map((c) => {
-          const active = c.id === campusId;
-          return (
-            <Pressable key={c.id} onPress={() => pickCampus(c.id)} style={[styles.campus, active && styles.campusActive]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.campusName, active && { color: colors.paper }]}>{c.name}</Text>
-                <Text style={[styles.campusCity, active && { color: colors.sky }]}>{c.city}</Text>
-              </View>
-              {active && <Check color={colors.lemon} size={20} strokeWidth={3} />}
-            </Pressable>
-          );
-        })}
+          <Label style={styles.label}>Campus</Label>
+          {CAMPUSES.map((c) => {
+            const active = c.id === campusId;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => pickCampus(c.id)}
+                style={[styles.campus, active && styles.campusActive]}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.campusName}>{c.name}</Text>
+                  <Text style={styles.campusCity}>{c.city}</Text>
+                </View>
+                {active && <Check color={colors.orange} size={20} strokeWidth={2.5} />}
+              </Pressable>
+            );
+          })}
 
-        <Kicker style={styles.label}>How do you get around?</Kicker>
-        <Text style={styles.hint}>We use this to show how far each spot really is and what the trip costs you.</Text>
-        <View style={styles.modes}>
-          {MODES.map((m) => (
-            <Chip key={m.id} label={m.label} active={modes.includes(m.id)} onPress={() => toggleMode(m.id)} />
-          ))}
+          <Label style={styles.label}>How do you get around?</Label>
+          <Text style={styles.hint}>We use this to show how far each spot really is and what the trip costs you.</Text>
+          <View style={styles.modes}>
+            {MODES.map((m) => (
+              <Chip key={m.id} label={m.label} active={modes.includes(m.id)} onPress={() => toggleMode(m.id)} />
+            ))}
+          </View>
+          {transit && (
+            <Text style={styles.hint}>
+              {transit.name}{' '}
+              {transit.free ? 'is free with your student ID here.' : `runs about $${transit.fare.toFixed(2)} a ride.`}
+            </Text>
+          )}
+
+          <Button
+            label={onboarding ? "Let's eat" : 'Save'}
+            onPress={save}
+            loading={busy}
+            disabled={!campusId || modes.length === 0}
+            style={{ marginTop: 28 }}
+          />
         </View>
-        {transit && (
-          <Text style={styles.hint}>
-            {transit.name} {transit.free ? 'is free with your student ID here.' : `runs about $${transit.fare.toFixed(2)} a ride.`}
-          </Text>
-        )}
-
-        <Button
-          label={onboarding ? "Let's eat" : 'Save'}
-          onPress={save}
-          loading={busy}
-          disabled={!campusId || modes.length === 0}
-          style={{ marginTop: 28 }}
-        />
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-  body: { padding: 20, paddingBottom: 40 },
-  lede: { fontFamily: fonts.body, fontSize: 15, color: colors.muted, lineHeight: 21 },
-  label: { marginTop: 26, marginBottom: 10 },
+  body: { padding: 22 },
+  lede: { marginTop: 6, color: colors.muted },
+  label: { marginTop: 28, marginBottom: 10 },
   campus: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.ink,
-    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 10,
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: colors.card,
+    backgroundColor: colors.paper,
   },
-  campusActive: { backgroundColor: colors.ink },
-  campusName: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  campusCity: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted, marginTop: 2 },
+  campusActive: { backgroundColor: colors.butter, borderColor: colors.lemon },
+  campusName: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
+  campusCity: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
   hint: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 19, marginBottom: 10 },
   modes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
 });

@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
 import { campusDishes } from '../lib/api';
 import { todayKey } from '../lib/time';
-import { Button, Chip, Field, Kicker, Loading, Stripes, Title } from '../components/ui';
+import { Button, Chip, CollageHeader, Field, Label, Loading, Note, Screen, Title } from '../components/ui';
 import { DishRow } from '../components/rows';
-import { colors, fonts } from '../theme';
+import { colors } from '../theme';
 
 export default function PickDishScreen({ navigation }) {
   const { campus } = useSession();
@@ -39,10 +39,17 @@ export default function PickDishScreen({ navigation }) {
 
   const header = (
     <View>
-      <Stripes height={insets.top + 18} count={9} />
+      <CollageHeader
+        height={insets.top + 96}
+        tone="cobalt"
+        pieces={[
+          { name: 'bloodOrange', size: 72, rotate: -10, right: 26, top: insets.top + 20 },
+          { name: 'sardine', size: 160, rotate: 6, right: 70, top: insets.top + 78 },
+        ]}
+      />
       <View style={styles.head}>
-        <Kicker>Rate something</Kicker>
-        <Title size={34}>What did you eat?</Title>
+        <Label>Rate something</Label>
+        <Title size={48}>What did you eat?</Title>
         <Field
           placeholder="Search dishes"
           value={search}
@@ -57,39 +64,43 @@ export default function PickDishScreen({ navigation }) {
           <Chip key={p.id} label={p.name} active={placeId === p.id} onPress={() => setPlaceId(p.id)} />
         ))}
       </ScrollView>
-      {!search && dishes?.length > 0 && <Text style={styles.hint}>Showing what's on today. Search to find anything else.</Text>}
+      {!search && dishes?.length > 0 && (
+        <Note size={16} style={styles.hint}>
+          Showing what's on today. Search to find anything else.
+        </Note>
+      )}
     </View>
   );
 
   return (
-    <FlatList
-      style={styles.screen}
-      data={results}
-      keyExtractor={(d) => d.id}
-      ListHeaderComponent={header}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: 40 }}
-      renderItem={({ item }) => (
-        <DishRow dish={item} onPress={() => navigation.navigate('WriteReview', { dishId: item.id })} />
-      )}
-      ListEmptyComponent={dishes === null ? <Loading /> : null}
-      ListFooterComponent={
-        dishes && (
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{search ? `No luck finding "${search.trim()}"?` : "Don't see it?"}</Text>
-            <Button label="Add it yourself" kind="ink" onPress={addNew} />
-          </View>
-        )
-      }
-    />
+    <Screen>
+      <FlatList
+        data={results}
+        keyExtractor={(d) => d.id}
+        ListHeaderComponent={header}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        renderItem={({ item, index }) => (
+          <DishRow dish={item} index={index} onPress={() => navigation.navigate('WriteReview', { dishId: item.id })} />
+        )}
+        ListEmptyComponent={dishes === null ? <Loading /> : null}
+        ListFooterComponent={
+          dishes && (
+            <View style={styles.footer}>
+              <Note style={styles.footerText}>{search ? `No luck finding "${search.trim()}"?` : "Don't see it?"}</Note>
+              <Button label="Add it yourself" kind="citrus" onPress={addNew} />
+            </View>
+          )
+        }
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-  head: { padding: 20, paddingBottom: 12 },
-  chips: { paddingHorizontal: 20, gap: 8, paddingBottom: 14 },
-  hint: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, paddingHorizontal: 20, marginBottom: 12 },
-  footer: { paddingHorizontal: 20, marginTop: 10, gap: 12 },
-  footerText: { fontFamily: fonts.displayItalic, fontSize: 18, color: colors.ink },
+  head: { padding: 22, paddingTop: 28, paddingBottom: 12 },
+  chips: { paddingHorizontal: 22, gap: 8, paddingBottom: 14 },
+  hint: { color: colors.muted, paddingHorizontal: 22, marginBottom: 12 },
+  footer: { paddingHorizontal: 22, marginTop: 14, gap: 12 },
+  footerText: { color: colors.ink },
 });

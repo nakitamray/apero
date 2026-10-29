@@ -7,9 +7,9 @@ import { dishReviews, getDish, myRanking } from '../lib/api';
 import { toTen } from '../lib/score';
 import { moodLabel } from '../lib/tags';
 import { todayKey } from '../lib/time';
-import { Button, Card, Empty, Kicker, Loading, ScoreBadge, Stamp, Tag, Title } from '../components/ui';
+import { Button, Empty, Label, Loading, Paper, Plate, Screen, Stamp, Tag, Title } from '../components/ui';
 import { ReviewCard, makeLike } from '../components/rows';
-import { Wave } from '../components/art';
+import { Sticker } from '../components/art';
 import { colors, fonts } from '../theme';
 
 export default function DishScreen({ navigation, route }) {
@@ -33,8 +33,18 @@ export default function DishScreen({ navigation, route }) {
     }, [dishId, user.uid]),
   );
 
-  if (missing) return <Empty title="Couldn't find that dish" />;
-  if (!dish) return <Loading />;
+  if (missing)
+    return (
+      <Screen>
+        <Empty title="Couldn't find that dish" />
+      </Screen>
+    );
+  if (!dish)
+    return (
+      <Screen>
+        <Loading />
+      </Screen>
+    );
 
   const place = getPlace(dish.placeId);
   const rate = () =>
@@ -43,71 +53,84 @@ export default function DishScreen({ navigation, route }) {
   const like = makeLike(setReviews, user.uid);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.body}>
-      <Pressable onPress={() => place && navigation.navigate('Place', { placeId: place.id })}>
-        <Kicker color={colors.cobalt}>{dish.placeName} →</Kicker>
-      </Pressable>
-      <Title size={34} style={{ marginTop: 4 }}>
-        {dish.name}
-      </Title>
-      <Wave width={120} color={colors.aperol} style={{ marginTop: 10 }} />
+    <Screen>
+      <ScrollView contentContainerStyle={styles.body}>
+        <Pressable onPress={() => place && navigation.navigate('Place', { placeId: place.id })}>
+          <Label color={colors.teal}>{dish.placeName} →</Label>
+        </Pressable>
+        <Title size={50} style={{ marginTop: 4 }}>
+          {dish.name}
+        </Title>
+        <Sticker name="swash" width={150} style={{ marginTop: 4 }} />
 
-      <View style={styles.scores}>
-        <View style={styles.scoreBlock}>
-          <ScoreBadge score={dish.ratingCount ? dish.score : null} size={92} />
-          <Text style={styles.scoreLabel}>
-            {dish.ratingCount ? `${dish.ratingCount} rating${dish.ratingCount === 1 ? '' : 's'}` : 'not rated yet'}
-          </Text>
-        </View>
-        {mine && (
+        <View style={styles.scores}>
           <View style={styles.scoreBlock}>
-            <ScoreBadge score={toTen(mine.elo)} size={64} />
-            <Text style={styles.scoreLabel}>yours</Text>
-            <Stamp verdict={mine.verdict} style={{ marginTop: 6, alignSelf: 'center' }} />
+            <Plate score={dish.ratingCount ? dish.score : null} size={112} />
+            <Text style={styles.scoreLabel}>
+              {dish.ratingCount ? `${dish.ratingCount} rating${dish.ratingCount === 1 ? '' : 's'}` : 'not rated yet'}
+            </Text>
+          </View>
+          {mine && (
+            <View style={styles.scoreBlock}>
+              <Plate score={toTen(mine.elo)} size={78} />
+              <Text style={styles.scoreLabel}>yours</Text>
+              <Stamp verdict={mine.verdict} style={{ marginTop: 6, alignSelf: 'center' }} />
+            </View>
+          )}
+        </View>
+
+        {(dish.station || dish.lastServedDate) && (
+          <Paper tilt={0.5} tint={colors.lagoon} outer={{ marginTop: 24 }}>
+            {dish.station ? <Text style={styles.fact}>Station: {dish.station}</Text> : null}
+            {dish.lastServedDate ? (
+              <Text style={styles.fact}>
+                {dish.lastServedDate === todayKey() ? 'On the menu today' : `Last served ${dish.lastServedDate}`}
+              </Text>
+            ) : null}
+          </Paper>
+        )}
+
+        {dish.tags?.length > 0 && (
+          <View style={styles.tags}>
+            {dish.tags.map((t) => (
+              <Tag key={t}>{moodLabel(t)}</Tag>
+            ))}
           </View>
         )}
-      </View>
 
-      {(dish.station || dish.lastServedDate) && (
-        <Card outer={{ marginTop: 20 }} tint={colors.mist}>
-          {dish.station ? <Text style={styles.fact}>Station: {dish.station}</Text> : null}
-          {dish.lastServedDate ? (
-            <Text style={styles.fact}>
-              {dish.lastServedDate === todayKey() ? 'On the menu today' : `Last served ${dish.lastServedDate}`}
-            </Text>
-          ) : null}
-        </Card>
-      )}
+        <Button
+          label={mine ? 'Rate it again' : 'Rate this dish'}
+          kind="citrus"
+          onPress={rate}
+          style={{ marginTop: 26 }}
+        />
 
-      {dish.tags?.length > 0 && (
-        <View style={styles.tags}>
-          {dish.tags.map((t) => (
-            <Tag key={t}>{moodLabel(t)}</Tag>
+        <Text style={styles.section}>What people said</Text>
+        <View style={{ marginHorizontal: -20 }}>
+          {reviews.map((r, i) => (
+            <ReviewCard key={r.id} index={i} review={r} uid={user.uid} onLike={like} />
           ))}
         </View>
-      )}
-
-      <Button label={mine ? 'Rate it again' : 'Rate this dish'} onPress={rate} style={{ marginTop: 24 }} />
-
-      <Text style={styles.section}>What people said</Text>
-      <View style={{ marginHorizontal: -20 }}>
-        {reviews.map((r) => (
-          <ReviewCard key={r.id} review={r} uid={user.uid} onLike={like} />
-        ))}
-      </View>
-      {reviews.length === 0 && <Text style={styles.quiet}>No reviews yet.</Text>}
-    </ScrollView>
+        {reviews.length === 0 && <Text style={styles.quiet}>No reviews yet.</Text>}
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-  body: { padding: 20, paddingBottom: 40 },
-  scores: { flexDirection: 'row', alignItems: 'flex-start', gap: 28, marginTop: 22 },
+  body: { padding: 22, paddingBottom: 40 },
+  scores: { flexDirection: 'row', alignItems: 'flex-start', gap: 26, marginTop: 24 },
   scoreBlock: { alignItems: 'center' },
-  scoreLabel: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted, marginTop: 6 },
+  scoreLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.muted,
+    marginTop: 8,
+  },
   fact: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink, marginVertical: 2 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 16 },
-  section: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginTop: 32, marginBottom: 12 },
-  quiet: { fontFamily: fonts.body, color: colors.muted },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 18 },
+  section: { fontFamily: fonts.display, fontSize: 32, color: colors.ink, marginTop: 36, marginBottom: 14 },
+  quiet: { fontFamily: fonts.note, fontSize: 17, color: colors.muted },
 });

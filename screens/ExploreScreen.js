@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
 import { activityToday } from '../lib/api';
 import { MODES, bestTrip, totalCost } from '../lib/trip';
-import { Chip, Kicker, Stripes, Title } from '../components/ui';
+import { Chip, CollageHeader, Label, Note, Screen, Title } from '../components/ui';
 import { PlaceRow } from '../components/places';
-import { colors, fonts } from '../theme';
+import { colors } from '../theme';
 
 const KINDS = [
   { id: 'hall', label: 'Dining halls' },
@@ -38,7 +38,9 @@ export default function ExploreScreen({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
-      activityToday(campus.id).then(setActivity).catch(() => setActivity({}));
+      activityToday(campus.id)
+        .then(setActivity)
+        .catch(() => setActivity({}));
     }, [campus.id]),
   );
 
@@ -58,10 +60,17 @@ export default function ExploreScreen({ navigation, route }) {
 
   const header = (
     <View>
-      <Stripes height={insets.top + 18} light={colors.mist} dark={colors.sky} count={11} />
+      <CollageHeader
+        height={insets.top + 96}
+        tone="orange"
+        pieces={[
+          { name: 'tile', size: 70, rotate: 10, right: 24, top: insets.top + 22 },
+          { name: 'lemon', size: 74, rotate: -12, right: 96, top: insets.top + 66 },
+        ]}
+      />
       <View style={styles.head}>
-        <Kicker>{campus.name}</Kicker>
-        <Title size={34}>Explore</Title>
+        <Label>{campus.name}</Label>
+        <Title size={48}>Explore</Title>
         <View style={styles.chips}>
           {KINDS.map((k) => (
             <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
@@ -71,12 +80,18 @@ export default function ExploreScreen({ navigation, route }) {
           <>
             <View style={[styles.chips, { marginTop: 10 }]}>
               {SORTS.map((s) => (
-                <Chip key={s.id} label={s.label} active={sort === s.id} onPress={() => setSort(s.id)} style={styles.small} />
+                <Chip
+                  key={s.id}
+                  label={s.label}
+                  active={sort === s.id}
+                  onPress={() => setSort(s.id)}
+                  style={styles.small}
+                />
               ))}
             </View>
-            <Text style={styles.note}>
+            <Note size={16} style={styles.note}>
               Trip times assume you {modeList(modes)}. Change that in Me → Campus & getting around.
-            </Text>
+            </Note>
           </>
         )}
       </View>
@@ -84,29 +99,30 @@ export default function ExploreScreen({ navigation, route }) {
   );
 
   return (
-    <FlatList
-      style={styles.screen}
-      data={places}
-      keyExtractor={(p) => p.id}
-      ListHeaderComponent={header}
-      contentContainerStyle={{ paddingBottom: 40 }}
-      renderItem={({ item }) => (
-        <PlaceRow
-          place={item}
-          campus={campus}
-          modes={modes}
-          activity={activity[item.id]}
-          onPress={() => navigation.navigate('Place', { placeId: item.id })}
-        />
-      )}
-    />
+    <Screen>
+      <FlatList
+        data={places}
+        keyExtractor={(p) => p.id}
+        ListHeaderComponent={header}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        renderItem={({ item, index }) => (
+          <PlaceRow
+            place={item}
+            index={index}
+            campus={campus}
+            modes={modes}
+            activity={activity[item.id]}
+            onPress={() => navigation.navigate('Place', { placeId: item.id })}
+          />
+        )}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-  head: { padding: 20, paddingBottom: 14 },
+  head: { padding: 22, paddingTop: 28, paddingBottom: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  small: { paddingVertical: 5, paddingHorizontal: 11 },
-  note: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 12, lineHeight: 17 },
+  small: { paddingVertical: 5, paddingHorizontal: 12 },
+  note: { color: colors.muted, marginTop: 12 },
 });

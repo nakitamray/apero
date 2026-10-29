@@ -8,9 +8,9 @@ import { getPlace } from '../data/campuses';
 import { myRankings, topDishes, userReviews } from '../lib/api';
 import { reasonLabel } from '../lib/tags';
 import { dayStreak, timeAgo } from '../lib/time';
-import { Awning, Button, Card, Kicker, Loading, ScoreBadge, Title } from '../components/ui';
+import { Button, CollageHeader, Label, Loading, Paper, Plate, Screen, Title } from '../components/ui';
 import { DishRow } from '../components/rows';
-import { colors, fonts } from '../theme';
+import { colors, fonts, lift } from '../theme';
 
 function Stat({ value, label }) {
   return (
@@ -74,128 +74,170 @@ export default function ProfileScreen({ navigation }) {
   const taste = reviews ? tasteFrom(reviews, campus) : null;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Awning height={insets.top + 70} />
-      <View style={styles.head}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{name[0].toUpperCase()}</Text>
-        </View>
-        <Title size={30} style={{ marginTop: 10 }}>
-          {name}
-        </Title>
-        <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
-          <Text style={styles.campusText}>{campus.name}</Text>
-          <ChevronRight size={16} color={colors.cobalt} />
-        </Pressable>
-      </View>
-
-      {!reviews ? (
-        <Loading />
-      ) : (
-        <>
-          <View style={styles.stats}>
-            <Stat value={total} label="reviews" />
-            <Stat value={Object.keys(taste.places).length} label="places" />
-            <Stat value={dayStreak(reviews.map((r) => r.createdAt).filter(Boolean))} label="day streak" />
+    <Screen>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <CollageHeader
+          height={insets.top + 90}
+          tone="orange"
+          pieces={[
+            { name: 'sardine', size: 150, rotate: -10, left: -20, top: insets.top + 20 },
+            { name: 'lemon', size: 70, rotate: 14, right: 26, top: insets.top + 30 },
+          ]}
+        />
+        <View style={styles.head}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{name[0].toUpperCase()}</Text>
           </View>
+          <Title size={46} style={{ marginTop: 10 }}>
+            {name}
+          </Title>
+          <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
+            <Text style={styles.campusText}>{campus.name}</Text>
+            <ChevronRight size={16} color={colors.teal} strokeWidth={1.6} />
+          </Pressable>
+        </View>
 
-          {total > 0 && (
-            <Card outer={styles.block}>
-              <Kicker style={{ marginBottom: 12 }}>Your taste</Kicker>
-              <Bar label="Loved it" share={taste.verdicts.love / total} color={colors.aperol} />
-              <Bar label="It was fine" share={taste.verdicts.fine / total} color={colors.sky} />
-              <Bar label="Not for me" share={taste.verdicts.meh / total} color={colors.sand} />
+        {!reviews ? (
+          <Loading />
+        ) : (
+          <>
+            <View style={styles.stats}>
+              <Stat value={total} label="reviews" />
+              <Stat value={Object.keys(taste.places).length} label="places" />
+              <Stat value={dayStreak(reviews.map((r) => r.createdAt).filter(Boolean))} label="day streak" />
+            </View>
 
-              {taste.topReasons.length > 0 && (
-                <Text style={styles.line}>
-                  You care most about{' '}
-                  <Text style={styles.em}>{taste.topReasons.map(([id]) => reasonLabel(id).toLowerCase()).join(', ')}</Text>.
-                </Text>
-              )}
-              {taste.favorite && (
-                <Text style={styles.line}>
-                  Your spot: <Text style={styles.em}>{taste.favorite.name}</Text>.
-                </Text>
-              )}
-              <Text style={styles.line}>
-                You've tried <Text style={styles.em}>{taste.triedHere}</Text> of {campus.places.length} places at {campus.short}.
-              </Text>
-            </Card>
-          )}
+            {total > 0 && (
+              <Paper tape tilt={-0.5} outer={styles.block} style={{ paddingTop: 22 }}>
+                <Label style={{ marginBottom: 14 }}>Your taste</Label>
+                <Bar label="Loved it" share={taste.verdicts.love / total} color={colors.orange} />
+                <Bar label="It was fine" share={taste.verdicts.fine / total} color={colors.lemon} />
+                <Bar label="Not for me" share={taste.verdicts.meh / total} color={colors.aqua} />
 
-          {tryNext.length > 0 && (
-            <>
-              <Text style={styles.section}>Try next</Text>
-              {tryNext.map((d) => (
-                <DishRow key={d.id} dish={d} onPress={() => navigation.navigate('Dish', { dishId: d.id })} />
-              ))}
-            </>
-          )}
-
-          {total > 0 && (
-            <>
-              <Text style={styles.section}>Lately</Text>
-              {reviews.slice(0, 5).map((r) => (
-                <Pressable key={r.id} style={styles.recent} onPress={() => navigation.navigate('Dish', { dishId: r.dishId })}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.recentDish}>{r.dishName}</Text>
-                    <Text style={styles.recentMeta}>
-                      {r.placeName} · {timeAgo(r.createdAt)}
+                {taste.topReasons.length > 0 && (
+                  <Text style={styles.line}>
+                    You care most about{' '}
+                    <Text style={styles.em}>
+                      {taste.topReasons.map(([id]) => reasonLabel(id).toLowerCase()).join(', ')}
                     </Text>
-                  </View>
-                  <ScoreBadge score={r.score} size={40} />
-                </Pressable>
-              ))}
-            </>
-          )}
-        </>
-      )}
+                    .
+                  </Text>
+                )}
+                {taste.favorite && (
+                  <Text style={styles.line}>
+                    Your spot: <Text style={styles.em}>{taste.favorite.name}</Text>.
+                  </Text>
+                )}
+                <Text style={styles.line}>
+                  You've tried <Text style={styles.em}>{taste.triedHere}</Text> of {campus.places.length} places at{' '}
+                  {campus.short}.
+                </Text>
+              </Paper>
+            )}
 
-      <View style={styles.block}>
-        <Button label="Campus & getting around" kind="plain" onPress={() => navigation.navigate('Settings')} />
-        <Button label="Log out" kind="ink" onPress={logOut} style={{ marginTop: 14 }} />
-      </View>
-    </ScrollView>
+            {tryNext.length > 0 && (
+              <>
+                <Text style={styles.section}>Try next</Text>
+                {tryNext.map((d, i) => (
+                  <DishRow
+                    key={d.id}
+                    dish={d}
+                    index={i}
+                    onPress={() => navigation.navigate('Dish', { dishId: d.id })}
+                  />
+                ))}
+              </>
+            )}
+
+            {total > 0 && (
+              <>
+                <Text style={styles.section}>Lately</Text>
+                {reviews.slice(0, 5).map((r) => (
+                  <Pressable
+                    key={r.id}
+                    style={styles.recent}
+                    onPress={() => navigation.navigate('Dish', { dishId: r.dishId })}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.recentDish}>{r.dishName}</Text>
+                      <Text style={styles.recentMeta}>
+                        {r.placeName} · {timeAgo(r.createdAt)}
+                      </Text>
+                    </View>
+                    <Plate score={r.score} size={44} />
+                  </Pressable>
+                ))}
+              </>
+            )}
+          </>
+        )}
+
+        <View style={styles.block}>
+          <Button label="Campus & getting around" kind="light" onPress={() => navigation.navigate('Settings')} />
+          <Button label="Log out" kind="light" onPress={logOut} style={{ marginTop: 12 }} />
+        </View>
+      </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
-  head: { alignItems: 'center', marginTop: -40 },
+  head: { alignItems: 'center', marginTop: -46, zIndex: 3 },
   avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.cobalt,
-    borderWidth: 3,
-    borderColor: colors.ink,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.aqua,
+    borderWidth: 4,
+    borderColor: colors.paper,
     alignItems: 'center',
     justifyContent: 'center',
+    ...lift,
   },
-  avatarText: { fontFamily: fonts.displayItalic, fontSize: 40, color: colors.paper },
-  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
-  campusText: { fontFamily: fonts.medium, fontSize: 14, color: colors.cobalt },
-  stats: { flexDirection: 'row', marginHorizontal: 20, marginTop: 24, borderTopWidth: 2, borderBottomWidth: 2, borderColor: colors.ink },
+  avatarText: { fontFamily: fonts.display, fontSize: 52, lineHeight: 58, color: colors.paper },
+  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  campusText: { fontFamily: fonts.medium, fontSize: 14, color: colors.teal },
+  stats: {
+    flexDirection: 'row',
+    marginHorizontal: 22,
+    marginTop: 26,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.hairline,
+  },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  statValue: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
-  statLabel: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted },
-  block: { marginHorizontal: 20, marginTop: 24 },
-  barLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  statValue: { fontFamily: fonts.display, fontSize: 42, lineHeight: 46, color: colors.cobalt },
+  statLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: colors.muted,
+  },
+  block: { marginHorizontal: 22, marginTop: 30 },
+  barLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   barLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
-  barPct: { fontFamily: fonts.mono, fontSize: 12, color: colors.muted },
-  barTrack: { height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: colors.ink, overflow: 'hidden', backgroundColor: colors.paper },
-  barFill: { height: '100%' },
-  line: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginTop: 10, lineHeight: 21 },
-  em: { fontFamily: fonts.displayItalic, color: colors.blood },
-  section: { fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginHorizontal: 20, marginTop: 30, marginBottom: 12 },
+  barPct: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
+  barTrack: { height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: colors.mist },
+  barFill: { height: '100%', borderRadius: 4 },
+  line: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginTop: 10, lineHeight: 22 },
+  em: { fontFamily: fonts.note, fontSize: 18, color: colors.orange },
+  section: {
+    fontFamily: fonts.display,
+    fontSize: 34,
+    color: colors.ink,
+    marginHorizontal: 22,
+    marginTop: 34,
+    marginBottom: 12,
+  },
   recent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginHorizontal: 22,
     paddingVertical: 10,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.sand,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
-  recentDish: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  recentMeta: { fontFamily: fonts.mono, fontSize: 11, color: colors.muted, marginTop: 2 },
+  recentDish: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
+  recentMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
 });
