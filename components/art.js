@@ -15,8 +15,18 @@ const ART = {
   tin: { src: require('../assets/art/tin.png'), ratio: 1.538 },
   starfish: { src: require('../assets/art/starfish.png'), ratio: 1.039 },
   tile: { src: require('../assets/art/tile.png'), ratio: 1 },
+  goldfish: { src: require('../assets/art/goldfish.png'), ratio: 1.674 },
+  shell: { src: require('../assets/art/shell.png'), ratio: 1 },
+  stamp: { src: require('../assets/art/stamp.png'), ratio: 0.81 },
+  matchbox: { src: require('../assets/art/matchbox.png'), ratio: 1.852 },
+  burst: { src: require('../assets/art/burst.png'), ratio: 1 },
   vase: { src: require('../assets/art/vase.png'), ratio: 0.528 },
   swash: { src: require('../assets/art/swash.png'), ratio: 13.636 },
+};
+
+export const BACKGROUNDS = {
+  orange: require('../assets/art/bg_orange.jpg'),
+  cobalt: require('../assets/art/bg_tiles.jpg'),
 };
 
 export const PLATTERS = {

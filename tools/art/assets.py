@@ -366,6 +366,162 @@ def platter(name, rim, accent, dots, center, seed=53):
     c.save(f'{OUT}/{name}.png', sticker=0, shadow=False, size=(500, 380))
 
 
+# ---------------------------------------------------------------- painted screen backgrounds (jpg)
+def _save_bg(c, name, size=(700, 1400)):
+    from PIL import Image as _I
+    rgb = c.rgb * c.a[..., None] + (1 - c.a[..., None])
+    img = _I.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8), 'RGB').resize(size, _I.LANCZOS)
+    img.save(f'{OUT}/{name}.jpg', quality=84, optimize=True)
+
+
+def bg_orange(seed=67):
+    w, h = 900, 1800
+    c = Canvas(w, h, seed)
+    full = np.ones((h, w))
+    c.wash(full, '#F4741F', density=1, wob=0, blotch=0.1, edge=0, grain=0.1)
+    for col, thr, dens in [('#E2501A', 0.55, 0.55), ('#F99A45', 0.75, 0.45), ('#D9441E', 1.25, 0.4)]:
+        m = (noise((h, w), 70, c.rng) > thr).astype(float)
+        c.wash(m, col, density=dens, wob=25, soft=14, edge=0.25)
+    # loose brush swirls like a painted wall
+    for _ in range(26):
+        x0, y0 = c.rng.uniform(-100, w), c.rng.uniform(0, h)
+        pts = [(x0 + k * 60, y0 + 70 * np.sin(k * 0.7 + x0)) for k in range(8)]
+        c.stroke(pts, '#FFB36B', width=c.rng.uniform(14, 34), alpha=0.18, jitter=6)
+    _save_bg(c, 'bg_orange')
+
+
+def bg_tiles(seed=71):
+    w, h = 900, 1800
+    c = Canvas(w, h, seed)
+    c.wash(np.ones((h, w)), '#D8E2F2', density=1, wob=0, blotch=0, edge=0, grain=0.05)
+    size = 150
+    glazes = ['#1F4FA8', '#2A5DB8', '#1A3F91', '#3366C4', '#2251A6']
+    for ty in range(0, h, size):
+        for tx in range(0, w, size):
+            m = np.zeros((h, w))
+            m[ty + 5:ty + size - 5, tx + 5:tx + size - 5] = 1
+            c.wash(m, glazes[c.rng.integers(len(glazes))], density=0.95, wob=3, blotch=0.3, edge=0.45, soft=1.5)
+            # wet glaze highlight
+            c.stroke([(tx + 25, ty + 30), (tx + 70, ty + 22), (tx + 120, ty + 34)], '#FFFFFF', width=10, alpha=0.12, jitter=2)
+    _save_bg(c, 'bg_tiles')
+
+
+# ---------------------------------------------------------------- collage pieces
+def goldfish(seed=73):
+    c = Canvas(1100, 800, seed)
+    tail = poly(c, [(620, 380), (820, 180), (1060, 120), (930, 330), (1080, 560), (850, 600), (620, 430)])
+    c.wash(tail, '#FFB46B', density=0.55, wob=10, edge=0.5)
+    for k in range(14):
+        a = -0.9 + k * 0.13
+        c.stroke([(640, 400), (640 + 420 * np.cos(a), 400 + 300 * np.sin(a))], '#F27A1E', width=3, alpha=0.6)
+    for fin in [[(420, 230), (560, 90), (640, 120), (600, 260)], [(420, 540), (520, 690), (600, 660), (560, 520)]]:
+        m = poly(c, fin)
+        c.wash(m, '#FFB46B', density=0.6, wob=8)
+        x0, y0 = fin[0]
+        for k in range(6):
+            c.stroke([(x0 + 40, y0 + 10), fin[1 + k % 2]], '#F27A1E', width=2.5, alpha=0.5)
+    body = poly(c, ellipse_pts(420, 400, 260, 165))
+    c.wash(body, '#F2551B', density=0.95, blotch=0.25)
+    yy, xx = np.mgrid[0:800, 0:1100]
+    c.wash(body * (yy > 430), '#FF9A4A', density=0.6, soft=10)
+    for k in range(5):
+        for j in range(4):
+            x, y = 350 + k * 55, 320 + j * 45
+            c.stroke(ellipse_pts(x, y, 22, 18, start=0.3, end=2.8), '#C7361A', width=3, alpha=0.4)
+    c.wash(poly(c, ellipse_pts(230, 360, 30, 30)), '#FFF1DC', density=1, wob=1)
+    c.wash(poly(c, ellipse_pts(232, 360, 17, 17)), '#1A1A2E', density=1, wob=1)
+    c.stroke([(170, 420), (200, 430)], '#7A1E0A', width=5, alpha=0.7)
+    c.stroke(ellipse_pts(420, 400, 262, 167, start=3.4, end=5.9), '#9E2A10', width=4, alpha=0.5)
+    c.save(f'{OUT}/goldfish.png', size=(380, 280))
+
+
+def shell(seed=79):
+    c = Canvas(800, 800, seed)
+    cx, cy = 400, 420
+    t = np.linspace(0, 5.2 * np.pi, 400)
+    r = 18 * np.exp(0.19 * t)
+    outline = np.stack([cx + r * np.cos(t), cy + r * np.sin(t)], 1)
+    disc = poly(c, ellipse_pts(cx, cy, r[-1] + 8, r[-1]))
+    c.wash(disc, '#F3F7FC', density=1, wob=5)
+    c.wash(disc, '#9EC0EA', density=0.35, soft=12)
+    c.stroke(outline, DEEP, width=10, alpha=0.85)
+    for k in range(0, 400, 9):
+        a = t[k]
+        r0, r1 = r[k] * 0.55, r[k] * 1.0
+        c.stroke([(cx + r0 * np.cos(a), cy + r0 * np.sin(a)), (cx + r1 * np.cos(a), cy + r1 * np.sin(a))], COBALT, width=5, alpha=0.75)
+    c.save(f'{OUT}/shell.png', size=(220, 220))
+
+
+def stamp(seed=83):
+    w, h = 640, 780
+    c = Canvas(w, h, seed)
+    paper = poly(c, [(40, 40), (600, 40), (600, 740), (40, 740)])
+    holes = np.zeros((h, w))
+    for x in range(40, 610, 34):
+        for y in (40, 740):
+            holes = np.maximum(holes, poly(c, ellipse_pts(x, y, 14, 14)))
+    for y in range(40, 750, 34):
+        for x in (40, 600):
+            holes = np.maximum(holes, poly(c, ellipse_pts(x, y, 14, 14)))
+    c.wash(np.clip(paper - holes, 0, 1), '#FBF3DF', density=1, wob=1, blotch=0.1, edge=0.1)
+    frame = np.clip(poly(c, [(90, 90), (550, 90), (550, 690), (90, 690)]) - poly(c, [(110, 110), (530, 110), (530, 670), (110, 670)]), 0, 1)
+    c.wash(frame, DEEP, density=0.9, wob=2)
+    sky = poly(c, [(130, 130), (510, 130), (510, 420), (130, 420)])
+    c.wash(sky, '#BFD5EF', density=0.6, wob=2)
+    c.wash(poly(c, ellipse_pts(400, 230, 50, 50)), ORANGE, density=0.85, wob=2)
+    sea = poly(c, [(130, 400), (510, 400), (510, 650), (130, 650)])
+    c.wash(sea, COBALT, density=0.85, wob=2)
+    for k in range(5):
+        y = 440 + k * 42
+        xs = np.linspace(135, 505, 30)
+        c.stroke(np.stack([xs, y + 8 * np.sin(xs / 25 + k)], 1), '#E6F0FB', width=5, alpha=0.8, taper=False)
+    # little boat
+    c.wash(poly(c, [(220, 395), (340, 395), (320, 420), (240, 420)]), '#FBF3DF', density=1, wob=1)
+    c.wash(poly(c, [(280, 300), (280, 392), (340, 392)]), '#FBF3DF', density=1, wob=1)
+    c.save(f'{OUT}/stamp.png', sticker=0, size=(170, 210))
+
+
+def matchbox(seed=89):
+    c = Canvas(900, 600, seed)
+    box = poly(c, [(60, 120), (700, 90), (720, 480), (80, 510)])
+    c.wash(box, '#9CC2EC', density=0.95)
+    # checker borders
+    for i in range(0, 640, 32):
+        for j in range(2):
+            x = 70 + i
+            y0 = 130 - i * 0.05 + j * 330
+            if (i // 32 + j) % 2 == 0:
+                c.wash(poly(c, [(x, y0), (x + 28, y0), (x + 28, y0 + 28), (x, y0 + 28)]), DEEP, density=0.85, wob=1)
+    for k, y in enumerate([230, 340]):
+        flip = k == 1
+        xs = np.array([200, 470]) if not flip else np.array([470, 200])
+        body = poly(c, ellipse_pts(340, y, 140, 42))
+        c.wash(body, '#E9F2FC', density=0.9, wob=2)
+        c.stroke(ellipse_pts(340, y, 140, 42), DEEP, width=5, alpha=0.85)
+        tx = 480 if not flip else 200
+        c.stroke([(tx, y), (tx + (60 if not flip else -60), y - 35), (tx + (60 if not flip else -60), y + 35), (tx, y)], DEEP, width=5, alpha=0.85)
+        for xx in range(250, 440, 26):
+            c.stroke(ellipse_pts(xx, y, 12, 10, start=0.5, end=2.6), DEEP, width=3, alpha=0.6)
+    drawer = poly(c, [(700, 100), (860, 130), (860, 500), (720, 480)])
+    c.wash(drawer, '#F6EEDC', density=1)
+    for y in range(140, 480, 26):
+        c.stroke([(720, y), (850, y + 8)], '#D9C9A8', width=10, alpha=0.9, taper=False)
+        c.wash(poly(c, ellipse_pts(852, y + 8, 10, 9)), '#2B2B2B', density=0.9, wob=1)
+    c.save(f'{OUT}/matchbox.png', size=(300, 200))
+
+
+def burst(seed=97):
+    c = Canvas(700, 700, seed)
+    pts = []
+    for i in range(36):
+        a = np.pi * i / 18
+        r = 330 if i % 2 == 0 else 280
+        pts.append((350 + r * np.cos(a), 350 + r * np.sin(a)))
+    c.wash(poly(c, pts), PERSIMMON, density=1, wob=3, blotch=0.15)
+    c.put('#FFF4E2', gaussian_filter(poly(c, ellipse_pts(350, 350, 225, 225)), 1.5), multiply=0)
+    c.save(f'{OUT}/burst.png', size=(220, 220))
+
+
 ALL = {
     'sardine': sardine,
     'lemon': lemon,
@@ -386,6 +542,12 @@ ALL = {
     'swash': swash,
     'tile': tile,
     'vase': vase,
+    'backgrounds': lambda: (bg_orange(), bg_tiles()),
+    'goldfish': goldfish,
+    'shell': shell,
+    'stamp': stamp,
+    'matchbox': matchbox,
+    'burst': burst,
     'platters': lambda: (
         platter('platter_blue', COBALT, AQUA, LEMON, '#DDF3F6', seed=53),
         platter('platter_orange', PERSIMMON, LEMON, DEEP, '#FFF0CC', seed=59),

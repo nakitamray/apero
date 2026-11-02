@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { colors, fonts, lift, tints } from '../theme';
 import { formatScore } from '../lib/score';
-import { PLATTERS, StampFrame, Sticker, TornEdge, WAVES } from './art';
+import { BACKGROUNDS, PLATTERS, StampFrame, Sticker, TornEdge, WAVES } from './art';
 
 // ticking-fabric pinstripes on white, cycling turquoise / orange / lemon
 const PINS = ['rgba(31, 179, 204, 0.22)', 'rgba(255, 123, 28, 0.18)', 'rgba(255, 212, 59, 0.38)'];
@@ -32,14 +32,65 @@ export function Pinstripes() {
   );
 }
 
-export function Screen({ children, style }) {
+// What text looks like on each kind of background. Screens painted orange or tiled cobalt
+// flip headings to cream; anything inside a Paper or Platter goes back to ink.
+const INKS = {
+  paper: {
+    text: colors.ink,
+    sub: colors.muted,
+    label: colors.cobalt,
+    link: colors.cobalt,
+    mark: colors.lemon,
+    shadow: null,
+  },
+  orange: {
+    text: colors.paper,
+    sub: '#FFE7D2',
+    label: '#FFF1C4',
+    link: colors.paper,
+    mark: colors.deep,
+    shadow: 'rgba(120, 30, 0, 0.35)',
+  },
+  cobalt: {
+    text: colors.paper,
+    sub: '#D6E4F7',
+    label: colors.lemon,
+    link: colors.lemon,
+    mark: colors.persimmon,
+    shadow: 'rgba(5, 20, 60, 0.45)',
+  },
+};
+
+const ToneContext = createContext('paper');
+export const useInk = () => INKS[useContext(ToneContext)];
+const textShadow = (ink) => (ink.shadow ? { textShadowColor: ink.shadow, textShadowRadius: 6 } : null);
+
+export function Screen({ children, style, tone = 'paper' }) {
+  const { width, height } = useWindowDimensions();
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.page }, style]}>
-      <Pinstripes />
-      {children}
-    </View>
+    <ToneContext.Provider value={tone}>
+      <View
+        style={[
+          {
+            flex: 1,
+            backgroundColor: tone === 'cobalt' ? colors.cobalt : tone === 'orange' ? colors.orange : colors.page,
+          },
+          style,
+        ]}
+      >
+        {tone === 'paper' ? (
+          <Pinstripes />
+        ) : (
+          <Image source={BACKGROUNDS[tone]} style={{ position: 'absolute', width, height }} resizeMode="cover" />
+        )}
+        {children}
+      </View>
+    </ToneContext.Provider>
   );
 }
+
+// anything drawn on paper reads in ink again
+const OnPaper = ({ children }) => <ToneContext.Provider value="paper">{children}</ToneContext.Provider>;
 
 // blue lino-cut band with painted cut-outs pinned over it, torn along the bottom
 export function CollageHeader({ height, pieces = [], tone = 'aqua', children }) {
@@ -59,31 +110,56 @@ export function CollageHeader({ height, pieces = [], tone = 'aqua', children }) 
   );
 }
 
-export function Label({ children, color = colors.cobalt, style }) {
-  return <Text style={[styles.label, { color }, style]}>{children}</Text>;
+export function Label({ children, color, style }) {
+  const ink = useInk();
+  return <Text style={[styles.label, { color: color || ink.label }, style]}>{children}</Text>;
 }
 
-export function Title({ children, size = 40, color = colors.ink, style }) {
-  return <Text style={[styles.title, { fontSize: size, lineHeight: size * 1.08, color }, style]}>{children}</Text>;
+export function Title({ children, size = 40, color, style }) {
+  const ink = useInk();
+  return (
+    <Text
+      style={[
+        styles.title,
+        { fontSize: size, lineHeight: size * 1.08, color: color || ink.text },
+        textShadow(ink),
+        style,
+      ]}
+    >
+      {children}
+    </Text>
+  );
 }
 
 export function Note({ children, style, size = 19 }) {
-  return <Text style={[styles.note, { fontSize: size, lineHeight: size * 1.25 }, style]}>{children}</Text>;
+  const ink = useInk();
+  return (
+    <Text style={[styles.note, { fontSize: size, lineHeight: size * 1.25, color: ink.text }, textShadow(ink), style]}>
+      {children}
+    </Text>
+  );
+}
+
+// muted helper text that still reads on painted backgrounds
+export function Sub({ children, style }) {
+  const ink = useInk();
+  return <Text style={[styles.sub, { color: ink.sub }, style]}>{children}</Text>;
 }
 
 export function SectionHeader({ label, title, action, onAction }) {
+  const ink = useInk();
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flex: 1 }}>
         {label ? <Label>{label}</Label> : null}
         <View style={{ alignSelf: 'flex-start' }}>
-          <View style={styles.highlight} />
+          <View style={[styles.highlight, { backgroundColor: ink.mark, opacity: ink.shadow ? 0.8 : 0.55 }]} />
           <Title size={32}>{title}</Title>
         </View>
       </View>
       {action ? (
         <Pressable onPress={onAction} hitSlop={10}>
-          <Text style={styles.link}>{action} →</Text>
+          <Text style={[styles.link, { color: ink.link }]}>{action} →</Text>
         </Pressable>
       ) : null}
     </View>
@@ -99,10 +175,12 @@ export function Paper({ children, style, outer, onPress, tilt = 0, tint, index =
     <View style={wrap}>
       {onPress ? (
         <Pressable style={body} onPress={onPress} onPressIn={() => setDown(true)} onPressOut={() => setDown(false)}>
-          {children}
+          <OnPaper>{children}</OnPaper>
         </Pressable>
       ) : (
-        <View style={body}>{children}</View>
+        <View style={body}>
+          <OnPaper>{children}</OnPaper>
+        </View>
       )}
     </View>
   );
@@ -113,7 +191,9 @@ export function Platter({ children, tone = 'blue', style, outer }) {
   return (
     <View style={[lift, outer]}>
       <Image source={PLATTERS[tone]} resizeMode="stretch" style={styles.platterArt} />
-      <View style={[styles.platter, style]}>{children}</View>
+      <View style={[styles.platter, style]}>
+        <OnPaper>{children}</OnPaper>
+      </View>
     </View>
   );
 }
@@ -214,23 +294,24 @@ export function Field({ label, style, ...props }) {
   );
 }
 
-export function Empty({ title, body, children }) {
+export function Empty({ title, body, children, art = 'vase' }) {
   return (
     <View style={styles.empty}>
-      <Sticker name="vase" width={110} rotate={-4} />
+      <Sticker name={art} width={art === 'vase' ? 110 : 170} rotate={-4} />
       <Title size={26} style={{ marginTop: 14, textAlign: 'center' }}>
         {title}
       </Title>
-      {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
+      {body ? <Sub style={styles.emptyBody}>{body}</Sub> : null}
       {children}
     </View>
   );
 }
 
 export function Loading() {
+  const ink = useInk();
   return (
     <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-      <ActivityIndicator color={colors.cobalt} />
+      <ActivityIndicator color={ink.text} />
     </View>
   );
 }
@@ -242,7 +323,7 @@ export const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   label: { fontFamily: fonts.medium, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase' },
   title: { fontFamily: fonts.display },
-  note: { fontFamily: fonts.note, color: colors.ink },
+  note: { fontFamily: fonts.note },
   highlight: {
     position: 'absolute',
     left: -6,
@@ -314,12 +395,6 @@ export const styles = StyleSheet.create({
   },
   multiline: { minHeight: 100, textAlignVertical: 'top' },
   empty: { alignItems: 'center', paddingVertical: 30, paddingHorizontal: 34 },
-  emptyBody: {
-    fontFamily: fonts.body,
-    fontSize: 15,
-    color: colors.muted,
-    marginTop: 6,
-    textAlign: 'center',
-    lineHeight: 21,
-  },
+  emptyBody: { fontSize: 15, marginTop: 6, textAlign: 'center', lineHeight: 21 },
+  sub: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
 });

@@ -21,13 +21,13 @@ export default function MoodScreen({ navigation, route }) {
 
   if (!dishes)
     return (
-      <Screen>
+      <Screen tone="orange">
         <Loading />
       </Screen>
     );
 
   return (
-    <Screen>
+    <Screen tone="orange">
       <FlatList
         data={dishes}
         keyExtractor={(d) => d.id}

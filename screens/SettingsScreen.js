@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check } from 'lucide-react-native';
-import { auth } from '../firebaseConfig';
+import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
 import { CAMPUSES, getCampus } from '../data/campuses';
 import { MODES, defaultModes } from '../lib/trip';
-import { Button, Chip, CollageHeader, Label, Note, Screen, Title } from '../components/ui';
+import { Button, Chip, CollageHeader, Label, Note, Screen, Sub, Title } from '../components/ui';
 import { colors, fonts } from '../theme';
 
 // used twice: first-run setup after sign up, and later from the profile tab
@@ -31,10 +31,15 @@ export default function SettingsScreen({ navigation, route }) {
 
   const save = async () => {
     setBusy(true);
+    const name = profile?.name || auth?.currentUser?.displayName || 'Guest';
     await updateProfile({
       campusId,
       getAround: modes,
-      name: profile?.name || auth.currentUser?.displayName || '',
+      name,
+      // friends find you by this, e.g. @maya42
+      handle:
+        profile?.handle || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}${Math.floor(Math.random() * 90 + 10)}`,
+      following: profile?.following || [],
     });
     setBusy(false);
     if (!onboarding) navigation.goBack();
@@ -44,7 +49,7 @@ export default function SettingsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
 
   return (
-    <Screen>
+    <Screen tone={onboarding ? 'cobalt' : 'paper'}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
         {onboarding && (
           <CollageHeader
@@ -83,17 +88,17 @@ export default function SettingsScreen({ navigation, route }) {
           })}
 
           <Label style={styles.label}>How do you get around?</Label>
-          <Text style={styles.hint}>We use this to show how far each spot really is and what the trip costs you.</Text>
+          <Sub style={styles.hint}>We use this to show how far each spot really is and what the trip costs you.</Sub>
           <View style={styles.modes}>
             {MODES.map((m) => (
               <Chip key={m.id} label={m.label} active={modes.includes(m.id)} onPress={() => toggleMode(m.id)} />
             ))}
           </View>
           {transit && (
-            <Text style={styles.hint}>
+            <Sub style={styles.hint}>
               {transit.name}{' '}
               {transit.free ? 'is free with your student ID here.' : `runs about $${transit.fare.toFixed(2)} a ride.`}
-            </Text>
+            </Sub>
           )}
 
           <Button
@@ -111,7 +116,7 @@ export default function SettingsScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   body: { padding: 22 },
-  lede: { marginTop: 6, color: colors.muted },
+  lede: { marginTop: 6 },
   label: { marginTop: 28, marginBottom: 10 },
   campus: {
     flexDirection: 'row',
@@ -127,6 +132,6 @@ const styles = StyleSheet.create({
   campusActive: { backgroundColor: colors.butter, borderColor: colors.lemon },
   campusName: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
   campusCity: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
-  hint: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, lineHeight: 19, marginBottom: 10 },
+  hint: { fontSize: 13, lineHeight: 19, marginBottom: 10 },
   modes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
 });

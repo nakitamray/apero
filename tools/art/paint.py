@@ -40,13 +40,13 @@ class Canvas:
         return map_coordinates(m, [yy + dy, xx + dx], order=1, mode='constant')
 
     # -- painting ----------------------------------------------------------
-    def put(self, color, alpha):
+    def put(self, color, alpha, multiply=0.35):
         alpha = np.clip(alpha, 0, 1)
         c = hexrgb(color) if isinstance(color, str) else color
         # pigment over pigment: mostly normal blend with a touch of multiply so overlaps deepen
         under = self.rgb
         mult = under * c
-        top = c * 0.65 + mult * 0.35
+        top = c * (1 - multiply) + mult * multiply
         out_a = alpha + self.a * (1 - alpha)
         mix = (top * alpha[..., None] + under * self.a[..., None] * (1 - alpha[..., None])) / np.maximum(out_a[..., None], 1e-6)
         self.rgb = np.where(out_a[..., None] > 0, mix, under)

@@ -49,7 +49,7 @@ export default function MyListScreen({ navigation }) {
   );
 
   return (
-    <Screen>
+    <Screen tone="orange">
       <FlatList
         data={shown}
         keyExtractor={(r) => r.dishId}
@@ -93,5 +93,5 @@ export default function MyListScreen({ navigation }) {
 const styles = StyleSheet.create({
   head: { padding: 22, paddingTop: 28, paddingBottom: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  foot: { color: colors.muted, textAlign: 'center', paddingHorizontal: 40, marginTop: 8 },
+  foot: { textAlign: 'center', paddingHorizontal: 40, marginTop: 8 },
 });

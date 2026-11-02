@@ -117,7 +117,7 @@ export default function ExploreScreen({ navigation, route }) {
   );
 
   return (
-    <Screen>
+    <Screen tone="cobalt">
       <FlatList
         data={places}
         keyExtractor={(p) => p.id}
@@ -144,5 +144,5 @@ const styles = StyleSheet.create({
   head: { padding: 22, paddingTop: 28, paddingBottom: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   small: { paddingVertical: 5, paddingHorizontal: 12 },
-  note: { color: colors.muted, marginTop: 12 },
+  note: { marginTop: 12 },
 });

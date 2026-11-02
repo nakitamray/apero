@@ -73,7 +73,7 @@ export default function PickDishScreen({ navigation }) {
   );
 
   return (
-    <Screen>
+    <Screen tone="orange">
       <FlatList
         data={results}
         keyExtractor={(d) => d.id}
@@ -100,7 +100,6 @@ export default function PickDishScreen({ navigation }) {
 const styles = StyleSheet.create({
   head: { padding: 22, paddingTop: 28, paddingBottom: 12 },
   chips: { paddingHorizontal: 22, gap: 8, paddingBottom: 14 },
-  hint: { color: colors.muted, paddingHorizontal: 22, marginBottom: 12 },
+  hint: { paddingHorizontal: 22, marginBottom: 12 },
   footer: { paddingHorizontal: 22, marginTop: 14, gap: 12 },
-  footerText: { color: colors.ink },
 });
