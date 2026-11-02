@@ -3,7 +3,8 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
-import { activityToday, campusFeed, topDishes } from '../lib/api';
+import { activityToday, campusDeals, campusFeed, setDealVote, topDishes } from '../lib/api';
+import { dealIsOn } from '../lib/deals';
 import { greeting, todayKey } from '../lib/time';
 import { MOODS } from '../lib/tags';
 import {
@@ -22,6 +23,8 @@ import {
 } from '../components/ui';
 import { DishRow, ReviewCard, makeLike } from '../components/rows';
 import { SpotCard } from '../components/places';
+import { DealCard, makeDealVote } from '../components/deals';
+import { Sticker } from '../components/art';
 import { colors, fonts } from '../theme';
 
 export default function TodayScreen({ navigation }) {
@@ -30,18 +33,21 @@ export default function TodayScreen({ navigation }) {
   const [top, setTop] = useState([]);
   const [feed, setFeed] = useState([]);
   const [busy, setBusy] = useState({});
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [dishes, reviews, activity] = await Promise.all([
+      const [dishes, reviews, activity, campusDealList] = await Promise.all([
         topDishes(campus.id, 5),
         campusFeed(campus.id, 3),
+        campusDeals(campus.id),
         activityToday(campus.id),
       ]);
       setTop(dishes);
       setFeed(reviews);
       setBusy(activity);
+      setDeals(campusDealList.filter((d) => dealIsOn(d)));
     } catch (e) {
       console.warn('today: load failed', e);
     }
@@ -64,7 +70,7 @@ export default function TodayScreen({ navigation }) {
   const today = todayKey();
 
   return (
-    <Screen>
+    <Screen tone="orange">
       <ScrollView
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.cobalt} />}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -86,7 +92,7 @@ export default function TodayScreen({ navigation }) {
           <Title size={48}>
             {greeting()}, {name}
           </Title>
-          <Note style={{ color: colors.muted }}>Here's what's good today.</Note>
+          <Note>Here's what's good today.</Note>
         </View>
 
         {demo && (
@@ -97,6 +103,16 @@ export default function TodayScreen({ navigation }) {
             </Text>
           </Paper>
         )}
+
+        <Paper tint={colors.paper} tilt={0.8} outer={styles.decider} onPress={() => navigation.navigate('Decider')}>
+          <View style={styles.deciderRow}>
+            <Sticker name="matchbox" width={92} rotate={-8} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.deciderTitle}>Can't pick where to eat?</Text>
+              <Text style={styles.deciderSub}>Bring your friends, set a budget, spin the orange.</Text>
+            </View>
+          </View>
+        </Paper>
 
         <SectionHeader label="What sounds good" title="Pick a mood" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -146,6 +162,30 @@ export default function TodayScreen({ navigation }) {
           </>
         )}
 
+        {deals.length > 0 && (
+          <>
+            <SectionHeader
+              label="Posted by students"
+              title="Deals today"
+              action="All deals"
+              onAction={() => navigation.navigate('Deals')}
+            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.spots}>
+              {deals.map((d, i) => (
+                <DealCard
+                  key={d.id}
+                  deal={d}
+                  index={i}
+                  compact
+                  uid={user.uid}
+                  onVote={makeDealVote(setDeals, user.uid, setDealVote)}
+                  onPress={() => navigation.navigate('Place', { placeId: d.placeId })}
+                />
+              ))}
+            </ScrollView>
+          </>
+        )}
+
         <SectionHeader
           label="Cheap eats near campus"
           title="Off the meal plan"
@@ -189,5 +229,9 @@ const styles = StyleSheet.create({
   spots: { paddingHorizontal: 22, paddingBottom: 10 },
   busyItem: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
   busyCount: { fontFamily: fonts.display, color: colors.orange, fontSize: 26 },
-  quiet: { color: colors.muted, paddingHorizontal: 22 },
+  quiet: { paddingHorizontal: 22 },
+  decider: { marginHorizontal: 20, marginTop: 22 },
+  deciderRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  deciderTitle: { fontFamily: fonts.display, fontSize: 28, lineHeight: 30, color: colors.ink },
+  deciderSub: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, marginTop: 2 },
 });

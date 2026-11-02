@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
 import { Button, CollageHeader, Field, Note, Screen } from '../components/ui';
 import { colors, fonts } from '../theme';

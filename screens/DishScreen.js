@@ -9,12 +9,13 @@ import { moodLabel } from '../lib/tags';
 import { todayKey } from '../lib/time';
 import { Button, Empty, Label, Loading, Paper, Plate, Screen, Stamp, Tag, Title } from '../components/ui';
 import { ReviewCard, makeLike } from '../components/rows';
+import { Avatar } from '../components/people';
 import { Sticker } from '../components/art';
 import { colors, fonts } from '../theme';
 
 export default function DishScreen({ navigation, route }) {
   const { dishId } = route.params;
-  const { user } = useSession();
+  const { user, following } = useSession();
   const [dish, setDish] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [mine, setMine] = useState(null);
@@ -22,7 +23,7 @@ export default function DishScreen({ navigation, route }) {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([getDish(dishId), dishReviews(dishId), myRanking(user.uid, dishId)])
+      Promise.all([getDish(dishId), dishReviews(dishId, 20), myRanking(user.uid, dishId)])
         .then(([d, r, m]) => {
           if (!d) setMissing(true);
           setDish(d);
@@ -51,6 +52,7 @@ export default function DishScreen({ navigation, route }) {
     navigation.navigate('ReviewTab', { screen: 'WriteReview', params: { dishId: dish.id }, initial: false });
 
   const like = makeLike(setReviews, user.uid);
+  const friendsHere = reviews.filter((r) => following.includes(r.userId));
 
   return (
     <Screen>
@@ -105,9 +107,26 @@ export default function DishScreen({ navigation, route }) {
           style={{ marginTop: 26 }}
         />
 
+        {friendsHere.length > 0 && (
+          <View style={styles.friends}>
+            <Label>Friends who've had it</Label>
+            {friendsHere.map((r) => (
+              <Pressable
+                key={r.id}
+                style={styles.friendRow}
+                onPress={() => navigation.navigate('Friend', { uid: r.userId })}
+              >
+                <Avatar user={{ name: r.userName }} size={30} />
+                <Text style={styles.friendName}>{r.userName}</Text>
+                <Stamp verdict={r.verdict} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         <Text style={styles.section}>What people said</Text>
         <View style={{ marginHorizontal: -20 }}>
-          {reviews.map((r, i) => (
+          {reviews.slice(0, 6).map((r, i) => (
             <ReviewCard key={r.id} index={i} review={r} uid={user.uid} onLike={like} />
           ))}
         </View>
@@ -131,6 +150,9 @@ const styles = StyleSheet.create({
   },
   fact: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink, marginVertical: 2 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 18 },
+  friends: { marginTop: 26, gap: 10 },
+  friendRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  friendName: { flex: 1, fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
   section: { fontFamily: fonts.display, fontSize: 32, color: colors.ink, marginTop: 36, marginBottom: 14 },
   quiet: { fontFamily: fonts.note, fontSize: 17, color: colors.muted },
 });

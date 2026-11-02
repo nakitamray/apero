@@ -8,7 +8,8 @@ import { getPlace } from '../data/campuses';
 import { myRankings, topDishes, userReviews } from '../lib/api';
 import { reasonLabel } from '../lib/tags';
 import { dayStreak, timeAgo } from '../lib/time';
-import { Button, CollageHeader, Label, Loading, Plate, Platter, Screen, Title } from '../components/ui';
+import { Button, CollageHeader, Label, Loading, Paper, Plate, Platter, Screen, Title } from '../components/ui';
+import { Sticker } from '../components/art';
 import { DishRow } from '../components/rows';
 import { colors, fonts, lift } from '../theme';
 
@@ -53,7 +54,7 @@ function tasteFrom(reviews, campus) {
 }
 
 export default function ProfileScreen({ navigation }) {
-  const { user, name, campus, demo, logOut } = useSession();
+  const { user, name, campus, demo, logOut, profile, following } = useSession();
   const insets = useSafeAreaInsets();
   const [reviews, setReviews] = useState(null);
   const [tryNext, setTryNext] = useState([]);
@@ -74,7 +75,7 @@ export default function ProfileScreen({ navigation }) {
   const taste = reviews ? tasteFrom(reviews, campus) : null;
 
   return (
-    <Screen>
+    <Screen tone="cobalt">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <CollageHeader
           height={insets.top + 90}
@@ -92,20 +93,47 @@ export default function ProfileScreen({ navigation }) {
             {name}
           </Title>
           <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
-            <Text style={styles.campusText}>{campus.name}</Text>
-            <ChevronRight size={16} color={colors.teal} strokeWidth={1.6} />
+            <Text style={styles.campusText}>
+              @{profile?.handle} · {campus.name}
+            </Text>
+            <ChevronRight size={16} color={colors.lemon} strokeWidth={1.6} />
           </Pressable>
+        </View>
+
+        <View style={styles.tiles}>
+          <Paper
+            tint={colors.paper}
+            tilt={-1}
+            outer={{ flex: 1 }}
+            onPress={() => navigation.navigate('Friends')}
+            style={styles.tile}
+          >
+            <Sticker name="goldfish" width={78} rotate={-6} />
+            <Text style={styles.tileTitle}>Friends</Text>
+            <Text style={styles.tileSub}>{following.length} · taste match</Text>
+          </Paper>
+          <Paper
+            tint={colors.lemon}
+            tilt={1.2}
+            outer={{ flex: 1 }}
+            onPress={() => navigation.navigate('Wrapped')}
+            style={styles.tile}
+          >
+            <Sticker name="stamp" width={50} rotate={8} />
+            <Text style={styles.tileTitle}>Wrapped</Text>
+            <Text style={styles.tileSub}>your semester in food</Text>
+          </Paper>
         </View>
 
         {!reviews ? (
           <Loading />
         ) : (
           <>
-            <View style={styles.stats}>
+            <Paper tint={colors.paper} tilt={-0.4} outer={styles.statsOuter} style={styles.stats}>
               <Stat value={total} label="reviews" />
               <Stat value={Object.keys(taste.places).length} label="places" />
               <Stat value={dayStreak(reviews.map((r) => r.createdAt).filter(Boolean))} label="day streak" />
-            </View>
+            </Paper>
 
             {total > 0 && (
               <Platter tone="blue" outer={styles.block}>
@@ -195,16 +223,20 @@ const styles = StyleSheet.create({
     ...lift,
   },
   avatarText: { fontFamily: fonts.display, fontSize: 52, lineHeight: 58, color: colors.paper },
+  tiles: { flexDirection: 'row', gap: 14, marginHorizontal: 22, marginTop: 22 },
+  tile: { alignItems: 'center', paddingVertical: 14, minHeight: 140, justifyContent: 'center' },
+  tileTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginTop: 4 },
+  tileSub: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  campusText: { fontFamily: fonts.medium, fontSize: 14, color: colors.teal },
-  stats: {
-    flexDirection: 'row',
-    marginHorizontal: 22,
-    marginTop: 26,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.hairline,
+  campusText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.paper,
+    textShadowColor: 'rgba(5, 20, 60, 0.5)',
+    textShadowRadius: 6,
   },
+  statsOuter: { marginHorizontal: 22, marginTop: 22 },
+  stats: { flexDirection: 'row', paddingVertical: 4 },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14 },
   statValue: { fontFamily: fonts.display, fontSize: 42, lineHeight: 46, color: colors.cobalt },
   statLabel: {
@@ -225,7 +257,7 @@ const styles = StyleSheet.create({
   section: {
     fontFamily: fonts.display,
     fontSize: 34,
-    color: colors.ink,
+    color: colors.paper,
     marginHorizontal: 22,
     marginTop: 34,
     marginBottom: 12,
@@ -236,8 +268,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 22,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.hairline,
+    borderBottomColor: 'rgba(255, 255, 255, 0.25)',
   },
-  recentDish: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
-  recentMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
+  recentDish: { fontFamily: fonts.medium, fontSize: 15, color: colors.paper },
+  recentMeta: { fontFamily: fonts.body, fontSize: 12, color: '#D6E4F7', marginTop: 2 },
 });

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
-import { getProfile, saveProfile, setDemoMode } from '../lib/api';
+import { auth } from '../lib/firebase';
+import { getProfile, saveProfile, setDemoMode, setFollowing } from '../lib/api';
 import { DEMO_UID } from '../lib/demoApi';
 import { getCampus } from '../data/campuses';
 import { defaultModes } from '../lib/trip';
@@ -45,9 +45,18 @@ export function SessionProvider({ children }) {
       modes: profile?.getAround || defaultModes(campus),
       name: profile?.name || current?.displayName || current?.email?.split('@')[0] || 'friend',
       loading: demo ? !profile : user === undefined,
+      following: profile?.following || [],
       updateProfile: async (patch) => {
         await saveProfile(current.uid, patch);
-        setProfile((p) => ({ ...p, ...patch }));
+        // re-read: saving can change more than the patch (the demo hands you friends when you pick a school)
+        setProfile(await getProfile(current.uid));
+      },
+      follow: async (otherUid, on) => {
+        setProfile((p) => {
+          const others = (p.following || []).filter((id) => id !== otherUid);
+          return { ...p, following: on ? [...others, otherUid] : others };
+        });
+        await setFollowing(current.uid, otherUid, on);
       },
       startDemo: () => {
         setDemoMode(true);

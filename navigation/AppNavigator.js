@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Compass, ListOrdered, Sun, User } from 'lucide-react-native';
 import { Sticker } from '../components/art';
 import { useSession } from '../context/Session';
+import { listenForSteps, reportScreen } from '../lib/siteBridge';
 import { colors, fonts } from '../theme';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -23,7 +24,14 @@ import WriteReviewScreen from '../screens/WriteReviewScreen';
 import CompareScreen from '../screens/CompareScreen';
 import MyListScreen from '../screens/MyListScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import FriendsScreen from '../screens/FriendsScreen';
+import FriendScreen from '../screens/FriendScreen';
+import DealsScreen from '../screens/DealsScreen';
+import AddDealScreen from '../screens/AddDealScreen';
+import DeciderScreen from '../screens/DeciderScreen';
+import WrappedScreen from '../screens/WrappedScreen';
 
+const navigationRef = createNavigationContainerRef();
 const Root = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TodayStack = createNativeStackNavigator();
@@ -44,10 +52,11 @@ const stackOptions = {
 
 const noHeader = { headerShown: false };
 
-// every tab can open a place or a dish, so each stack gets these
+// every tab can open a place, a dish or a person, so each stack gets these
 const detailScreens = (Stack) => [
   <Stack.Screen key="Place" name="Place" component={PlaceScreen} options={{ title: '' }} />,
   <Stack.Screen key="Dish" name="Dish" component={DishScreen} options={{ title: '' }} />,
+  <Stack.Screen key="Friend" name="Friend" component={FriendScreen} options={{ title: '' }} />,
 ];
 
 function TodayTab() {
@@ -56,7 +65,10 @@ function TodayTab() {
       <TodayStack.Screen name="Today" component={TodayScreen} options={noHeader} />
       {detailScreens(TodayStack)}
       <TodayStack.Screen name="Mood" component={MoodScreen} />
-      <TodayStack.Screen name="Feed" component={FeedScreen} options={{ title: 'Campus feed' }} />
+      <TodayStack.Screen name="Feed" component={FeedScreen} options={{ title: 'Feed' }} />
+      <TodayStack.Screen name="Deals" component={DealsScreen} options={{ title: 'Deals' }} />
+      <TodayStack.Screen name="AddDeal" component={AddDealScreen} options={{ title: 'Post a deal' }} />
+      <TodayStack.Screen name="Decider" component={DeciderScreen} options={{ title: 'Group decider' }} />
     </TodayStack.Navigator>
   );
 }
@@ -99,6 +111,7 @@ function MeTab() {
     <MeStack.Navigator screenOptions={stackOptions}>
       <MeStack.Screen name="Profile" component={ProfileScreen} options={noHeader} />
       <MeStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Campus & getting around' }} />
+      <MeStack.Screen name="Friends" component={FriendsScreen} options={{ title: 'Friends' }} />
       {detailScreens(MeStack)}
     </MeStack.Navigator>
   );
@@ -158,10 +171,13 @@ function Tabs() {
 
 export default function AppNavigator() {
   const { user, profile, loading } = useSession();
+  useEffect(() => listenForSteps(navigationRef), []);
   if (loading) return null;
 
+  const report = () => reportScreen(navigationRef.getCurrentRoute()?.name);
+
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} ref={navigationRef} onReady={report} onStateChange={report}>
       <Root.Navigator screenOptions={noHeader}>
         {!user ? (
           <>
@@ -171,7 +187,10 @@ export default function AppNavigator() {
         ) : !profile?.campusId ? (
           <Root.Screen name="Onboarding" component={SettingsScreen} initialParams={{ onboarding: true }} />
         ) : (
-          <Root.Screen name="Main" component={Tabs} />
+          <>
+            <Root.Screen name="Main" component={Tabs} />
+            <Root.Screen name="Wrapped" component={WrappedScreen} options={{ presentation: 'fullScreenModal' }} />
+          </>
         )}
       </Root.Navigator>
     </NavigationContainer>

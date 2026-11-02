@@ -8,8 +8,10 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if signedIn() && request.auth.uid == uid;
 
+      // friends can see each other's lists (taste match, "their list")
       match /rankings/{dishId} {
-        allow read, write: if signedIn() && request.auth.uid == uid;
+        allow read: if signedIn();
+        allow write: if signedIn() && request.auth.uid == uid;
       }
     }
 
@@ -26,6 +28,15 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if signedIn()
         && request.resource.data.keys().hasOnly(ratingFields().concat(['campusId', 'name']));
+    }
+
+    // student-posted deals; anyone can vote "still good", only the poster can take it down
+    match /deals/{dealId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.postedBy == request.auth.uid;
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']);
+      allow delete: if signedIn() && resource.data.postedBy == request.auth.uid;
     }
 
     match /reviews/{reviewId} {

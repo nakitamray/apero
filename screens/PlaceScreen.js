@@ -4,7 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Bus, Car, Footprints, MapPin, Plus } from 'lucide-react-native';
 import { useSession } from '../context/Session';
 import { getCampus, getPlace, priceTag } from '../data/campuses';
-import { getPlaceStats, placeDishes, placeReviews } from '../lib/api';
+import { campusDeals, getPlaceStats, placeDishes, placeReviews, setDealVote } from '../lib/api';
+import { DealCard, makeDealVote } from '../components/deals';
 import { currentMeal, todayKey } from '../lib/time';
 import { bestTrip, directionsUrl, mealCost, money, tripOptions } from '../lib/trip';
 import { Button, Chip, Empty, Label, Loading, Plate, Platter, Screen, Title } from '../components/ui';
@@ -96,6 +97,7 @@ export default function PlaceScreen({ navigation, route }) {
   const [dishes, setDishes] = useState(null);
   const [stats, setStats] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [picked, setPicked] = useState(null);
 
   useFocusEffect(
@@ -109,6 +111,9 @@ export default function PlaceScreen({ navigation, route }) {
       placeReviews(place.id, 3)
         .then(setReviews)
         .catch(() => setReviews([]));
+      campusDeals(place.campusId)
+        .then((rows) => setDeals(rows.filter((d) => d.placeId === place.id)))
+        .catch(() => setDeals([]));
     }, [place.id]),
   );
 
@@ -163,6 +168,17 @@ export default function PlaceScreen({ navigation, route }) {
             onPressDish={() => navigation.navigate('Dish', { dishId: item.dishId })}
           />
         ),
+      },
+      ...sections,
+    ];
+  }
+  if (deals.length) {
+    const vote = makeDealVote(setDeals, user.uid, setDealVote);
+    sections = [
+      {
+        title: 'Deals here',
+        data: deals,
+        renderItem: ({ item, index }) => <DealCard deal={item} index={index} uid={user.uid} onVote={vote} />,
       },
       ...sections,
     ];
