@@ -1,5 +1,6 @@
 """Shared Firebase setup + helpers for the data scripts."""
 
+import json
 import os
 import re
 import sys
@@ -9,13 +10,19 @@ KEY_PATH = os.path.join(HERE, "serviceAccountKey.json")
 
 
 def connect():
+    """Service account from the FIREBASE_SERVICE_ACCOUNT env var (the whole JSON), or py/serviceAccountKey.json."""
     import firebase_admin
     from firebase_admin import credentials, firestore
 
-    if not os.path.exists(KEY_PATH):
-        sys.exit(f"serviceAccountKey.json not found at {KEY_PATH} (download it from Firebase console -> Service accounts)")
+    from_env = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+    if from_env:
+        cred = credentials.Certificate(json.loads(from_env))
+    elif os.path.exists(KEY_PATH):
+        cred = credentials.Certificate(KEY_PATH)
+    else:
+        sys.exit("No Firebase credentials: set FIREBASE_SERVICE_ACCOUNT or add py/serviceAccountKey.json (Firebase console -> Service accounts)")
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(credentials.Certificate(KEY_PATH))
+        firebase_admin.initialize_app(cred)
     return firestore.client()
 
 

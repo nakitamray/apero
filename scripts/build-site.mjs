@@ -8,9 +8,8 @@ const root = new URL('..', import.meta.url).pathname;
 const out = join(root, 'site');
 const app = join(out, 'app');
 
-if (!existsSync(join(root, 'firebaseConfig.js'))) {
-  console.log('no firebaseConfig.js, building with the blank example (demo only, log in turned off)');
-  cpSync(join(root, 'firebaseConfig.example.js'), join(root, 'firebaseConfig.js'));
+if (!process.env.EXPO_PUBLIC_FIREBASE_API_KEY && !existsSync(join(root, '.env'))) {
+  console.log('no Firebase settings found, building demo-only (log in turned off)');
 }
 
 rmSync(out, { recursive: true, force: true });
@@ -32,8 +31,20 @@ readdirSync(js).forEach((f) => f.endsWith('.js') && relative(join(js, f)));
 cpSync(join(root, 'website'), out, { recursive: true });
 mkdirSync(join(out, 'img'), { recursive: true });
 mkdirSync(join(out, 'fonts'), { recursive: true });
-['sardine', 'lemon', 'spritz', 'vase', 'blood_orange', 'tile', 'orange_slice', 'plate', 'tin', 'waves_aqua', 'platter_blue', 'platter_orange', 'platter_lemon'].forEach(
-  (name) => cpSync(join(root, 'assets', 'art', `${name}.png`), join(out, 'img', `${name}.png`)),
+[
+  'sardine',
+  'lemon',
+  'goldfish',
+  'shell',
+  'stamp',
+  'matchbox',
+  'burst',
+  'blood_orange',
+  'orange_slice',
+  'plate',
+].forEach((name) => cpSync(join(root, 'assets', 'art', `${name}.png`), join(out, 'img', `${name}.png`)));
+['bg_tiles', 'bg_orange'].forEach((name) =>
+  cpSync(join(root, 'assets', 'art', `${name}.jpg`), join(out, 'img', `${name}.jpg`)),
 );
 cpSync(join(root, 'assets', 'fonts', 'GrandParadiso-Regular.ttf'), join(out, 'fonts', 'GrandParadiso-Regular.ttf'));
 

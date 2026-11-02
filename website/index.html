@@ -15,110 +15,53 @@
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
-    <header class="nav">
-      <a class="wordmark" href="#top">apero</a>
-      <nav>
-        <a href="#how">How it works</a>
-        <a href="#campuses">Campuses</a>
-        <a class="pill ghost" href="app/">Log in</a>
-        <a class="pill" href="#demo" data-demo>Try the demo</a>
-      </nav>
-    </header>
+    <main class="table">
+      <!-- the tour: each step sends the phone to that part of the app -->
+      <aside class="card tour">
+        <h1 class="wordmark">apero</h1>
+        <p class="tagline">Rate what you ate. Find where to eat next.</p>
+        <p class="label">Take it for a spin</p>
+        <ol class="steps">
+          <li><button data-step="school"><span class="n">1</span><span><b>Pick your school</b><small>start like a new student</small></span></button></li>
+          <li><button data-step="today"><span class="n">2</span><span><b>See what's good</b><small>top dishes, deals, busy spots</small></span></button></li>
+          <li><button data-step="explore"><span class="n">3</span><span><b>Find a spot</b><small>maps, prices, how to get there</small></span></button></li>
+          <li><button data-step="rate"><span class="n">4</span><span><b>Rate a dish</b><small>verdict, then this or that</small></span></button></li>
+          <li><button data-step="friends"><span class="n">5</span><span><b>Friends &amp; taste match</b><small>who eats like you</small></span></button></li>
+          <li><button data-step="decider"><span class="n">6</span><span><b>Decide as a group</b><small>spin the orange</small></span></button></li>
+          <li><button data-step="deals"><span class="n">7</span><span><b>Student deals</b><small>posted by students</small></span></button></li>
+          <li><button data-step="wrapped"><span class="n">8</span><span><b>Campus Wrapped</b><small>your semester in food</small></span></button></li>
+        </ol>
+        <p class="member">Already eating with apero? <a href="app/">Log in →</a></p>
+        <a class="open-demo" href="app/?demo=1">Open the demo</a>
+      </aside>
 
-    <main id="top">
-      <section class="hero" id="demo">
-        <div class="waves" aria-hidden="true"></div>
-
-        <div class="hero-copy">
-          <p class="label">A food diary for college campuses</p>
-          <h1>Rate what you ate. Find where to eat next.</h1>
-          <p class="lede">
-            apero is for the dining hall and the cheap spot down the street. Rate a dish, answer a couple of
-            “this or that” questions, and it lands in your own ranked list. Everyone's ratings add up to a campus
-            score, so you always know what's worth the walk.
-          </p>
-          <div class="buttons">
-            <a class="pill big" href="app/?demo=1" data-demo>Try the demo</a>
-            <a class="pill big ghost" href="app/">Log in</a>
-          </div>
-          <p class="note">The demo runs with sample data, so tap around. Nothing you do there is saved.</p>
-        </div>
-
-        <div class="stage">
-          <img class="sticker s-sardine" src="img/sardine.png" alt="" />
-          <img class="sticker s-lemon" src="img/lemon.png" alt="" />
-          <img class="sticker s-spritz" src="img/spritz.png" alt="" />
-          <img class="sticker s-vase" src="img/vase.png" alt="" />
-          <img class="sticker s-orange" src="img/blood_orange.png" alt="" />
-          <img class="sticker s-tile" src="img/tile.png" alt="" />
-
+      <section class="stage" aria-label="apero demo">
+        <div class="sun" aria-hidden="true"></div>
+        <img class="sticker s-goldfish" src="img/goldfish.png" alt="" />
+        <img class="sticker s-shell" src="img/shell.png" alt="" />
+        <img class="sticker s-stamp" src="img/stamp.png" alt="" />
+        <img class="sticker s-matchbox" src="img/matchbox.png" alt="" />
+        <img class="sticker s-lemon" src="img/lemon.png" alt="" />
+        <img class="sticker s-burst" src="img/burst.png" alt="" />
+        <div class="phone-box">
           <div class="phone">
             <div class="island"></div>
-            <iframe title="apero demo" src="app/?demo=1" loading="lazy"></iframe>
+            <iframe id="app" title="apero, running as a demo" src="app/?demo=1"></iframe>
           </div>
-          <p class="hint">this is the real app. go ahead, tap it</p>
         </div>
       </section>
 
-      <section class="how" id="how">
-        <p class="label">How it works</p>
-        <h2>Like a food diary that ranks itself</h2>
-        <div class="platters">
-          <article class="platter blue">
-            <img src="img/orange_slice.png" alt="" class="mini" />
-            <h3>Rate it</h3>
-            <p>Loved it, fine, or not for me. Then pick between it and a few things you've already had, and it slots into your list.</p>
-          </article>
-          <article class="platter orange">
-            <img src="img/sardine.png" alt="" class="mini wide" />
-            <h3>Find it</h3>
-            <p>Dining halls plus cheap eats near campus, with a map, directions, and what the trip costs whether you walk, ride the bus, or drive.</p>
-          </article>
-          <article class="platter lemon">
-            <img src="img/plate.png" alt="" class="mini" />
-            <h3>See everyone's take</h3>
-            <p>Every place gets one score from everyone who's eaten there, plus the best rated spots on every campus.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="campuses" id="campuses">
-        <p class="label">Starting with</p>
-        <h2>Thirteen campuses</h2>
-        <ul class="chips">
-          <li>Purdue</li>
-          <li>UCLA</li>
-          <li>USC</li>
-          <li>UC Berkeley</li>
-          <li>Stanford</li>
-          <li>UC Irvine</li>
-          <li>UC Riverside</li>
-          <li>MIT</li>
-          <li>NYU</li>
-          <li>Carnegie Mellon</li>
-          <li>University of Washington</li>
-          <li>UIUC</li>
-          <li>Embry-Riddle</li>
-        </ul>
-      </section>
+      <aside class="card caption" aria-live="polite">
+        <img class="caption-art" id="caption-art" src="img/stamp.png" alt="" />
+        <p class="label">You're on</p>
+        <h2 id="caption-title">Pick your school</h2>
+        <p id="caption-body">Start the way a new student would.</p>
+        <p class="try" id="caption-try"></p>
+      </aside>
     </main>
 
-    <footer>
-      <img src="img/tin.png" alt="" />
-      <p>made by Nakita</p>
-    </footer>
+    <footer>made by Nakita</footer>
 
-    <script>
-      // on a phone the mockup is pointless, so the demo buttons just open the app full screen
-      const small = window.matchMedia('(max-width: 860px)');
-      document.querySelectorAll('[data-demo]').forEach((link) => {
-        link.addEventListener('click', (e) => {
-          if (small.matches) {
-            e.preventDefault();
-            window.location.href = 'app/?demo=1';
-          }
-        });
-      });
-    </script>
+    <script src="tour.js"></script>
   </body>
 </html>

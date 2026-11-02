@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build:site": "node scripts/build-site.mjs"
+    "build:site": "node scripts/build-site.mjs",
+    "deploy:firestore": "firebase deploy --only firestore --project $EXPO_PUBLIC_FIREBASE_PROJECT_ID"
   },
   "dependencies": {
     "@expo-google-fonts/cormorant-garamond": "^0.4.1",

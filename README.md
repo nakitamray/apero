@@ -15,36 +15,36 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Feed**: reviews from your campus. You can like and share them.
 - **Places**: every dining hall and spot has one score from everyone who's rated anything there (and how the loved it / fine / not for me votes split), a map, directions that match how you get around, and the latest reviews.
 - **Worldwide**: the best rated places on every campus.
+- **Friends**: add people by handle or find classmates. Every friend shows a taste match % from the dishes you've both ranked, what you both loved, and what they loved that you haven't tried.
+- **Group decider**: pick who's coming and a budget, get a shortlist ranked for the whole group ("Maya loved the tacos here", "deal today"), then spin the orange.
+- **Deals**: student discounts and specials posted by students, with a "still good" vote. They show up on Today and on each place.
+- **Campus Wrapped**: your semester in food as story cards: dishes rated, your number one, your spot, your eater type, your taste twin.
 - **Me**: your stats, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
 ## Look
 
-Euro summer collage: painted sardines, lemons, blood oranges and majolica plates cut out like stickers (`assets/art`), turquoise and orange lino-wave headers, paper scraps on pinstripe linen. Headlines are set in Grand Paradiso, body text in Jost, little notes in Cormorant Garamond italic.
+Euro summer collage: painted sardines, goldfish, lemons, blood oranges, stamps and majolica plates cut out like stickers (`assets/art`), screens painted in orange watercolor or cobalt tiles, lino-wave headers, and paper scraps and platters on top. Headlines are set in Grand Paradiso, body text in Jost, little notes in Cormorant Garamond italic.
 
 ## Running it
 
 ```bash
 npm install
-cp firebaseConfig.example.js firebaseConfig.js   # then paste in your Firebase web config
+cp .env.example .env   # paste in your Firebase web config
 npx expo start
 ```
 
-Firestore needs the rules and indexes in this repo:
-
-```bash
-firebase deploy --only firestore:rules,firestore:indexes
-```
+Then push the Firestore rules and indexes with `npm run deploy:firestore`. The full walkthrough (Firebase project, Vercel, custom domain) is in [docs/setup.md](docs/setup.md).
 
 ## Website
 
-`website/` is a landing page that shows the real app running inside a phone, in demo mode, with buttons to log in or try it.
+`website/` is the public page: the real app running inside a phone in demo mode. Visitors pick a school and use it like a student, with a tour down the side that jumps the phone to each feature and a card that explains whatever screen they're on (the app tells the page where it is through `lib/siteBridge.js`). Members can log in at `/app/`.
 
 ```bash
 npm run build:site
 ```
 
-That builds the app for the web into `site/app/` and copies the landing page next to it. Upload the whole `site/` folder anywhere (paths are relative, so a sub-folder of your own site works too). Without a `firebaseConfig.js` the build is demo-only and logging in is turned off.
+That builds the app for the web into `site/app/` and copies the landing page next to it. Vercel runs that automatically (see `vercel.json`). Paths are relative, so `site/` also works from a sub-folder of another site. Without Firebase settings the build is demo-only and logging in is turned off.
 
 ## Data
 
@@ -54,11 +54,12 @@ Firestore collections:
 
 | collection | what's in it |
 | --- | --- |
-| `users/{uid}` | name, campus, how you get around |
+| `users/{uid}` | name, handle, campus, how you get around, who you follow |
 | `users/{uid}/rankings/{dishId}` | your verdict + ranking for each dish |
 | `dishes/{dishId}` | name, place, tags, and the running average of everyone's scores |
 | `places/{placeId}` | everyone's score for a dining hall or spot, plus the verdict split |
 | `reviews/{id}` | each review (verdict, reasons, note, likes) |
+| `deals/{id}` | a student-posted deal: place, days, end date, "still good" votes |
 
 Dishes get in two ways: people add them from the app, and for Purdue the dining court menus are pulled in every day by a script.
 
@@ -72,7 +73,7 @@ python py/purdue_menus.py --dry-run  # print without writing
 python py/reset_database.py          # wipe dishes/reviews/users (asks first)
 ```
 
-They need a `py/serviceAccountKey.json` from the Firebase console (it's gitignored).
+They need a service account: `py/serviceAccountKey.json` from the Firebase console (gitignored), or the same JSON in a `FIREBASE_SERVICE_ACCOUNT` environment variable.
 
 ## Art
 
