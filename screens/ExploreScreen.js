@@ -5,14 +5,21 @@ import { useSession } from '../context/Session';
 import { activityToday, campusPlaceStats, topPlacesWorld } from '../lib/api';
 import { getPlace } from '../data/campuses';
 import { MODES, bestTrip, totalCost } from '../lib/trip';
-import { Chip, Masthead, Note, Screen } from '../components/ui';
+import { Chip, Hint, Masthead, Note, Screen } from '../components/ui';
 import { PlaceRow } from '../components/places';
 import { colors } from '../theme';
 
 const KINDS = [
   { id: 'hall', label: 'Dining halls' },
-  { id: 'spot', label: 'Cheap eats' },
+  { id: 'spot', label: 'Eat out' },
   { id: 'world', label: 'Worldwide' },
+];
+
+// what kind of night out
+const PRICES = [
+  { id: 'any', label: 'Any price' },
+  { id: 'cheap', label: '$ only' },
+  { id: 'date', label: 'Date night' },
 ];
 
 const SORTS = [
@@ -30,6 +37,7 @@ export default function ExploreScreen({ navigation, route }) {
   const { campus, modes } = useSession();
   const [kind, setKind] = useState(route.params?.kind || 'hall');
   const [sort, setSort] = useState('near');
+  const [price, setPrice] = useState('any');
   const [activity, setActivity] = useState({});
   const [stats, setStats] = useState({});
   const [world, setWorld] = useState([]);
@@ -52,7 +60,9 @@ export default function ExploreScreen({ navigation, route }) {
     }, [campus.id]),
   );
 
-  const places = kind === 'world' ? world.map((p) => getPlace(p.id)) : campus.places.filter((p) => p.kind === kind);
+  const places = (
+    kind === 'world' ? world.map((p) => getPlace(p.id)) : campus.places.filter((p) => p.kind === kind)
+  ).filter((p) => kind !== 'spot' || price === 'any' || (price === 'cheap' ? p.price === 1 : p.occasion === 'date'));
   const statsFor = (id) => (kind === 'world' ? world.find((p) => p.id === id) : stats[id]);
   if (kind === 'spot') {
     const trip = (p) => bestTrip(p, campus, modes);
@@ -78,6 +88,9 @@ export default function ExploreScreen({ navigation, route }) {
             <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
           ))}
         </View>
+        <Hint style={{ marginTop: 12 }} arrow="↓">
+          tap a place for its menu, map and reviews
+        </Hint>
         {kind === 'world' && (
           <Note size={14} style={styles.note}>
             The best rated places on every campus on apero, from everyone who's rated them.
@@ -86,6 +99,17 @@ export default function ExploreScreen({ navigation, route }) {
         {kind === 'spot' && (
           <>
             <View style={[styles.chips, { marginTop: 10 }]}>
+              {PRICES.map((p) => (
+                <Chip
+                  key={p.id}
+                  label={p.label}
+                  active={price === p.id}
+                  onPress={() => setPrice(p.id)}
+                  style={styles.small}
+                />
+              ))}
+            </View>
+            <View style={[styles.chips, { marginTop: 8 }]}>
               {SORTS.map((s) => (
                 <Chip
                   key={s.id}
@@ -97,7 +121,8 @@ export default function ExploreScreen({ navigation, route }) {
               ))}
             </View>
             <Note size={14} style={styles.note}>
-              Trip times assume you {modeList(modes)}. Change that in Me → Campus & getting around.
+              Everything within a 25 min walk or 20 min drive. Trip times assume you {modeList(modes)}; change that in
+              Me.
             </Note>
           </>
         )}

@@ -29,12 +29,6 @@ export const BACKGROUNDS = {
   cobalt: require('../assets/art/bg_tiles.jpg'),
 };
 
-export const PLATTERS = {
-  blue: require('../assets/art/platter_blue.png'),
-  orange: require('../assets/art/platter_orange.png'),
-  lemon: require('../assets/art/platter_lemon.png'),
-};
-
 export const WAVES = {
   aqua: require('../assets/art/waves_aqua.jpg'),
   orange: require('../assets/art/waves_orange.jpg'),

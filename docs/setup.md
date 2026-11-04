@@ -7,6 +7,7 @@ Two services: **Firebase** holds accounts and data, **Vercel** hosts the website
 1. Go to [console.firebase.google.com](https://console.firebase.google.com) and **Add project** (call it `apero`). Google Analytics is optional.
 2. **Build → Authentication → Get started → Email/Password → Enable.**
 3. **Build → Firestore Database → Create database.** Pick a location close to your users (e.g. `nam5`), start in **production mode**.
+   Then **Build → Storage → Get started** (same location, production mode). That's where food photos on reviews go. Storage needs the Blaze plan, but the free allowance covers a campus app easily.
 4. **Project settings (gear) → General → Your apps → Web (`</>`)**, register an app called `apero web`. Firebase shows a `firebaseConfig` block.
 5. Copy `.env.example` to `.env` and paste those six values in:
 
@@ -18,7 +19,7 @@ Two services: **Firebase** holds accounts and data, **Vercel** hosts the website
    ```
 
    These are fine to ship in a web app (Firebase web config isn't secret, the security rules are what protect the data), but `.env` is gitignored anyway.
-6. Push the security rules and indexes from this repo:
+6. Push the security rules (Firestore and Storage) and indexes from this repo:
 
    ```bash
    npx firebase-tools login
@@ -37,9 +38,9 @@ Two services: **Firebase** holds accounts and data, **Vercel** hosts the website
 
 Start the app with `npx expo start`. Sign up, pick a campus, and you're in.
 
-### Letting Claude Code do the Firebase parts
+### Doing the Firebase parts from a cloud environment
 
-Steps 1–5 need you in the console. For the rest (deploying rules and indexes, running the menu script), add the service account JSON from step 7 to your Claude Code cloud environment as an environment variable named `FIREBASE_SERVICE_ACCOUNT` (the whole JSON on one line), plus `EXPO_PUBLIC_FIREBASE_PROJECT_ID`. The environment's network settings also need to allow `*.googleapis.com`. Never paste the key into a chat.
+Steps 1–5 need you in the console. For the rest (deploying rules and indexes, running the menu script), add the service account JSON from step 7 to your cloud dev environment as an environment variable named `FIREBASE_SERVICE_ACCOUNT` (the whole JSON on one line), plus `EXPO_PUBLIC_FIREBASE_PROJECT_ID`. The environment's network settings also need to allow `*.googleapis.com`. Never commit the key or paste it anywhere public.
 
 ## 2. Vercel
 

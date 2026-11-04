@@ -341,31 +341,6 @@ def vase(seed=47):
     c.save(f'{OUT}/vase.png', size=(440, 640))
 
 
-# ---------------------------------------------------------------- platters (card frames, stretched in the app)
-def platter(name, rim, accent, dots, center, seed=53):
-    w, h = 1000, 760
-    c = Canvas(w, h, seed)
-    t = np.linspace(0, 2 * np.pi, 300)
-
-    def shape(sx, sy, p=0.42):
-        return np.stack([w / 2 + sx * np.sign(np.cos(t)) * np.abs(np.cos(t)) ** p, h / 2 + sy * np.sign(np.sin(t)) * np.abs(np.sin(t)) ** p], 1)
-
-    outer, inner = shape(480, 360), shape(400, 284)
-    c.wash(poly(c, outer), '#FFFDF6', density=1, wob=2, blotch=0, edge=0, grain=0)
-    ring = np.clip(poly(c, outer) - poly(c, shape(452, 334)), 0, 1)
-    c.wash(ring, rim, density=0.92, wob=3)
-    band = np.clip(poly(c, shape(418, 302)) - poly(c, inner), 0, 1)
-    c.wash(band, accent, density=0.85, wob=2)
-    c.wash(poly(c, inner), center, density=0.8, wob=4, blotch=0.12, edge=0.15)
-    mid = shape(436, 318)
-    for i in range(0, len(mid), 10):
-        x, y = mid[i]
-        col = dots if i % 20 == 0 else rim
-        c.wash(poly(c, ellipse_pts(x, y, 9, 9)), col, density=0.95, wob=1)
-    c.stroke(outer[::2], NAVY, width=3, alpha=0.35)
-    c.save(f'{OUT}/{name}.png', sticker=0, shadow=False, size=(1000, 760))
-
-
 # ---------------------------------------------------------------- painted screen backgrounds (jpg)
 def _save_bg(c, name, size=(900, 1800)):
     from PIL import Image as _I
@@ -547,11 +522,6 @@ ALL = {
     'stamp': stamp,
     'matchbox': matchbox,
     'burst': burst,
-    'platters': lambda: (
-        platter('platter_blue', COBALT, AQUA, LEMON, '#DDF3F6', seed=53),
-        platter('platter_orange', PERSIMMON, LEMON, DEEP, '#FFF0CC', seed=59),
-        platter('platter_lemon', DEEP, LEMON, PERSIMMON, '#FFF7DA', seed=61),
-    ),
 }
 
 if __name__ == '__main__':

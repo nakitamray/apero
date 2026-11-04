@@ -54,7 +54,7 @@ export default function PickDishScreen({ navigation }) {
       </ScrollView>
       {!search && dishes?.length > 0 && (
         <Note size={13} style={styles.hint}>
-          Showing what's on today. Search to find anything else.
+          Tap what you ate. Showing what's on today; search for anything else.
         </Note>
       )}
     </View>

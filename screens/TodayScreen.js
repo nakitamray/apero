@@ -6,7 +6,7 @@ import { activityToday, campusDeals, campusFeed, setDealVote, topDishes } from '
 import { dealIsOn } from '../lib/deals';
 import { greeting, todayKey } from '../lib/time';
 import { MOODS } from '../lib/tags';
-import { Chip, Empty, Loading, Masthead, Num, Paper, Platter, Screen, SectionHeader } from '../components/ui';
+import { Chip, Empty, Hint, Loading, Masthead, Num, Paper, Platter, Screen, SectionHeader } from '../components/ui';
 import { ReviewCard, makeLike } from '../components/rows';
 import { SpotCard } from '../components/places';
 import { DealCard, makeDealVote } from '../components/deals';
@@ -55,7 +55,8 @@ export default function TodayScreen({ navigation }) {
 
   const like = makeLike(setFeed, user.uid);
   const openPlace = (place) => navigation.navigate('Place', { placeId: place.id });
-  const spots = campus.places.filter((p) => p.kind === 'spot');
+  const spots = campus.places.filter((p) => p.kind === 'spot' && !p.occasion);
+  const dateNight = campus.places.filter((p) => p.occasion === 'date');
   const busiest = campus.places
     .filter((p) => busy[p.id])
     .sort((a, b) => busy[b.id] - busy[a.id])
@@ -88,7 +89,7 @@ export default function TodayScreen({ navigation }) {
           </Pressable>
         )}
 
-        <SectionHeader label="Ranked by students" title="Tonight's menu" />
+        <SectionHeader label="Ranked by students" title="Tonight's menu" hint="swipe through, tap one to open it" />
         {loading ? (
           <Loading />
         ) : top.length ? (
@@ -104,6 +105,7 @@ export default function TodayScreen({ navigation }) {
           />
         )}
 
+        <Hint style={styles.shortcutHint}>more to do, swipe</Hint>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcuts}>
           {SHORTCUTS.map((s, i) => (
             <Paper
@@ -121,7 +123,7 @@ export default function TodayScreen({ navigation }) {
           ))}
         </ScrollView>
 
-        <SectionHeader label="What sounds good" title="By mood" />
+        <SectionHeader label="What sounds good" title="By mood" hint="pick a mood, see dishes for it" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
           {MOODS.map((m) => (
             <Chip key={m.id} label={m.label} onPress={() => navigation.navigate('Mood', { mood: m.id })} />
@@ -133,6 +135,7 @@ export default function TodayScreen({ navigation }) {
             <SectionHeader
               label="Posted by students"
               title="Deals today"
+              hint="swipe for more"
               action="All"
               onAction={() => navigation.navigate('Deals')}
             />
@@ -171,6 +174,7 @@ export default function TodayScreen({ navigation }) {
         <SectionHeader
           label="Cheap eats near campus"
           title="Off the meal plan"
+          hint="swipe for more"
           action="All"
           onAction={() => navigation.navigate('ExploreTab', { screen: 'Explore', params: { kind: 'spot' } })}
         />
@@ -179,6 +183,24 @@ export default function TodayScreen({ navigation }) {
             <SpotCard key={s.id} spot={s} campus={campus} modes={modes} index={i} onPress={() => openPlace(s)} />
           ))}
         </ScrollView>
+
+        {dateNight.length > 0 && (
+          <>
+            <SectionHeader label="Worth dressing up for" title="Date night" hint="swipe for more" />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+              {dateNight.map((s, i) => (
+                <SpotCard
+                  key={s.id}
+                  spot={s}
+                  campus={campus}
+                  modes={modes}
+                  index={i + 1}
+                  onPress={() => openPlace(s)}
+                />
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         <SectionHeader
           label="Fresh off the feed"
@@ -212,6 +234,7 @@ const styles = StyleSheet.create({
   },
   demoText: { fontFamily: fonts.body, fontSize: 13, color: colors.ink, textAlign: 'center' },
   demoLink: { fontFamily: fonts.bold, color: colors.deep, textDecorationLine: 'underline' },
+  shortcutHint: { paddingHorizontal: 22, marginTop: 8 },
   shortcuts: { paddingHorizontal: 22, paddingTop: 10, gap: 12 },
   shortcut: { width: 150 },
   shortcutBody: { minHeight: 150, justifyContent: 'flex-end', borderWidth: 1.5, borderColor: colors.ink, ...lift },

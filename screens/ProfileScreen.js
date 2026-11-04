@@ -10,6 +10,7 @@ import { dayStreak, timeAgo } from '../lib/time';
 import { Button, Label, Loading, Masthead, MenuCard, Paper, Plate, Platter, Screen } from '../components/ui';
 import { Sticker } from '../components/art';
 import { DishMenu } from '../components/rows';
+import { PhotoGrid } from '../components/grid';
 import { colors, fonts, lift } from '../theme';
 
 function Stat({ value, label }) {
@@ -155,6 +156,13 @@ export default function ProfileScreen({ navigation }) {
               <>
                 <Text style={styles.section}>Try next</Text>
                 <DishMenu dishes={tryNext} onPress={(d) => navigation.navigate('Dish', { dishId: d.id })} />
+              </>
+            )}
+
+            {reviews.some((r) => r.photos?.length) && (
+              <>
+                <Text style={styles.section}>Your photos</Text>
+                <PhotoGrid reviews={reviews} onPress={(r) => navigation.navigate('Dish', { dishId: r.dishId })} />
               </>
             )}
 

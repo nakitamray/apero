@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSession } from '../context/Session';
 import { myRankings } from '../lib/api';
 import { VERDICTS, toTen } from '../lib/score';
-import { Button, Chip, Empty, Loading, Masthead, Note, Screen } from '../components/ui';
+import { Button, Chip, Empty, Hint, Loading, Masthead, Note, Screen } from '../components/ui';
 import { DishMenu } from '../components/rows';
 
 const FILTERS = [{ id: 'all', label: 'All' }, ...Object.entries(VERDICTS).map(([id, v]) => ({ id, label: v.label }))];
@@ -40,6 +40,9 @@ export default function MyListScreen({ navigation }) {
           stickerSize={130}
           scrollY={scrollY}
         />
+        <Hint style={{ paddingHorizontal: 22, marginTop: 4 }} arrow="">
+          tap a dish to see it or rate it again
+        </Hint>
         <View style={styles.chips}>
           {FILTERS.map((f) => (
             <Chip key={f.id} label={f.label} active={filter === f.id} onPress={() => setFilter(f.id)} />

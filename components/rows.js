@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Heart, Share2 } from 'lucide-react-native';
 import { colors, fonts } from '../theme';
 import { timeAgo } from '../lib/time';
@@ -65,7 +65,47 @@ export const makeLike = (setRows, uid) => async (review, liked) => {
   await setLiked(review.id, uid, liked);
 };
 
+// photos are download links from Storage, or bundled images in the demo
+export const photoSource = (photo) => (typeof photo === 'string' ? { uri: photo } : photo);
+
+// swipeable photos at the top of a review, like a post
+function PhotoStrip({ photos, width }) {
+  const [page, setPage] = React.useState(0);
+  return (
+    <View style={{ marginHorizontal: -6, marginTop: -6, marginBottom: 14 }}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        style={{ width, borderRadius: 4 }}
+      >
+        {photos.map((p, i) => (
+          <Image key={i} source={photoSource(p)} style={{ width, height: width, borderRadius: 4 }} />
+        ))}
+      </ScrollView>
+      {photos.length > 1 && (
+        <View style={styles.dots}>
+          {photos.map((_, i) => (
+            <View key={i} style={[styles.dot, i === page && styles.dotOn]} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+export const withLine = (people) =>
+  people.length === 1
+    ? people[0].name
+    : `${people
+        .slice(0, -1)
+        .map((p) => p.name)
+        .join(', ')} & ${people.at(-1).name}`;
+
 export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
+  const { width } = useWindowDimensions();
+  const photoWidth = width - 40 - 36 + 12;
   const liked = review.likedBy?.includes(uid);
   const likes = review.likedBy?.length || 0;
 
@@ -87,9 +127,12 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
         </View>
         <Text style={styles.who} numberOfLines={1}>
           {review.userName || 'someone'}
+          {review.with?.length ? <Text style={styles.withText}> with {withLine(review.with)}</Text> : null}
         </Text>
         <Text style={styles.when}>{timeAgo(review.createdAt)}</Text>
       </View>
+
+      {review.photos?.length > 0 && <PhotoStrip photos={review.photos} width={photoWidth} />}
 
       <Pressable onPress={onPressDish} style={styles.reviewBody}>
         <View style={{ flex: 1 }}>
@@ -130,6 +173,10 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
 
 const styles = StyleSheet.create({
   rowOuter: { marginHorizontal: 20, marginBottom: 12 },
+  withText: { fontFamily: fonts.body, color: colors.muted },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: 8 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.hairline },
+  dotOn: { backgroundColor: colors.deep },
   menuOuter: { marginHorizontal: 20 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   linePressed: { backgroundColor: 'rgba(255, 212, 59, 0.25)' },

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '../context/Session';
-import { myRankings, saveReview } from '../lib/api';
+import { myRankings, saveReview, uploadReviewPhoto } from '../lib/api';
 import { MAX_QUESTIONS, eloForPosition, toTen } from '../lib/score';
-import { Button, Label, Loading, Note, Plate, Screen, Title } from '../components/ui';
+import { Button, Hint, Label, Loading, Note, Plate, Screen, Title } from '../components/ui';
 import { Sticker } from '../components/art';
 import { colors, fonts, lift } from '../theme';
 
 // Binary search through your own same-verdict list: each answer halves where the new dish can go.
 export default function CompareScreen({ navigation, route }) {
-  const { dish, verdict, tags, note } = route.params;
+  const { dish, verdict, tags, note, photos = [], withPeople = [] } = route.params;
   const { user, name } = useSession();
   const [ranked, setRanked] = useState(null);
   const [lo, setLo] = useState(0);
@@ -38,7 +38,10 @@ export default function CompareScreen({ navigation, route }) {
     const pos = Math.floor((lo + hi) / 2);
     const elo = eloForPosition(ranked, pos, verdict);
     setSaving(true);
-    saveReview({ uid: user.uid, userName: name, dish, verdict, elo, tags, note })
+    Promise.all(photos.map((uri) => uploadReviewPhoto(user.uid, uri)))
+      .then((urls) =>
+        saveReview({ uid: user.uid, userName: name, dish, verdict, elo, tags, note, photos: urls, withPeople }),
+      )
       .then(() => setFinalScore(toTen(elo)))
       .catch(() => {
         Alert.alert("Couldn't save", "Your review didn't go through. Try again in a sec.");
@@ -104,6 +107,9 @@ export default function CompareScreen({ navigation, route }) {
       <Title size={42} style={{ marginBottom: 26, textAlign: 'center' }}>
         Which did you like more?
       </Title>
+      <Hint arrow="↓" style={{ marginTop: -16, marginBottom: 18 }}>
+        tap one. a few of these and your list sorts itself
+      </Hint>
 
       <Choice
         title={dish.name}
