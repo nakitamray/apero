@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "deploy:firestore": "firebase deploy --only firestore --project $EXPO_PUBLIC_FIREBASE_PROJECT_ID"
+    "deploy:firestore": "firebase deploy --only firestore --project $EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+    "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

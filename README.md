@@ -38,7 +38,13 @@ Then push the Firestore rules and indexes with `npm run deploy:firestore`. The f
 
 ## Website
 
-The public website (a phone on a page, running this app's demo) lives on the `website` branch. See the README there.
+This branch (`website`) is the app plus the public page in `website/`: one color, a phone, and the real app running inside it in demo mode. Visitors pick a school and use it like a student; members log in at `/app/`.
+
+```bash
+npm run build:site
+```
+
+builds the app for the web into `site/app/` and puts the page next to it. Vercel runs that on every push to this branch (`vercel.json`). To pick up app changes, merge the app branch in: `git merge summer-redesign`.
 
 ## Data
 

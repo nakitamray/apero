@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>apero</title>
+    <meta name="description" content="A food diary for campus. Rate what you ate, find where to eat next." />
+    <link rel="icon" href="img/orange_slice.png" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <header>
+      <span class="wordmark">Apero</span>
+      <a class="login" href="app/">Log in</a>
+    </header>
+
+    <main>
+      <div class="phone-box" id="box">
+        <div class="phone" id="phone">
+          <div class="screen">
+            <div class="status" aria-hidden="true">
+              <span>9:41</span>
+              <span class="icons"><i class="bars"></i><i class="battery"></i></span>
+            </div>
+            <iframe title="apero" src="app/?demo=1"></iframe>
+          </div>
+          <div class="notch"></div>
+        </div>
+      </div>
+      <p class="hint">This is the real app. Pick a school and tap around.</p>
+      <a class="open" href="app/?demo=1">Open the demo</a>
+    </main>
+
+    <script>
+      // full size whenever it fits; shrink only on short windows
+      const box = document.getElementById('box');
+      const phone = document.getElementById('phone');
+      const fit = () => {
+        const scale = Math.max(0.55, Math.min(1, (window.innerHeight - 150) / 872, (window.innerWidth - 32) / 418));
+        phone.style.transform = scale < 1 ? `scale(${scale.toFixed(3)})` : '';
+        box.style.width = `${418 * scale}px`;
+        box.style.height = `${872 * scale}px`;
+      };
+      window.addEventListener('resize', fit);
+      fit();
+    </script>
+  </body>
+</html>
