@@ -73,7 +73,7 @@ export function MenuDeck({ dishes, onPress, badgeFor }) {
                 </Text>
                 <Text style={styles.place} numberOfLines={1}>
                   {dish.placeName}
-                  {dish.ratingCount ? `  /  ${dish.ratingCount} ratings` : ''}
+                  {dish.ratingCount ? `  /  ${dish.ratingCount} rating${dish.ratingCount === 1 ? '' : 's'}` : ''}
                 </Text>
                 {badgeFor?.(dish) && (
                   <View style={{ marginTop: 8, alignSelf: 'flex-start' }}>
