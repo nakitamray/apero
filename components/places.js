@@ -90,8 +90,8 @@ export function PlaceRow({ place, campus, modes, activity, stats, worldwide, onP
 const styles = StyleSheet.create({
   card: { minHeight: 168, paddingTop: 12 },
   cardArt: { height: 66, justifyContent: 'center', marginBottom: 6 },
-  cardName: { fontFamily: fonts.display, fontSize: 24, lineHeight: 26, color: colors.ink },
-  rowName: { fontFamily: fonts.display, fontSize: 26, lineHeight: 28, color: colors.ink },
+  cardName: { fontFamily: fonts.title, fontSize: 24, lineHeight: 26, color: colors.ink },
+  rowName: { fontFamily: fonts.title, fontSize: 26, lineHeight: 28, color: colors.ink },
   meta: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 3 },
   trip: {
     fontFamily: fonts.medium,

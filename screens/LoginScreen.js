@@ -3,25 +3,19 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleShee
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
-import { Button, CollageHeader, Field, Note, Screen } from '../components/ui';
+import { Button, Field, Masthead, Note, Screen } from '../components/ui';
 import { colors, fonts } from '../theme';
-
-const PIECES = [
-  { name: 'spritz', size: 104, rotate: 8, right: 26, top: 92 },
-  { name: 'sardine', size: 210, rotate: -9, left: -36, top: 236 },
-  { name: 'lemon', size: 84, rotate: -14, left: 18, top: 70 },
-  { name: 'orangeSlice', size: 64, rotate: 0, right: 118, top: 228 },
-];
 
 export function AuthHeader() {
   return (
-    <CollageHeader height={300} pieces={PIECES}>
-      <View style={styles.center}>
-        <View style={styles.label}>
-          <Text style={styles.word}>apero</Text>
-        </View>
-      </View>
-    </CollageHeader>
+    <Masthead
+      kicker="A food diary for campus"
+      title="Apero"
+      accent="rate what you ate"
+      sticker="spritz"
+      stickerSize={130}
+      right=""
+    />
   );
 }
 
@@ -51,8 +45,8 @@ export default function LoginScreen({ navigation }) {
         <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
           <AuthHeader />
           <View style={styles.form}>
-            <Note size={24} style={styles.tagline}>
-              Rate what you ate, find where to eat next.
+            <Note size={16} style={styles.tagline}>
+              Find where to eat next, and what to order when you get there.
             </Note>
             <Field
               label="Email"
@@ -83,16 +77,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 export const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 30 },
-  label: {
-    backgroundColor: colors.paper,
-    paddingHorizontal: 26,
-    paddingTop: 4,
-    paddingBottom: 8,
-    borderRadius: 4,
-    transform: [{ rotate: '-3deg' }],
-  },
-  word: { fontFamily: fonts.display, fontSize: 70, lineHeight: 78, color: colors.cobalt },
   tagline: { marginBottom: 24, color: colors.ink },
   form: { padding: 26, paddingTop: 34 },
   switch: { marginTop: 24, alignItems: 'center' },

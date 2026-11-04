@@ -24,7 +24,7 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 
 ## Look
 
-Euro summer collage: painted sardines, goldfish, lemons, blood oranges, stamps and majolica plates cut out like stickers (`assets/art`), screens painted in orange watercolor or cobalt tiles, lino-wave headers, and paper scraps and platters on top. Headlines are set in Grand Paradiso, body text in Jost, little notes in Cormorant Garamond italic.
+Euro summer menu card: white ticking with turquoise, orange and lemon pinstripes, every screen headed like a printed menu (double rules, a big title, one painted cut-out that drifts as you scroll), dish lists set as menu lines, and painted sardines, lemons, blood oranges, stamps and majolica plates cut out like stickers (`assets/art`). Titles and dish names are Medan, scores on the plates are Gresida, everything else is Doblegh.
 
 ## Running it
 
@@ -38,13 +38,7 @@ Then push the Firestore rules and indexes with `npm run deploy:firestore`. The f
 
 ## Website
 
-`website/` is the public page: the real app running inside a phone in demo mode. Visitors pick a school and use it like a student, with a tour down the side that jumps the phone to each feature and a card that explains whatever screen they're on (the app tells the page where it is through `lib/siteBridge.js`). Members can log in at `/app/`.
-
-```bash
-npm run build:site
-```
-
-That builds the app for the web into `site/app/` and copies the landing page next to it. Vercel runs that automatically (see `vercel.json`). Paths are relative, so `site/` also works from a sub-folder of another site. Without Firebase settings the build is demo-only and logging in is turned off.
+The public website (a phone on a page, running this app's demo) lives on the `website` branch. See the README there.
 
 ## Data
 

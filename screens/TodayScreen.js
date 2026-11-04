@@ -1,48 +1,41 @@
-import React, { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
 import { activityToday, campusDeals, campusFeed, setDealVote, topDishes } from '../lib/api';
 import { dealIsOn } from '../lib/deals';
 import { greeting, todayKey } from '../lib/time';
 import { MOODS } from '../lib/tags';
-import {
-  Chip,
-  CollageHeader,
-  Empty,
-  Label,
-  Loading,
-  Note,
-  Paper,
-  Platter,
-  Screen,
-  SectionHeader,
-  Tag,
-  Title,
-} from '../components/ui';
-import { DishRow, ReviewCard, makeLike } from '../components/rows';
+import { Chip, Empty, Loading, Masthead, Num, Paper, Platter, Screen, SectionHeader } from '../components/ui';
+import { ReviewCard, makeLike } from '../components/rows';
 import { SpotCard } from '../components/places';
 import { DealCard, makeDealVote } from '../components/deals';
+import { MenuDeck } from '../components/deck';
 import { Sticker } from '../components/art';
-import { colors, fonts } from '../theme';
+import { colors, fonts, lift } from '../theme';
+
+const SHORTCUTS = [
+  { id: 'Decider', label: 'Decide together', sub: 'spin the orange', art: 'matchbox', tint: colors.lemon },
+  { id: 'Deals', label: 'Deals', sub: 'posted by students', art: 'burst', tint: colors.peach },
+  { id: 'Feed', label: 'The feed', sub: 'who ate what', art: 'goldfish', tint: '#D6F1F5' },
+];
 
 export default function TodayScreen({ navigation }) {
   const { campus, modes, name, user, demo, logOut } = useSession();
-  const insets = useSafeAreaInsets();
   const [top, setTop] = useState([]);
   const [feed, setFeed] = useState([]);
   const [busy, setBusy] = useState({});
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const load = useCallback(async () => {
     try {
       const [dishes, reviews, activity, campusDealList] = await Promise.all([
-        topDishes(campus.id, 5),
+        topDishes(campus.id, 6),
         campusFeed(campus.id, 3),
-        campusDeals(campus.id),
         activityToday(campus.id),
+        campusDeals(campus.id),
       ]);
       setTop(dishes);
       setFeed(reviews);
@@ -70,77 +63,40 @@ export default function TodayScreen({ navigation }) {
   const today = todayKey();
 
   return (
-    <Screen tone="orange">
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.cobalt} />}
+    <Screen>
+      <Animated.ScrollView
+        refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.deep} />}
         contentContainerStyle={{ paddingBottom: 40 }}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
       >
-        <CollageHeader
-          height={insets.top + 120}
-          pieces={[
-            { name: 'spritz', size: 78, rotate: 6, right: 24, top: insets.top + 20 },
-            { name: 'vase', size: 58, rotate: -6, right: 110, top: insets.top + 40 },
-            { name: 'lemonSlice', size: 50, rotate: 0, right: 92, top: insets.top + 112 },
-            { name: 'sardine', size: 150, rotate: -8, left: -30, top: insets.top + 96 },
-          ]}
+        <Masthead
+          kicker={`${campus.short} / ${campus.city}`}
+          title={`${greeting()},`}
+          accent={name}
+          note="Here's what's good today."
+          sticker="spritz"
+          stickerSize={112}
+          scrollY={scrollY}
         />
 
-        <View style={styles.hello}>
-          <Label>
-            {campus.short} · {campus.city}
-          </Label>
-          <Title size={48}>
-            {greeting()}, {name}
-          </Title>
-          <Note>Here's what's good today.</Note>
-        </View>
-
         {demo && (
-          <Paper tint={colors.lemon} tilt={-0.8} outer={styles.demo} onPress={logOut}>
+          <Pressable onPress={logOut} style={styles.demo}>
             <Text style={styles.demoText}>
-              You're poking around the demo, so nothing here is saved.{' '}
-              <Text style={styles.demoLink}>Make an account →</Text>
+              Demo with sample data. Nothing is saved. <Text style={styles.demoLink}>Make an account</Text>
             </Text>
-          </Paper>
+          </Pressable>
         )}
 
-        <Paper tint={colors.paper} tilt={0.8} outer={styles.decider} onPress={() => navigation.navigate('Decider')}>
-          <View style={styles.deciderRow}>
-            <Sticker name="matchbox" width={92} rotate={-8} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.deciderTitle}>Can't pick where to eat?</Text>
-              <Text style={styles.deciderSub}>Bring your friends, set a budget, spin the orange.</Text>
-            </View>
-          </View>
-        </Paper>
-
-        <SectionHeader label="What sounds good" title="Pick a mood" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {MOODS.map((m) => (
-            <Chip key={m.id} label={m.label} onPress={() => navigation.navigate('Mood', { mood: m.id })} />
-          ))}
-        </ScrollView>
-
-        <SectionHeader label="Ranked by students" title="Best on campus" />
+        <SectionHeader label="Ranked by students" title="Tonight's menu" />
         {loading ? (
           <Loading />
         ) : top.length ? (
-          top.map((dish, i) => (
-            <DishRow
-              key={dish.id}
-              dish={dish}
-              rank={i + 1}
-              index={i}
-              onPress={() => navigation.navigate('Dish', { dishId: dish.id })}
-              badge={
-                dish.lastServedDate === today ? (
-                  <View style={{ marginTop: 6, alignSelf: 'flex-start' }}>
-                    <Tag color={colors.teal}>On the menu today</Tag>
-                  </View>
-                ) : null
-              }
-            />
-          ))
+          <MenuDeck
+            dishes={top}
+            onPress={(dish) => navigation.navigate('Dish', { dishId: dish.id })}
+            badgeFor={(dish) => (dish.lastServedDate === today ? 'on today' : null)}
+          />
         ) : (
           <Empty
             title="Nothing rated yet"
@@ -148,29 +104,39 @@ export default function TodayScreen({ navigation }) {
           />
         )}
 
-        {busiest.length > 0 && (
-          <>
-            <SectionHeader label="Where people are eating" title="Busy today" />
-            <Platter tone="lemon" outer={{ marginHorizontal: 20 }} style={{ gap: 10 }}>
-              {busiest.map((p) => (
-                <Text key={p.id} style={styles.busyItem} onPress={() => openPlace(p)}>
-                  <Text style={styles.busyCount}>{busy[p.id]} </Text>
-                  {p.name}
-                </Text>
-              ))}
-            </Platter>
-          </>
-        )}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcuts}>
+          {SHORTCUTS.map((s, i) => (
+            <Paper
+              key={s.id}
+              tint={s.tint}
+              tilt={[-1.5, 1, -0.6][i]}
+              outer={styles.shortcut}
+              style={styles.shortcutBody}
+              onPress={() => navigation.navigate(s.id)}
+            >
+              <Sticker name={s.art} width={s.art === 'goldfish' ? 96 : 70} rotate={i % 2 ? 8 : -8} />
+              <Text style={styles.shortcutTitle}>{s.label}</Text>
+              <Text style={styles.shortcutSub}>{s.sub}</Text>
+            </Paper>
+          ))}
+        </ScrollView>
+
+        <SectionHeader label="What sounds good" title="By mood" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {MOODS.map((m) => (
+            <Chip key={m.id} label={m.label} onPress={() => navigation.navigate('Mood', { mood: m.id })} />
+          ))}
+        </ScrollView>
 
         {deals.length > 0 && (
           <>
             <SectionHeader
               label="Posted by students"
               title="Deals today"
-              action="All deals"
+              action="All"
               onAction={() => navigation.navigate('Deals')}
             />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.spots}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
               {deals.map((d, i) => (
                 <DealCard
                   key={d.id}
@@ -186,13 +152,29 @@ export default function TodayScreen({ navigation }) {
           </>
         )}
 
+        {busiest.length > 0 && (
+          <>
+            <SectionHeader label="Where people are eating" title="Busy today" />
+            <Platter tone="lemon" outer={{ marginHorizontal: 20 }} style={{ gap: 10 }}>
+              {busiest.map((p) => (
+                <Pressable key={p.id} style={styles.busyRow} onPress={() => openPlace(p)}>
+                  <Num size={30} color={colors.persimmon}>
+                    {busy[p.id]}
+                  </Num>
+                  <Text style={styles.busyItem}>{p.name}</Text>
+                </Pressable>
+              ))}
+            </Platter>
+          </>
+        )}
+
         <SectionHeader
           label="Cheap eats near campus"
           title="Off the meal plan"
-          action="All spots"
+          action="All"
           onAction={() => navigation.navigate('ExploreTab', { screen: 'Explore', params: { kind: 'spot' } })}
         />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.spots}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
           {spots.map((s, i) => (
             <SpotCard key={s.id} spot={s} campus={campus} modes={modes} index={i} onPress={() => openPlace(s)} />
           ))}
@@ -201,7 +183,7 @@ export default function TodayScreen({ navigation }) {
         <SectionHeader
           label="Fresh off the feed"
           title="Just rated"
-          action="See all"
+          action="All"
           onAction={() => navigation.navigate('Feed')}
         />
         {feed.map((r, i) => (
@@ -214,24 +196,29 @@ export default function TodayScreen({ navigation }) {
             onPressDish={() => navigation.navigate('Dish', { dishId: r.dishId })}
           />
         ))}
-        {!loading && feed.length === 0 && <Note style={styles.quiet}>No reviews yet today. Quiet one.</Note>}
-      </ScrollView>
+      </Animated.ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hello: { paddingHorizontal: 22, marginTop: 30 },
-  demo: { marginHorizontal: 20, marginTop: 18 },
-  demoText: { fontFamily: fonts.body, fontSize: 14, color: colors.ink, lineHeight: 20 },
-  demoLink: { fontFamily: fonts.medium, color: colors.deep },
+  demo: {
+    marginHorizontal: 22,
+    marginTop: 14,
+    backgroundColor: colors.lemon,
+    borderRadius: 999,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+  },
+  demoText: { fontFamily: fonts.body, fontSize: 13, color: colors.ink, textAlign: 'center' },
+  demoLink: { fontFamily: fonts.bold, color: colors.deep, textDecorationLine: 'underline' },
+  shortcuts: { paddingHorizontal: 22, paddingTop: 10, gap: 12 },
+  shortcut: { width: 150 },
+  shortcutBody: { minHeight: 150, justifyContent: 'flex-end', borderWidth: 1.5, borderColor: colors.ink, ...lift },
+  shortcutTitle: { fontFamily: fonts.title, fontSize: 19, lineHeight: 20, color: colors.ink, marginTop: 10 },
+  shortcutSub: { fontFamily: fonts.body, fontSize: 12, color: colors.ink, opacity: 0.75, marginTop: 2 },
   chips: { paddingHorizontal: 22, gap: 8 },
-  spots: { paddingHorizontal: 22, paddingBottom: 10 },
-  busyItem: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
-  busyCount: { fontFamily: fonts.display, color: colors.orange, fontSize: 26 },
-  quiet: { paddingHorizontal: 22 },
-  decider: { marginHorizontal: 20, marginTop: 22 },
-  deciderRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  deciderTitle: { fontFamily: fonts.display, fontSize: 28, lineHeight: 30, color: colors.ink },
-  deciderSub: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, marginTop: 2 },
+  row: { paddingHorizontal: 22, paddingBottom: 10 },
+  busyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  busyItem: { fontFamily: fonts.title, fontSize: 17, color: colors.ink, flex: 1 },
 });

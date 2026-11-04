@@ -71,6 +71,6 @@ export default function AddDishScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   body: { padding: 22, paddingBottom: 40 },
   label: { marginTop: 18, marginBottom: 4 },
-  group: { fontFamily: fonts.note, fontSize: 18, color: colors.ink, marginTop: 10, marginBottom: 8 },
+  group: { fontFamily: fonts.italic, fontSize: 18, color: colors.ink, marginTop: 10, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

@@ -153,6 +153,6 @@ const styles = StyleSheet.create({
   friends: { marginTop: 26, gap: 10 },
   friendRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   friendName: { flex: 1, fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
-  section: { fontFamily: fonts.display, fontSize: 32, color: colors.ink, marginTop: 36, marginBottom: 14 },
-  quiet: { fontFamily: fonts.note, fontSize: 17, color: colors.muted },
+  section: { fontFamily: fonts.title, fontSize: 32, color: colors.ink, marginTop: 36, marginBottom: 14 },
+  quiet: { fontFamily: fonts.italic, fontSize: 17, color: colors.muted },
 });

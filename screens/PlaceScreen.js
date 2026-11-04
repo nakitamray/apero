@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Linking, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bus, Car, Footprints, MapPin, Plus } from 'lucide-react-native';
 import { useSession } from '../context/Session';
@@ -8,8 +8,8 @@ import { campusDeals, getPlaceStats, placeDishes, placeReviews, setDealVote } fr
 import { DealCard, makeDealVote } from '../components/deals';
 import { currentMeal, todayKey } from '../lib/time';
 import { bestTrip, directionsUrl, mealCost, money, tripOptions } from '../lib/trip';
-import { Button, Chip, Empty, Label, Loading, Plate, Platter, Screen, Title } from '../components/ui';
-import { DishRow, ReviewCard, makeLike } from '../components/rows';
+import { Button, Chip, Empty, Label, Loading, Plate, Platter, Screen, SectionHeader, Title } from '../components/ui';
+import { DishMenu, ReviewCard, makeLike } from '../components/rows';
 import MapEmbed from '../components/MapEmbed';
 import { Sticker } from '../components/art';
 import { colors, fonts } from '../theme';
@@ -187,10 +187,10 @@ export default function PlaceScreen({ navigation, route }) {
   const header = (
     <View style={styles.head}>
       <Sticker name={place.kind === 'spot' ? 'bloodOrange' : 'tile'} width={76} rotate={10} style={styles.corner} />
-      <Label color={place.kind === 'spot' ? colors.orange : colors.teal}>
-        {place.kind === 'spot' ? `Cheap eats · ${priceTag(place.price)} · ${place.cuisine}` : 'Dining hall'}
+      <Label color={place.kind === 'spot' ? colors.persimmon : colors.teal}>
+        {place.kind === 'spot' ? `Cheap eats / ${priceTag(place.price)} / ${place.cuisine}` : 'Dining hall'}
       </Label>
-      <Title size={46} style={{ paddingRight: 70 }}>
+      <Title size={40} style={{ paddingRight: 70, marginTop: 4 }}>
         {place.name}
       </Title>
       <View style={styles.area}>
@@ -229,32 +229,36 @@ export default function PlaceScreen({ navigation, route }) {
 
   return (
     <Screen>
-      <SectionList
-        sections={sections}
-        keyExtractor={(d) => d.id}
-        ListHeaderComponent={header}
-        stickySectionHeadersEnabled={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        renderSectionHeader={({ section }) => <Text style={styles.station}>{section.title}</Text>}
-        renderItem={({ item, index }) => (
-          <DishRow
-            dish={item}
-            index={index}
-            subtitle={item.station || place.name}
-            onPress={() => navigation.navigate('Dish', { dishId: item.id })}
-          />
-        )}
-        ListEmptyComponent={
-          dishes === null ? (
-            <Loading />
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {header}
+        {sections.map((section) =>
+          section.renderItem ? (
+            <View key={section.title}>
+              <SectionHeader title={section.title} />
+              {section.data.map((item, index) => (
+                <View key={item.id}>{section.renderItem({ item, index })}</View>
+              ))}
+            </View>
           ) : (
-            <Empty
-              title={hasMenu ? `Nothing listed for ${meal.toLowerCase()}` : 'No dishes here yet'}
-              body={hasMenu ? 'Try another meal.' : 'Had something good here? Add it so other people can find it.'}
-            />
-          )
-        }
-      />
+            <View key={section.title}>
+              <SectionHeader title={section.title} />
+              <DishMenu
+                dishes={section.data}
+                subtitleFor={(d) => d.station || place.name}
+                onPress={(d) => navigation.navigate('Dish', { dishId: d.id })}
+              />
+            </View>
+          ),
+        )}
+        {dishes === null ? (
+          <Loading />
+        ) : !sections.some((x) => !x.renderItem) ? (
+          <Empty
+            title={hasMenu ? `Nothing for ${meal.toLowerCase()}` : 'No dishes here yet'}
+            body={hasMenu ? 'Try another meal.' : 'Had something good here? Add it so other people can find it.'}
+          />
+        ) : null}
+      </ScrollView>
     </Screen>
   );
 }
@@ -268,12 +272,12 @@ const styles = StyleSheet.create({
   tripMode: { flex: 1, fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
   tripMin: { fontFamily: fonts.body, fontSize: 14, color: colors.ink, width: 60 },
   tripCost: { fontFamily: fonts.medium, fontSize: 14, color: colors.teal, width: 84, textAlign: 'right' },
-  tripNote: { fontFamily: fonts.note, fontSize: 15, color: colors.muted, lineHeight: 19 },
+  tripNote: { fontFamily: fonts.italic, fontSize: 15, color: colors.muted, lineHeight: 19 },
   buttons: { flexDirection: 'row', gap: 12, marginTop: 22 },
   meals: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 22 },
   statsBox: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   statsCount: { fontFamily: fonts.medium, fontSize: 11, letterSpacing: 1.2, color: colors.muted, marginTop: 4 },
-  statsLine: { fontFamily: fonts.note, fontSize: 17, color: colors.ink, marginTop: 6 },
+  statsLine: { fontFamily: fonts.italic, fontSize: 17, color: colors.ink, marginTop: 6 },
   splitRow: { flexDirection: 'row', justifyContent: 'space-between' },
   splitLabel: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
   splitN: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
@@ -286,12 +290,4 @@ const styles = StyleSheet.create({
   },
   splitFill: { height: '100%', borderRadius: 4 },
   map: { marginTop: 22, borderRadius: 12, overflow: 'hidden', borderWidth: 3, borderColor: colors.deep },
-  station: {
-    fontFamily: fonts.display,
-    fontSize: 28,
-    color: colors.orange,
-    paddingHorizontal: 22,
-    marginTop: 20,
-    marginBottom: 10,
-  },
 });

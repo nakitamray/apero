@@ -1,4 +1,4 @@
-// sardine blues, lemons, blood oranges, majolica
+// sardine blues, lemons, blood oranges, majolica, on white ticking
 export const colors = {
   page: '#FFFFFF',
   paper: '#FFFDF7',
@@ -7,7 +7,7 @@ export const colors = {
   cobalt: '#2456B8',
   deep: '#0B3B8C',
   ink: '#13285E',
-  muted: '#5F6F92',
+  muted: '#55648A',
   aqua: '#1FB3CC',
   teal: '#0B7F94',
   lagoon: '#C9F0F4',
@@ -18,24 +18,30 @@ export const colors = {
   peach: '#FFE3CF',
   blood: '#D9441E',
   pink: '#F2938C',
-  hairline: 'rgba(36, 86, 184, 0.22)',
+  hairline: 'rgba(19, 40, 94, 0.18)',
 };
 
 // cards rotate through these so a list never goes flat white
 export const tints = ['#FFF5C9', '#D6F1F5', '#FFE3CF', '#E1EBFA'];
 
 export const fonts = {
-  display: 'GrandParadiso',
-  body: 'Jost_400Regular',
-  medium: 'Jost_500Medium',
-  note: 'CormorantGaramond_500Medium_Italic',
+  // Medan: all-caps vintage serif for titles and dish names
+  title: 'Medan',
+  // Gresida: wavy numerals for scores, ranks, stats
+  number: 'Gresida',
+  // Doblegh for everything you read or tap
+  body: 'Doblegh-Regular',
+  medium: 'Doblegh-Medium',
+  bold: 'Doblegh-SemiBold',
+  heavy: 'Doblegh-Bold',
+  italic: 'Doblegh-RegItalic',
 };
 
 // soft paper shadow, like a cut-out lying on the table
 export const lift = {
   shadowColor: '#13285E',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.12,
-  shadowRadius: 10,
-  elevation: 3,
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.14,
+  shadowRadius: 14,
+  elevation: 4,
 };

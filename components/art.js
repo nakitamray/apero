@@ -36,9 +36,8 @@ export const PLATTERS = {
 };
 
 export const WAVES = {
-  cobalt: require('../assets/art/waves.png'),
-  aqua: require('../assets/art/waves_aqua.png'),
-  orange: require('../assets/art/waves_orange.png'),
+  aqua: require('../assets/art/waves_aqua.jpg'),
+  orange: require('../assets/art/waves_orange.jpg'),
 };
 
 export function Sticker({ name, width, rotate = 0, flip, style }) {
@@ -53,27 +52,6 @@ export function Sticker({ name, width, rotate = 0, flip, style }) {
       ]}
       resizeMode="contain"
     />
-  );
-}
-
-// ragged bottom edge where the blue header is "torn" off
-export function TornEdge({ width, color = colors.page, height = 16, seed = 3 }) {
-  let x = 0;
-  let r = seed;
-  const rand = () => {
-    r = (r * 9301 + 49297) % 233280;
-    return r / 233280;
-  };
-  let d = `M0 ${height} L0 ${height * 0.5}`;
-  while (x < width) {
-    x += 6 + rand() * 12;
-    d += ` L${x.toFixed(1)} ${(height * (0.15 + rand() * 0.7)).toFixed(1)}`;
-  }
-  d += ` L${width} ${height} Z`;
-  return (
-    <Svg width={width} height={height} style={{ marginTop: -height + 1 }}>
-      <Path d={d} fill={color} />
-    </Svg>
   );
 }
 

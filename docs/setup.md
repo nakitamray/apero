@@ -43,10 +43,10 @@ Steps 1–5 need you in the console. For the rest (deploying rules and indexes, 
 
 ## 2. Vercel
 
-Keep everything on **one branch**. The website build includes the app, so splitting them across branches would just let them drift apart. Vercel builds a preview for every other branch and pull request on its own.
+The website lives on its own `website` branch. That branch is this app plus the landing page, so when the app changes, merge it into `website` (`git checkout website && git merge summer-redesign`) and Vercel redeploys.
 
 1. [vercel.com](https://vercel.com) → **Add New → Project → Import** `nakitamray/apero`.
-2. Vercel reads `vercel.json`: install `npm install`, build `npm run build:site`, output `site`. Leave those alone.
+2. **Settings → Git → Production Branch**: set it to `website`. Vercel reads that branch's `vercel.json` (build `npm run build:site`, output `site`).
 3. **Settings → Environment Variables**: add the six `EXPO_PUBLIC_FIREBASE_*` values (Production and Preview).
 4. Deploy. The site is at `apero-<something>.vercel.app`, the app itself at `/app/`, and the demo at `/app/?demo=1`.
 5. Back in Firebase: **Authentication → Settings → Authorized domains → Add** your Vercel domain (and your custom domain), or logging in on the web is blocked.

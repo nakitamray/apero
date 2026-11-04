@@ -1,10 +1,10 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { FlatList } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useSession } from '../context/Session';
 import { moodDishes } from '../lib/api';
 import { moodLabel } from '../lib/tags';
 import { Empty, Loading, Screen } from '../components/ui';
-import { DishRow } from '../components/rows';
+import { DishMenu } from '../components/rows';
 
 export default function MoodScreen({ navigation, route }) {
   const { mood } = route.params;
@@ -21,24 +21,24 @@ export default function MoodScreen({ navigation, route }) {
 
   if (!dishes)
     return (
-      <Screen tone="orange">
+      <Screen>
         <Loading />
       </Screen>
     );
 
   return (
-    <Screen tone="orange">
-      <FlatList
-        data={dishes}
-        keyExtractor={(d) => d.id}
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: 40 }}
-        renderItem={({ item, index }) => (
-          <DishRow dish={item} index={index} onPress={() => navigation.navigate('Dish', { dishId: item.id })} />
-        )}
-        ListEmptyComponent={
+    <Screen>
+      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingBottom: 40 }}>
+        {dishes.length ? (
+          <DishMenu
+            title={moodLabel(mood)}
+            dishes={dishes}
+            onPress={(d) => navigation.navigate('Dish', { dishId: d.id })}
+          />
+        ) : (
           <Empty title="Nothing tagged like that yet" body="When people add dishes they can tag the mood." />
-        }
-      />
+        )}
+      </ScrollView>
     </Screen>
   );
 }

@@ -6,8 +6,8 @@ import { getUser, myRankings } from '../lib/api';
 import { tasteMatch } from '../lib/taste';
 import { toTen } from '../lib/score';
 import { getCampus } from '../data/campuses';
-import { CollageHeader, Loading, Note, Platter, Screen, SectionHeader, Sub, Title } from '../components/ui';
-import { DishRow } from '../components/rows';
+import { Loading, Note, Platter, Screen, SectionHeader, Sub, Title } from '../components/ui';
+import { DishMenu } from '../components/rows';
 import { Avatar, FollowButton, MatchBadge } from '../components/people';
 import { colors, fonts } from '../theme';
 
@@ -32,7 +32,7 @@ export default function FriendScreen({ navigation, route }) {
 
   if (!person || !match) {
     return (
-      <Screen tone="cobalt">
+      <Screen>
         <Loading />
       </Screen>
     );
@@ -42,7 +42,7 @@ export default function FriendScreen({ navigation, route }) {
   const openDish = (id) => navigation.navigate('Dish', { dishId: id });
 
   return (
-    <Screen tone="cobalt">
+    <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.head}>
           <Avatar user={person} size={84} />
@@ -74,35 +74,30 @@ export default function FriendScreen({ navigation, route }) {
         {match.bothLoved.length > 0 && (
           <>
             <SectionHeader title="You both loved" />
-            {match.bothLoved.map((r, i) => (
-              <DishRow key={r.dishId} dish={r} index={i} score={toTen(r.elo)} onPress={() => openDish(r.dishId)} />
-            ))}
+            <DishMenu dishes={match.bothLoved} scoreFor={(r) => toTen(r.elo)} onPress={(r) => openDish(r.dishId)} />
           </>
         )}
 
         {match.toTry.length > 0 && (
           <>
             <SectionHeader label="They loved it, you haven't had it" title="Try these" />
-            {match.toTry.slice(0, 4).map((r, i) => (
-              <DishRow key={r.dishId} dish={r} index={i + 1} score={toTen(r.elo)} onPress={() => openDish(r.dishId)} />
-            ))}
+            <DishMenu
+              dishes={match.toTry.slice(0, 4)}
+              scoreFor={(r) => toTen(r.elo)}
+              onPress={(r) => openDish(r.dishId)}
+            />
           </>
         )}
 
         <SectionHeader title={`${person.name}'s list`} />
         {theirs.length ? (
-          theirs
-            .slice(0, 12)
-            .map((r, i) => (
-              <DishRow
-                key={r.dishId}
-                dish={r}
-                rank={i + 1}
-                index={i}
-                score={toTen(r.elo)}
-                onPress={() => openDish(r.dishId)}
-              />
-            ))
+          <DishMenu
+            title={`${person.name}'s list`}
+            dishes={theirs.slice(0, 12)}
+            rankFrom={1}
+            scoreFor={(r) => toTen(r.elo)}
+            onPress={(r) => openDish(r.dishId)}
+          />
         ) : (
           <Note style={{ paddingHorizontal: 22 }}>Nothing ranked yet.</Note>
         )}
@@ -115,6 +110,6 @@ const styles = StyleSheet.create({
   head: { alignItems: 'center', paddingTop: 22 },
   block: { marginHorizontal: 20, marginTop: 24 },
   matchBox: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  matchTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.ink },
+  matchTitle: { fontFamily: fonts.title, fontSize: 30, color: colors.ink },
   matchLine: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.ink, marginTop: 2 },
 });

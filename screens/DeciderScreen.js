@@ -68,7 +68,7 @@ export default function DeciderScreen({ navigation }) {
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '1440deg'] });
 
   return (
-    <Screen tone="cobalt">
+    <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
         <View style={styles.head}>
           <Title size={46}>Where are we eating?</Title>
@@ -157,9 +157,9 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: 22, marginTop: 8 },
   cta: { marginHorizontal: 22, marginTop: 28 },
   cardOuter: { marginHorizontal: 20, marginBottom: 12 },
-  cardName: { fontFamily: fonts.display, fontSize: 28, lineHeight: 30, color: colors.ink },
+  cardName: { fontFamily: fonts.title, fontSize: 28, lineHeight: 30, color: colors.ink },
   cardTrip: { fontFamily: fonts.medium, fontSize: 12, color: colors.teal, marginTop: 2, marginBottom: 6 },
   reason: { fontFamily: fonts.body, fontSize: 14, color: colors.ink, lineHeight: 20 },
   spinRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginHorizontal: 22, marginVertical: 18 },
-  winner: { fontFamily: fonts.display, fontSize: 38, lineHeight: 40, color: colors.ink, marginTop: 4 },
+  winner: { fontFamily: fonts.title, fontSize: 38, lineHeight: 40, color: colors.ink, marginTop: 4 },
 });

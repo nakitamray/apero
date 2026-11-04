@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../context/Session';
 import { activityToday, campusPlaceStats, topPlacesWorld } from '../lib/api';
 import { getPlace } from '../data/campuses';
 import { MODES, bestTrip, totalCost } from '../lib/trip';
-import { Chip, CollageHeader, Label, Note, Screen, Title } from '../components/ui';
+import { Chip, Masthead, Note, Screen } from '../components/ui';
 import { PlaceRow } from '../components/places';
 import { colors } from '../theme';
 
@@ -29,7 +28,6 @@ const modeList = (modes) =>
 
 export default function ExploreScreen({ navigation, route }) {
   const { campus, modes } = useSession();
-  const insets = useSafeAreaInsets();
   const [kind, setKind] = useState(route.params?.kind || 'hall');
   const [sort, setSort] = useState('near');
   const [activity, setActivity] = useState({});
@@ -73,24 +71,15 @@ export default function ExploreScreen({ navigation, route }) {
 
   const header = (
     <View>
-      <CollageHeader
-        height={insets.top + 96}
-        tone="orange"
-        pieces={[
-          { name: 'tile', size: 70, rotate: 10, right: 24, top: insets.top + 22 },
-          { name: 'lemon', size: 74, rotate: -12, right: 96, top: insets.top + 66 },
-        ]}
-      />
+      <Masthead kicker={campus.name} title="Explore" accent={campus.short} sticker="tile" stickerSize={104} />
       <View style={styles.head}>
-        <Label>{campus.name}</Label>
-        <Title size={48}>Explore</Title>
         <View style={styles.chips}>
           {KINDS.map((k) => (
             <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
           ))}
         </View>
         {kind === 'world' && (
-          <Note size={16} style={styles.note}>
+          <Note size={14} style={styles.note}>
             The best rated places on every campus on apero, from everyone who's rated them.
           </Note>
         )}
@@ -107,7 +96,7 @@ export default function ExploreScreen({ navigation, route }) {
                 />
               ))}
             </View>
-            <Note size={16} style={styles.note}>
+            <Note size={14} style={styles.note}>
               Trip times assume you {modeList(modes)}. Change that in Me → Campus & getting around.
             </Note>
           </>
@@ -117,9 +106,10 @@ export default function ExploreScreen({ navigation, route }) {
   );
 
   return (
-    <Screen tone="cobalt">
+    <Screen>
       <FlatList
         data={places}
+        ListHeaderComponentStyle={{ marginBottom: 6 }}
         keyExtractor={(p) => p.id}
         ListHeaderComponent={header}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -141,7 +131,7 @@ export default function ExploreScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  head: { padding: 22, paddingTop: 28, paddingBottom: 16 },
+  head: { paddingHorizontal: 22, paddingTop: 6, paddingBottom: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   small: { paddingVertical: 5, paddingHorizontal: 12 },
   note: { marginTop: 12 },

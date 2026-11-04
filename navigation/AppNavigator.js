@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { NavigationContainer, DefaultTheme, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Compass, ListOrdered, Sun, User } from 'lucide-react-native';
 import { Sticker } from '../components/art';
 import { useSession } from '../context/Session';
-import { listenForSteps, reportScreen } from '../lib/siteBridge';
 import { colors, fonts } from '../theme';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -31,7 +30,6 @@ import AddDealScreen from '../screens/AddDealScreen';
 import DeciderScreen from '../screens/DeciderScreen';
 import WrappedScreen from '../screens/WrappedScreen';
 
-const navigationRef = createNavigationContainerRef();
 const Root = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const TodayStack = createNativeStackNavigator();
@@ -45,7 +43,7 @@ const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background
 const stackOptions = {
   headerStyle: { backgroundColor: colors.page },
   headerTintColor: colors.cobalt,
-  headerTitleStyle: { fontFamily: fonts.display, fontSize: 24, color: colors.ink },
+  headerTitleStyle: { fontFamily: fonts.title, fontSize: 18, color: colors.ink },
   headerShadowVisible: false,
   headerBackButtonDisplayMode: 'minimal',
 };
@@ -171,13 +169,10 @@ function Tabs() {
 
 export default function AppNavigator() {
   const { user, profile, loading } = useSession();
-  useEffect(() => listenForSteps(navigationRef), []);
   if (loading) return null;
 
-  const report = () => reportScreen(navigationRef.getCurrentRoute()?.name);
-
   return (
-    <NavigationContainer theme={navTheme} ref={navigationRef} onReady={report} onStateChange={report}>
+    <NavigationContainer theme={navTheme}>
       <Root.Navigator screenOptions={noHeader}>
         {!user ? (
           <>
@@ -211,7 +206,7 @@ const styles = StyleSheet.create({
   reviewButton: { marginTop: -24, alignItems: 'center', justifyContent: 'center' },
   plus: {
     position: 'absolute',
-    fontFamily: fonts.display,
+    fontFamily: fonts.title,
     fontSize: 40,
     lineHeight: 46,
     color: colors.cobalt,

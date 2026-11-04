@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../theme';
-import { Sticker, WAVES } from './art';
+import { Sticker } from './art';
+import { Pinstripes } from './ui';
 
 // cut-outs drop onto the blue like someone's pasting a collage, then it fades away
 const PIECES = [
@@ -17,7 +18,6 @@ export default function Splash({ onDone }) {
   const land = useRef(PIECES.map(() => new Animated.Value(0))).current;
   const word = useRef(new Animated.Value(0)).current;
   const fade = useRef(new Animated.Value(1)).current;
-  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     Animated.sequence([
@@ -41,7 +41,7 @@ export default function Splash({ onDone }) {
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade, zIndex: 10 }]} pointerEvents="none">
       <View style={styles.bg}>
-        <Image source={WAVES.aqua} style={{ position: 'absolute', width, height }} resizeMode="cover" />
+        <Pinstripes />
         {PIECES.map(({ name, size, rotate, from, ...pos }, i) => (
           <Animated.View
             key={i}
@@ -70,8 +70,12 @@ export default function Splash({ onDone }) {
               },
             ]}
           >
-            <Text style={styles.word}>apero</Text>
+            <View style={styles.rule} />
+            <View style={styles.ruleThin} />
+            <Text style={styles.word}>Apero</Text>
             <Text style={styles.sub}>rate what you ate</Text>
+            <View style={styles.ruleThin} />
+            <View style={styles.rule} />
           </Animated.View>
         </View>
       </View>
@@ -80,23 +84,19 @@ export default function Splash({ onDone }) {
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: colors.aqua },
+  bg: { flex: 1, backgroundColor: colors.page },
   piece: { position: 'absolute' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  label: {
-    backgroundColor: colors.paper,
-    paddingHorizontal: 34,
-    paddingTop: 10,
-    paddingBottom: 14,
-    borderRadius: 4,
-    alignItems: 'center',
-    transform: [{ rotate: '-2deg' }],
-    shadowColor: colors.ink,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+  label: { alignItems: 'center', paddingHorizontal: 30 },
+  rule: { height: 3, alignSelf: 'stretch', backgroundColor: colors.ink },
+  ruleThin: { height: 1, alignSelf: 'stretch', backgroundColor: colors.ink, marginTop: 3 },
+  word: { fontFamily: fonts.title, fontSize: 88, lineHeight: 96, color: colors.deep, marginTop: 10 },
+  sub: {
+    fontFamily: fonts.bold,
+    fontSize: 12,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    color: colors.persimmon,
+    marginBottom: 10,
   },
-  word: { fontFamily: fonts.display, fontSize: 84, lineHeight: 92, color: colors.cobalt },
-  sub: { fontFamily: fonts.note, fontSize: 20, color: colors.orange, marginTop: -4 },
 });

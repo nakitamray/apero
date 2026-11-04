@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
     borderColor: colors.hairline,
   },
   verdictActive: { borderColor: colors.orange, ...lift },
-  verdictText: { fontFamily: fonts.display, fontSize: 30, color: colors.ink },
+  verdictText: { fontFamily: fonts.title, fontSize: 30, color: colors.ink },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

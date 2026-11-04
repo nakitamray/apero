@@ -50,9 +50,9 @@ export function FollowButton({ following, onPress }) {
 
 const styles = StyleSheet.create({
   avatar: { alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.paper },
-  avatarText: { fontFamily: fonts.display, color: colors.paper },
+  avatarText: { fontFamily: fonts.title, color: colors.paper },
   match: { backgroundColor: colors.lemon, alignItems: 'center', justifyContent: 'center' },
-  matchNumber: { fontFamily: fonts.display, color: colors.deep, lineHeight: 26 },
+  matchNumber: { fontFamily: fonts.number, color: colors.deep, lineHeight: 26 },
   matchLabel: {
     fontFamily: fonts.medium,
     fontSize: 7,

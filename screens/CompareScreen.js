@@ -49,7 +49,7 @@ export default function CompareScreen({ navigation, route }) {
 
   if (!ranked || saving || (done && finalScore == null)) {
     return (
-      <Screen tone="cobalt">
+      <Screen>
         <Loading />
       </Screen>
     );
@@ -57,7 +57,7 @@ export default function CompareScreen({ navigation, route }) {
 
   if (finalScore != null) {
     return (
-      <Screen tone="cobalt" style={styles.center}>
+      <Screen style={styles.center}>
         <View>
           <Sticker name="lemon" width={96} rotate={-14} style={styles.lemonSticker} />
           <Plate score={finalScore} size={150} />
@@ -99,7 +99,7 @@ export default function CompareScreen({ navigation, route }) {
   };
 
   return (
-    <Screen tone="cobalt" style={styles.center}>
+    <Screen style={styles.center}>
       <Label>Question {asked + 1}</Label>
       <Title size={42} style={{ marginBottom: 26, textAlign: 'center' }}>
         Which did you like more?
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     ...lift,
   },
   choiceArt: { position: 'absolute', top: -18, right: 10 },
-  choiceTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 34, color: colors.ink, textAlign: 'center' },
+  choiceTitle: { fontFamily: fonts.title, fontSize: 32, lineHeight: 34, color: colors.ink, textAlign: 'center' },
   choicePlace: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 6 },
   or: { color: colors.orange, marginVertical: 12 },
   skip: { fontFamily: fonts.medium, fontSize: 14, color: colors.paper, textDecorationLine: 'underline' },

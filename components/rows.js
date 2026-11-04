@@ -5,26 +5,51 @@ import { colors, fonts } from '../theme';
 import { timeAgo } from '../lib/time';
 import { reasonLabel } from '../lib/tags';
 import { setLiked } from '../lib/api';
-import { Note, Paper, Plate, Stamp, Tag } from './ui';
+import { Dotted, MenuCard, Note, Paper, Plate, Rise, Stamp, Tag } from './ui';
 
 // tiny alternating tilt so a list looks pasted down by hand
 export const tiltFor = (i) => [-0.6, 0.4, -0.2, 0.7][i % 4];
 
-export function DishRow({ dish, rank, score, subtitle, onPress, badge, index = 0 }) {
+// one line on a menu: rank, dish, where, and the score on its plate
+export function DishRow({ dish, rank, score, subtitle, onPress, badge, index = 0, last }) {
   return (
-    <Paper onPress={onPress} index={index} tilt={tiltFor(index)} outer={styles.rowOuter} style={styles.dishRow}>
-      {rank != null && <Text style={styles.rank}>{rank}</Text>}
-      <View style={{ flex: 1 }}>
-        <Text style={styles.dishName} numberOfLines={2}>
-          {dish.name || dish.dishName}
-        </Text>
-        <Text style={styles.sub} numberOfLines={1}>
-          {subtitle ?? dish.placeName}
-        </Text>
-        {badge}
-      </View>
-      <Plate score={score !== undefined ? score : dish.ratingCount ? dish.score : null} />
-    </Paper>
+    <Rise index={index}>
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.line, pressed && styles.linePressed]}>
+        {rank != null && <Text style={styles.rank}>{rank}</Text>}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.dishName} numberOfLines={2}>
+            {dish.name || dish.dishName}
+          </Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {subtitle ?? dish.placeName}
+          </Text>
+          {badge}
+        </View>
+        <Plate score={score !== undefined ? score : dish.ratingCount ? dish.score : null} size={50} />
+      </Pressable>
+      {!last && <Dotted />}
+    </Rise>
+  );
+}
+
+// a run of dishes printed on one menu card
+export function DishMenu({ dishes, title, rankFrom, scoreFor, subtitleFor, badgeFor, onPress, outer }) {
+  return (
+    <MenuCard title={title} outer={[styles.menuOuter, outer]}>
+      {dishes.map((dish, i) => (
+        <DishRow
+          key={dish.id || dish.dishId}
+          dish={dish}
+          index={i}
+          last={i === dishes.length - 1}
+          rank={rankFrom != null ? rankFrom + i : undefined}
+          score={scoreFor ? scoreFor(dish) : undefined}
+          subtitle={subtitleFor ? subtitleFor(dish) : undefined}
+          badge={badgeFor ? badgeFor(dish) : null}
+          onPress={() => onPress(dish)}
+        />
+      ))}
+    </MenuCard>
   );
 }
 
@@ -105,9 +130,11 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
 
 const styles = StyleSheet.create({
   rowOuter: { marginHorizontal: 20, marginBottom: 12 },
-  dishRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
-  rank: { fontFamily: fonts.display, fontSize: 34, color: colors.persimmon, minWidth: 26, textAlign: 'center' },
-  dishName: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink, lineHeight: 21 },
+  menuOuter: { marginHorizontal: 20 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  linePressed: { backgroundColor: 'rgba(255, 212, 59, 0.25)' },
+  rank: { fontFamily: fonts.title, fontSize: 26, color: colors.persimmon, minWidth: 26, textAlign: 'center' },
+  dishName: { fontFamily: fonts.title, fontSize: 17, color: colors.ink, lineHeight: 20, letterSpacing: 0.3 },
   sub: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2 },
   reviewTop: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   avatar: {
@@ -118,11 +145,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontFamily: fonts.display, fontSize: 18, color: colors.paper },
+  avatarText: { fontFamily: fonts.title, fontSize: 18, color: colors.paper },
   who: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
   when: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
   reviewBody: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  reviewDish: { fontFamily: fonts.display, fontSize: 28, lineHeight: 30, color: colors.ink },
+  reviewDish: { fontFamily: fonts.title, fontSize: 28, lineHeight: 30, color: colors.ink },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   actions: {
     flexDirection: 'row',

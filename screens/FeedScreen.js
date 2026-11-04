@@ -34,7 +34,7 @@ export default function FeedScreen({ navigation, route }) {
   );
 
   return (
-    <Screen tone="cobalt">
+    <Screen>
       <FlatList
         data={feed || []}
         keyExtractor={(r) => r.id}

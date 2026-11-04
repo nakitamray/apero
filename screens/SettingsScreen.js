@@ -6,7 +6,7 @@ import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
 import { CAMPUSES, getCampus } from '../data/campuses';
 import { MODES, defaultModes } from '../lib/trip';
-import { Button, Chip, CollageHeader, Label, Note, Screen, Sub, Title } from '../components/ui';
+import { Button, Chip, Dotted, Label, Masthead, MenuCard, Screen, Sub } from '../components/ui';
 import { colors, fonts } from '../theme';
 
 // used twice: first-run setup after sign up, and later from the profile tab
@@ -49,43 +49,41 @@ export default function SettingsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
 
   return (
-    <Screen tone={onboarding ? 'cobalt' : 'paper'}>
+    <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }}>
         {onboarding && (
-          <CollageHeader
-            height={insets.top + 150}
-            tone="orange"
-            pieces={[
-              { name: 'lemon', size: 90, rotate: 12, right: 22, top: insets.top + 40 },
-              { name: 'sardine', size: 170, rotate: -6, right: 90, top: insets.top + 118 },
-            ]}
+          <Masthead
+            kicker="Welcome to apero"
+            title="Where do"
+            accent="you eat?"
+            note="Pick your campus. You can switch any time from your profile."
+            sticker="lemon"
+            stickerSize={110}
           />
         )}
         <View style={styles.body}>
-          {onboarding && (
-            <>
-              <Title size={46}>Where do you eat?</Title>
-              <Note style={styles.lede}>Pick your campus. You can switch any time from your profile.</Note>
-            </>
-          )}
-
           <Label style={styles.label}>Campus</Label>
-          {CAMPUSES.map((c) => {
-            const active = c.id === campusId;
-            return (
-              <Pressable
-                key={c.id}
-                onPress={() => pickCampus(c.id)}
-                style={[styles.campus, active && styles.campusActive]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.campusName}>{c.name}</Text>
-                  <Text style={styles.campusCity}>{c.city}</Text>
+          <MenuCard title="thirteen campuses" style={{ paddingVertical: 6 }}>
+            {CAMPUSES.map((c, i) => {
+              const active = c.id === campusId;
+              return (
+                <View key={c.id}>
+                  <Pressable onPress={() => pickCampus(c.id)} style={[styles.campus, active && styles.campusActive]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.campusName}>{c.name}</Text>
+                      <Text style={styles.campusCity}>{c.city}</Text>
+                    </View>
+                    {active ? (
+                      <Check color={colors.persimmon} size={22} strokeWidth={2.5} />
+                    ) : (
+                      <Text style={styles.campusArrow}>→</Text>
+                    )}
+                  </Pressable>
+                  {i < CAMPUSES.length - 1 && <Dotted />}
                 </View>
-                {active && <Check color={colors.orange} size={20} strokeWidth={2.5} />}
-              </Pressable>
-            );
-          })}
+              );
+            })}
+          </MenuCard>
 
           <Label style={styles.label}>How do you get around?</Label>
           <Sub style={styles.hint}>We use this to show how far each spot really is and what the trip costs you.</Sub>
@@ -115,23 +113,13 @@ export default function SettingsScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  body: { padding: 22 },
-  lede: { marginTop: 6 },
-  label: { marginTop: 28, marginBottom: 10 },
-  campus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.hairline,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: colors.paper,
-  },
-  campusActive: { backgroundColor: colors.butter, borderColor: colors.lemon },
-  campusName: { fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
+  body: { paddingHorizontal: 22, paddingBottom: 22 },
+  label: { marginTop: 22, marginBottom: 10 },
+  campus: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, paddingHorizontal: 6, borderRadius: 6 },
+  campusActive: { backgroundColor: colors.lemon },
+  campusName: { fontFamily: fonts.title, fontSize: 17, color: colors.ink },
   campusCity: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
+  campusArrow: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink, opacity: 0.4 },
   hint: { fontSize: 13, lineHeight: 19, marginBottom: 10 },
   modes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
 });

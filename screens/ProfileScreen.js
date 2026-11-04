@@ -1,16 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight } from 'lucide-react-native';
 import { useSession } from '../context/Session';
 import { getPlace } from '../data/campuses';
 import { myRankings, topDishes, userReviews } from '../lib/api';
 import { reasonLabel } from '../lib/tags';
 import { dayStreak, timeAgo } from '../lib/time';
-import { Button, CollageHeader, Label, Loading, Paper, Plate, Platter, Screen, Title } from '../components/ui';
+import { Button, Label, Loading, Masthead, MenuCard, Paper, Plate, Platter, Screen } from '../components/ui';
 import { Sticker } from '../components/art';
-import { DishRow } from '../components/rows';
+import { DishMenu } from '../components/rows';
 import { colors, fonts, lift } from '../theme';
 
 function Stat({ value, label }) {
@@ -55,7 +54,6 @@ function tasteFrom(reviews, campus) {
 
 export default function ProfileScreen({ navigation }) {
   const { user, name, campus, demo, logOut, profile, following } = useSession();
-  const insets = useSafeAreaInsets();
   const [reviews, setReviews] = useState(null);
   const [tryNext, setTryNext] = useState([]);
 
@@ -75,30 +73,20 @@ export default function ProfileScreen({ navigation }) {
   const taste = reviews ? tasteFrom(reviews, campus) : null;
 
   return (
-    <Screen tone="cobalt">
+    <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <CollageHeader
-          height={insets.top + 90}
-          tone="orange"
-          pieces={[
-            { name: 'sardine', size: 150, rotate: -10, left: -20, top: insets.top + 20 },
-            { name: 'lemon', size: 70, rotate: 14, right: 26, top: insets.top + 30 },
-          ]}
+        <Masthead
+          kicker={`@${profile?.handle || 'you'} / ${campus.short}`}
+          title={name}
+          accent="at the table"
+          sticker="goldfish"
+          stickerSize={150}
+          right="Me"
         />
-        <View style={styles.head}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{name[0].toUpperCase()}</Text>
-          </View>
-          <Title size={46} style={{ marginTop: 10 }}>
-            {name}
-          </Title>
-          <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
-            <Text style={styles.campusText}>
-              @{profile?.handle} · {campus.name}
-            </Text>
-            <ChevronRight size={16} color={colors.lemon} strokeWidth={1.6} />
-          </Pressable>
-        </View>
+        <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
+          <Text style={styles.campusText}>{campus.name} / how you get around</Text>
+          <ChevronRight size={16} color={colors.persimmon} strokeWidth={2} />
+        </Pressable>
 
         <View style={styles.tiles}>
           <Paper
@@ -129,11 +117,11 @@ export default function ProfileScreen({ navigation }) {
           <Loading />
         ) : (
           <>
-            <Paper tint={colors.paper} tilt={-0.4} outer={styles.statsOuter} style={styles.stats}>
+            <MenuCard outer={styles.statsOuter} style={styles.stats}>
               <Stat value={total} label="reviews" />
               <Stat value={Object.keys(taste.places).length} label="places" />
               <Stat value={dayStreak(reviews.map((r) => r.createdAt).filter(Boolean))} label="day streak" />
-            </Paper>
+            </MenuCard>
 
             {total > 0 && (
               <Platter tone="blue" outer={styles.block}>
@@ -166,14 +154,7 @@ export default function ProfileScreen({ navigation }) {
             {tryNext.length > 0 && (
               <>
                 <Text style={styles.section}>Try next</Text>
-                {tryNext.map((d, i) => (
-                  <DishRow
-                    key={d.id}
-                    dish={d}
-                    index={i}
-                    onPress={() => navigation.navigate('Dish', { dishId: d.id })}
-                  />
-                ))}
+                <DishMenu dishes={tryNext} onPress={(d) => navigation.navigate('Dish', { dishId: d.id })} />
               </>
             )}
 
@@ -189,7 +170,7 @@ export default function ProfileScreen({ navigation }) {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.recentDish}>{r.dishName}</Text>
                       <Text style={styles.recentMeta}>
-                        {r.placeName} · {timeAgo(r.createdAt)}
+                        {r.placeName} / {timeAgo(r.createdAt)}
                       </Text>
                     </View>
                     <Plate score={r.score} size={44} />
@@ -210,35 +191,16 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  head: { alignItems: 'center', marginTop: -46, zIndex: 3 },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.aqua,
-    borderWidth: 4,
-    borderColor: colors.paper,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...lift,
-  },
-  avatarText: { fontFamily: fonts.display, fontSize: 52, lineHeight: 58, color: colors.paper },
   tiles: { flexDirection: 'row', gap: 14, marginHorizontal: 22, marginTop: 22 },
   tile: { alignItems: 'center', paddingVertical: 14, minHeight: 140, justifyContent: 'center' },
-  tileTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginTop: 4 },
+  tileTitle: { fontFamily: fonts.title, fontSize: 28, color: colors.ink, marginTop: 4 },
   tileSub: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  campusText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.paper,
-    textShadowColor: 'rgba(5, 20, 60, 0.5)',
-    textShadowRadius: 6,
-  },
+  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 22, marginTop: 4 },
+  campusText: { fontFamily: fonts.bold, fontSize: 13, color: colors.persimmon },
   statsOuter: { marginHorizontal: 22, marginTop: 22 },
   stats: { flexDirection: 'row', paddingVertical: 4 },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  statValue: { fontFamily: fonts.display, fontSize: 42, lineHeight: 46, color: colors.cobalt },
+  statValue: { fontFamily: fonts.title, fontSize: 42, lineHeight: 46, color: colors.cobalt },
   statLabel: {
     fontFamily: fonts.medium,
     fontSize: 10,
@@ -253,11 +215,11 @@ const styles = StyleSheet.create({
   barTrack: { height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: colors.mist },
   barFill: { height: '100%', borderRadius: 4 },
   line: { fontFamily: fonts.body, fontSize: 15, color: colors.ink, marginTop: 10, lineHeight: 22 },
-  em: { fontFamily: fonts.note, fontSize: 18, color: colors.orange },
+  em: { fontFamily: fonts.italic, fontSize: 18, color: colors.orange },
   section: {
-    fontFamily: fonts.display,
-    fontSize: 34,
-    color: colors.paper,
+    fontFamily: fonts.title,
+    fontSize: 26,
+    color: colors.ink,
     marginHorizontal: 22,
     marginTop: 34,
     marginBottom: 12,
@@ -268,8 +230,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 22,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.25)',
+    borderBottomColor: colors.hairline,
   },
-  recentDish: { fontFamily: fonts.medium, fontSize: 15, color: colors.paper },
-  recentMeta: { fontFamily: fonts.body, fontSize: 12, color: '#D6E4F7', marginTop: 2 },
+  recentDish: { fontFamily: fonts.title, fontSize: 16, color: colors.ink },
+  recentMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 },
 });

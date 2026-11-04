@@ -187,14 +187,21 @@ const styles = StyleSheet.create({
     color: colors.teal,
   },
   big: {
-    fontFamily: fonts.display,
+    fontFamily: fonts.title,
     fontSize: 52,
     lineHeight: 56,
     color: colors.deep,
     textAlign: 'center',
     marginTop: 6,
   },
-  sub: { fontFamily: fonts.note, fontSize: 21, color: colors.ink, textAlign: 'center', marginTop: 10, lineHeight: 26 },
+  sub: {
+    fontFamily: fonts.italic,
+    fontSize: 21,
+    color: colors.ink,
+    textAlign: 'center',
+    marginTop: 10,
+    lineHeight: 26,
+  },
   outroButtons: { alignSelf: 'stretch', gap: 12, marginTop: 24 },
   taps: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row' },
 });

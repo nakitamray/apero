@@ -90,7 +90,7 @@ def sardine(seed=3, name='sardine'):
     c.stroke([(1235, 240), (1255, 300), (1320, 395)], NAVY, width=4, alpha=0.6)
     for k in range(5):
         c.stroke([(1110, 236), (1290 - k * 6, 120 + k * 55)], COBALT, width=3, alpha=0.5)
-    c.save(f'{OUT}/{name}.png', size=(700, 260))
+    c.save(f'{OUT}/{name}.png', size=(1000, 360))
 
 
 # ---------------------------------------------------------------- lemon
@@ -120,7 +120,7 @@ def lemon(seed=5):
         if whole[int(y), int(x)] > 0.5:
             c.stroke([(x, y), (x + 2, y + 1)], '#C9971A', width=3, alpha=0.35, jitter=0)
     c.stroke(ellipse_pts(430, 470, 292, 232, rot=-0.35, start=-0.2, end=2.6), '#8C5A0C', width=4, alpha=0.5)
-    c.save(f'{OUT}/lemon.png', size=(360, 330))
+    c.save(f'{OUT}/lemon.png', size=(520, 480))
 
 
 # ---------------------------------------------------------------- citrus slice
@@ -145,7 +145,7 @@ def slice_(name, rind, flesh, pith='#FFF6DE', seed=9, segs=10):
             c.stroke([(x, y), (x + 12 * np.cos(t), y + 12 * np.sin(t))], '#FFFFFF', width=4, alpha=0.45, jitter=0.5)
     c.wash(poly(c, ellipse_pts(cx, cy, 26, 26)), pith, density=1, wob=2)
     c.stroke(ellipse_pts(cx, cy, 362, 357, start=0.4, end=4.2), '#7A2A0A' if rind != LEMON else '#8C5A0C', width=4, alpha=0.45)
-    c.save(f'{OUT}/{name}.png', size=(300, 300))
+    c.save(f'{OUT}/{name}.png', size=(460, 460))
 
 
 # ---------------------------------------------------------------- spritz
@@ -188,7 +188,7 @@ def spritz(seed=11):
         c.wash(poly(c, ellipse_pts(560, 150, r, r)), col, density=d, wob=4)
     for a in np.linspace(0, 2 * np.pi, 9)[:-1]:
         c.stroke([(560, 150), (560 + 88 * np.cos(a), 150 + 88 * np.sin(a))], '#FFF1D8', width=6, alpha=0.9)
-    c.save(f'{OUT}/spritz.png', size=(300, 430))
+    c.save(f'{OUT}/spritz.png', size=(460, 660))
 
 
 # ---------------------------------------------------------------- majolica plate (score holder)
@@ -207,7 +207,7 @@ def plate(seed=13):
         x2, y2 = cx + 336 * np.cos(a + np.pi / 18), cy + 336 * np.sin(a + np.pi / 18)
         c.wash(poly(c, ellipse_pts(x2, y2, 7, 7)), LEMON, density=0.95, wob=1)
     c.stroke(ellipse_pts(cx, cy, 381, 381), NAVY, width=3, alpha=0.4)
-    c.save(f'{OUT}/plate.png', sticker=0, shadow=False, size=(260, 260))
+    c.save(f'{OUT}/plate.png', sticker=0, shadow=False, size=(480, 480))
 
 
 # ---------------------------------------------------------------- sardine tin (empty states)
@@ -240,7 +240,7 @@ def tin(seed=17):
     c.wash(lid, '#D8C67A', density=0.95)
     c.stroke([(80, 140), (90, 590)], '#6E6C58', width=6, alpha=0.6)
     c.stroke(np.stack([sx, sy], 1)[::2], '#55543F', width=5, alpha=0.6)
-    c.save(f'{OUT}/tin.png', size=(420, 300))
+    c.save(f'{OUT}/tin.png', size=(700, 500))
 
 
 # ---------------------------------------------------------------- lino waves (header band texture)
@@ -252,7 +252,7 @@ def waves(seed=19, color=COBALT, line='#EAF2FB', name='waves'):
     for k, base in enumerate(range(-30, h + 60, 46)):
         ys = base + 22 * np.sin(xs / 95 + k * 0.9) + 10 * np.sin(xs / 37 + k)
         c.stroke(np.stack([xs, ys], 1)[::2], line, width=13 + 5 * np.sin(k), alpha=0.92, jitter=1.5, taper=False)
-    c.save(f'{OUT}/{name}.png', sticker=0, shadow=False, size=(800, 260))
+    _save_bg(c, name, size=(1600, 520))
 
 
 # ---------------------------------------------------------------- tiny accents
@@ -269,7 +269,7 @@ def starfish(seed=23):
         x, y = c.rng.uniform(60, 540), c.rng.uniform(60, 560)
         if m[int(y), int(x)] > 0.5:
             c.wash(poly(c, ellipse_pts(x, y, 7, 7)), SKY, density=0.9, wob=1)
-    c.save(f'{OUT}/starfish.png', size=(160, 160))
+    c.save(f'{OUT}/starfish.png', size=(320, 320))
 
 
 
@@ -279,7 +279,7 @@ def swash(seed=31):
     ys = 75 + 14 * np.sin(xs / 140) - (xs - 450) ** 2 / 40000
     c.stroke(np.stack([xs, ys], 1), COBALT, width=34, alpha=0.85, jitter=1.5)
     c.stroke(np.stack([xs[5:-8], ys[5:-8] - 6], 1), SKY, width=8, alpha=0.4, jitter=1)
-    c.save(f'{OUT}/swash.png', sticker=0, shadow=False, size=(300, 48))
+    c.save(f'{OUT}/swash.png', sticker=0, shadow=False, size=(700, 110))
 
 
 def tile(seed=37):
@@ -298,7 +298,7 @@ def tile(seed=37):
         c.wash(poly(c, ellipse_pts(cx + 150 * np.cos(a + np.pi / 8), cy + 150 * np.sin(a + np.pi / 8), 14, 14)), LEMON, density=0.9, wob=2)
     for (x, y) in [(10, 10), (590, 10), (10, 590), (590, 590)]:
         c.wash(poly(c, ellipse_pts(x, y, 90, 90)) * poly(c, [(10, 10), (590, 10), (590, 590), (10, 590)]), COBALT, density=0.85)
-    c.save(f'{OUT}/tile.png', sticker=8, size=(200, 200))
+    c.save(f'{OUT}/tile.png', sticker=8, size=(440, 440))
 
 
 # ---------------------------------------------------------------- tuscan vase
@@ -338,7 +338,7 @@ def vase(seed=47):
     for (x, y) in [(240, 60), (470, 40), (360, 10), (300, 120)]:
         c.wash(poly(c, ellipse_pts(x, y, 22, 22)), '#FFFFFF', density=1, wob=3)
         c.wash(poly(c, ellipse_pts(x, y, 8, 8)), LEMON, density=1, wob=1)
-    c.save(f'{OUT}/vase.png', size=(300, 430))
+    c.save(f'{OUT}/vase.png', size=(440, 640))
 
 
 # ---------------------------------------------------------------- platters (card frames, stretched in the app)
@@ -363,11 +363,11 @@ def platter(name, rim, accent, dots, center, seed=53):
         col = dots if i % 20 == 0 else rim
         c.wash(poly(c, ellipse_pts(x, y, 9, 9)), col, density=0.95, wob=1)
     c.stroke(outer[::2], NAVY, width=3, alpha=0.35)
-    c.save(f'{OUT}/{name}.png', sticker=0, shadow=False, size=(500, 380))
+    c.save(f'{OUT}/{name}.png', sticker=0, shadow=False, size=(1000, 760))
 
 
 # ---------------------------------------------------------------- painted screen backgrounds (jpg)
-def _save_bg(c, name, size=(700, 1400)):
+def _save_bg(c, name, size=(900, 1800)):
     from PIL import Image as _I
     rgb = c.rgb * c.a[..., None] + (1 - c.a[..., None])
     img = _I.fromarray((np.clip(rgb, 0, 1) * 255).astype(np.uint8), 'RGB').resize(size, _I.LANCZOS)
@@ -432,7 +432,7 @@ def goldfish(seed=73):
     c.wash(poly(c, ellipse_pts(232, 360, 17, 17)), '#1A1A2E', density=1, wob=1)
     c.stroke([(170, 420), (200, 430)], '#7A1E0A', width=5, alpha=0.7)
     c.stroke(ellipse_pts(420, 400, 262, 167, start=3.4, end=5.9), '#9E2A10', width=4, alpha=0.5)
-    c.save(f'{OUT}/goldfish.png', size=(380, 280))
+    c.save(f'{OUT}/goldfish.png', size=(800, 580))
 
 
 def shell(seed=79):
@@ -449,7 +449,7 @@ def shell(seed=79):
         a = t[k]
         r0, r1 = r[k] * 0.55, r[k] * 1.0
         c.stroke([(cx + r0 * np.cos(a), cy + r0 * np.sin(a)), (cx + r1 * np.cos(a), cy + r1 * np.sin(a))], COBALT, width=5, alpha=0.75)
-    c.save(f'{OUT}/shell.png', size=(220, 220))
+    c.save(f'{OUT}/shell.png', size=(460, 460))
 
 
 def stamp(seed=83):
@@ -478,7 +478,7 @@ def stamp(seed=83):
     # little boat
     c.wash(poly(c, [(220, 395), (340, 395), (320, 420), (240, 420)]), '#FBF3DF', density=1, wob=1)
     c.wash(poly(c, [(280, 300), (280, 392), (340, 392)]), '#FBF3DF', density=1, wob=1)
-    c.save(f'{OUT}/stamp.png', sticker=0, size=(170, 210))
+    c.save(f'{OUT}/stamp.png', sticker=0, size=(400, 490))
 
 
 def matchbox(seed=89):
@@ -507,7 +507,7 @@ def matchbox(seed=89):
     for y in range(140, 480, 26):
         c.stroke([(720, y), (850, y + 8)], '#D9C9A8', width=10, alpha=0.9, taper=False)
         c.wash(poly(c, ellipse_pts(852, y + 8, 10, 9)), '#2B2B2B', density=0.9, wob=1)
-    c.save(f'{OUT}/matchbox.png', size=(300, 200))
+    c.save(f'{OUT}/matchbox.png', size=(660, 440))
 
 
 def burst(seed=97):
@@ -519,7 +519,7 @@ def burst(seed=97):
         pts.append((350 + r * np.cos(a), 350 + r * np.sin(a)))
     c.wash(poly(c, pts), PERSIMMON, density=1, wob=3, blotch=0.15)
     c.put('#FFF4E2', gaussian_filter(poly(c, ellipse_pts(350, 350, 225, 225)), 1.5), multiply=0)
-    c.save(f'{OUT}/burst.png', size=(220, 220))
+    c.save(f'{OUT}/burst.png', size=(460, 460))
 
 
 ALL = {
@@ -534,7 +534,6 @@ ALL = {
     'plate': plate,
     'tin': tin,
     'waves': lambda: (
-        waves(),
         waves(seed=41, color=AQUA, line='#E6FAFC', name='waves_aqua'),
         waves(seed=43, color=ORANGE, line='#FFF1DC', name='waves_orange'),
     ),

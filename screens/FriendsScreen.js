@@ -40,7 +40,7 @@ export default function FriendsScreen({ navigation }) {
   const open = (p) => navigation.navigate('Friend', { uid: p.id });
 
   return (
-    <Screen tone="orange">
+    <Screen>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <View style={styles.search}>
           <Note size={18} style={{ marginBottom: 10 }}>

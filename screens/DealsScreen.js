@@ -35,7 +35,7 @@ export default function DealsScreen({ navigation }) {
   );
 
   return (
-    <Screen tone="orange">
+    <Screen>
       <FlatList
         data={shown}
         keyExtractor={(d) => d.id}
