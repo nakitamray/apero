@@ -9,17 +9,18 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 ## What it does
 
 - **Today**: top rated dishes on your campus, what's on the menu right now, where people are eating, and the latest reviews.
-- **Explore**: dining halls plus cheap eats near campus. For each spot you see how you'd get there (walk, bus/train, or car, depending on what you said you use), how long it takes, and roughly what the meal plus the trip costs. If your school's bus is free with a student ID, that counts as $0.
+- **Explore**: dining halls, cheap eats and date night spots near campus (anything within a 25 minute walk or a 20 minute drive). For each spot you see how you'd get there (walk, bus/train, or car, depending on what you said you use), how long it takes, and roughly what the meal plus the trip costs. If your school's bus is free with a student ID, that counts as $0.
 - **Rating**: pick a verdict (loved it / it was fine / not for me), say why, then answer a couple of "which did you like more?" questions. That places the dish in your list, like a binary search, so your scores stay consistent with each other.
 - **My list**: your personal ranking, filterable by verdict.
-- **Feed**: reviews from your campus. You can like and share them.
+- **Reviews**: add up to 4 photos of your food and tag who you ate with. Tagged friends see it on their feed too.
+- **Feed**: reviews from your campus or just your friends, as posts or as a photo grid. You can like and share them.
 - **Places**: every dining hall and spot has one score from everyone who's rated anything there (and how the loved it / fine / not for me votes split), a map, directions that match how you get around, and the latest reviews.
 - **Worldwide**: the best rated places on every campus.
 - **Friends**: add people by handle or find classmates. Every friend shows a taste match % from the dishes you've both ranked, what you both loved, and what they loved that you haven't tried.
 - **Group decider**: pick who's coming and a budget, get a shortlist ranked for the whole group ("Maya loved the tacos here", "deal today"), then spin the orange.
 - **Deals**: student discounts and specials posted by students, with a "still good" vote. They show up on Today and on each place.
 - **Campus Wrapped**: your semester in food as story cards: dishes rated, your number one, your spot, your eater type, your taste twin.
-- **Me**: your stats, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
+- **Me**: your stats, your photo grid, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
 ## Look

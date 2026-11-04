@@ -1,6 +1,6 @@
 // Campuses + the places we track at each one.
-// kind 'hall' = campus dining, kind 'spot' = cheap eats near campus.
-// price is 1-3 ($ to $$$). miles is a rough distance from the middle of campus.
+// kind 'hall' = campus dining, kind 'spot' = places to eat out near campus
+// (mostly student-budget, plus a few sit-down 'date' places). price is 1-3 ($ to $$$). miles is a rough distance from the middle of campus.
 // transit.free means a student ID / pass covers the ride.
 
 const hall = (campusId, slug, name, area) => ({
@@ -11,7 +11,7 @@ const hall = (campusId, slug, name, area) => ({
   area,
 });
 
-const spot = (campusId, slug, name, cuisine, price, area, miles) => ({
+const spot = (campusId, slug, name, cuisine, price, area, miles, occasion) => ({
   id: `${campusId}-${slug}`,
   campusId,
   kind: 'spot',
@@ -20,7 +20,12 @@ const spot = (campusId, slug, name, cuisine, price, area, miles) => ({
   price,
   area,
   miles,
+  ...(occasion ? { occasion } : {}),
 });
+
+// sit-down places for a nicer night out
+const dateSpot = (campusId, slug, name, cuisine, price, area, miles) =>
+  spot(campusId, slug, name, cuisine, price, area, miles, 'date');
 
 export const CAMPUSES = [
   {
@@ -40,6 +45,8 @@ export const CAMPUSES = [
       spot('purdue', 'mad-mushroom', 'Mad Mushroom Pizza', 'Pizza', 1, 'Chauncey Village', 0.4),
       spot('purdue', 'greyhouse', 'Greyhouse Coffee & Supply Co.', 'Coffee', 1, 'Northwestern Ave', 0.5),
       spot('purdue', 'nine-irish', 'Nine Irish Brothers', 'Pub food', 2, 'Northwestern Ave', 0.7),
+      dateSpot('purdue', 'bistro-501', 'Bistro 501', 'French', 3, 'Downtown Lafayette', 1.6),
+      dateSpot('purdue', 'mcgraws', "McGraw's Steak, Chop & Fish House", 'Steakhouse', 3, 'Lafayette', 2.4),
     ],
   },
   {
@@ -57,6 +64,8 @@ export const CAMPUSES = [
       spot('ucla', 'in-n-out', 'In-N-Out Burger', 'Burgers', 1, 'Gayley Ave', 0.6),
       spot('ucla', 'fat-sals', "Fat Sal's Deli", 'Sandwiches', 2, 'Gayley Ave', 0.6),
       spot('ucla', 'stans', "Stan's Donuts", 'Donuts', 1, 'Weyburn Ave', 0.7),
+      dateSpot('ucla', 'tsujita', 'Tsujita LA Artisan Noodle', 'Ramen', 2, 'Sawtelle', 2.1),
+      dateSpot('ucla', 'toscana', 'Toscana', 'Italian', 3, 'Brentwood', 2.6),
     ],
   },
   {
@@ -73,6 +82,8 @@ export const CAMPUSES = [
       spot('usc', 'chanos', "Chano's Drive In", 'Mexican', 1, 'Figueroa St', 0.5),
       spot('usc', 'la-taquiza', 'La Taquiza', 'Tacos', 1, 'Figueroa St', 0.5),
       spot('usc', 'northern-cafe', 'Northern Cafe', 'Chinese', 1, 'Jefferson Blvd', 0.4),
+      dateSpot('usc', 'grand-central', 'Grand Central Market', 'Food hall', 2, 'Downtown LA', 3.2),
+      dateSpot('usc', 'rossoblu', 'Rossoblu', 'Italian', 3, 'Fashion District', 2.9),
     ],
   },
   {
@@ -90,6 +101,9 @@ export const CAMPUSES = [
       spot('berkeley', 'cheese-board', 'Cheese Board Pizza', 'Pizza', 1, 'North Shattuck', 1.0),
       spot('berkeley', 'sliver', 'Sliver Pizzeria', 'Pizza', 1, 'Downtown Shattuck', 0.4),
       spot('berkeley', 'imm-thai', 'Imm Thai Street Food', 'Thai', 1, 'Durant Ave', 0.3),
+      dateSpot('berkeley', 'comal', 'Comal', 'Mexican', 2, 'Downtown Berkeley', 0.5),
+      dateSpot('berkeley', 'ippuku', 'Ippuku', 'Izakaya', 3, 'Downtown Berkeley', 0.6),
+      dateSpot('berkeley', 'chez-panisse', 'Chez Panisse', 'Californian', 3, 'North Shattuck', 1.2),
     ],
   },
   {
@@ -108,6 +122,8 @@ export const CAMPUSES = [
       spot('stanford', 'tacolicious', 'Tacolicious', 'Tacos', 2, 'Town & Country Village', 1.0),
       spot('stanford', 'orens', "Oren's Hummus", 'Israeli', 2, 'University Ave', 1.6),
       spot('stanford', 'ramen-nagi', 'Ramen Nagi', 'Ramen', 2, 'University Ave', 1.6),
+      dateSpot('stanford', 'evvia', 'Evvia Estiatorio', 'Greek', 3, 'Downtown Palo Alto', 1.7),
+      dateSpot('stanford', 'zola', 'Zola', 'French', 3, 'Downtown Palo Alto', 1.8),
     ],
   },
   {
@@ -123,6 +139,8 @@ export const CAMPUSES = [
       spot('uci', 'brittas', "Britta's Cafe", 'Cafe', 2, 'University Center', 0.4),
       spot('uci', 'luna-grill', 'Luna Grill', 'Mediterranean', 1, 'University Center', 0.5),
       spot('uci', 'mendocino', 'Mendocino Farms', 'Sandwiches', 2, 'University Town Center', 0.5),
+      dateSpot('uci', 'din-tai-fung', 'Din Tai Fung', 'Taiwanese', 2, 'South Coast Plaza', 5),
+      dateSpot('uci', 'taco-maria', 'Taco María', 'Mexican', 3, 'Costa Mesa', 4.6),
     ],
   },
   {
@@ -138,6 +156,7 @@ export const CAMPUSES = [
       spot('ucr', 'manna-grill', 'Manna Grill', 'Korean', 1, 'University Village', 0.6),
       spot('ucr', 'university-pizza', 'University Pizza Company', 'Pizza', 1, 'University Village', 0.6),
       spot('ucr', 'chronic-tacos', 'Chronic Tacos', 'Tacos', 1, 'University Ave', 0.9),
+      dateSpot('ucr', 'mission-inn', 'Mission Inn Restaurant', 'American', 3, 'Downtown Riverside', 3),
     ],
   },
   {
@@ -157,6 +176,8 @@ export const CAMPUSES = [
       spot('mit', 'flour', 'Flour Bakery + Cafe', 'Bakery', 2, 'Kendall Square', 0.6),
       spot('mit', 'dumpling-house', 'Dumpling House', 'Chinese', 1, 'Central Square', 0.6),
       spot('mit', 'life-alive', 'Life Alive', 'Bowls', 2, 'Central Square', 0.7),
+      dateSpot('mit', 'oleana', 'Oleana', 'Mediterranean', 3, 'Inman Square', 1.4),
+      dateSpot('mit', 'giulia', 'Giulia', 'Italian', 3, 'Porter Square', 2.2),
     ],
   },
   {
@@ -174,6 +195,8 @@ export const CAMPUSES = [
       spot('nyu', 'mamouns', "Mamoun's Falafel", 'Falafel', 1, 'MacDougal St', 0.2),
       spot('nyu', 'artichoke', "Artichoke Basille's Pizza", 'Pizza', 1, '14th St', 0.6),
       spot('nyu', 'veselka', 'Veselka', 'Ukrainian diner', 2, 'East Village', 0.8),
+      dateSpot('nyu', 'via-carota', 'Via Carota', 'Italian', 3, 'West Village', 0.7),
+      dateSpot('nyu', 'carbone', 'Carbone', 'Italian', 3, 'Thompson St', 0.4),
     ],
   },
   {
@@ -191,6 +214,8 @@ export const CAMPUSES = [
       spot('cmu', 'primanti', 'Primanti Bros.', 'Sandwiches', 1, 'Oakland', 0.8),
       spot('cmu', 'stackd', "Stack'd Burgers & Beer", 'Burgers', 2, 'Oakland', 0.8),
       spot('cmu', 'fuel-fuddle', 'Fuel & Fuddle', 'Pub food', 2, 'Oakland', 0.9),
+      dateSpot('cmu', 'mercurios', "Mercurio's", 'Pizza & gelato', 2, 'Shadyside', 1.1),
+      dateSpot('cmu', 'morcilla', 'Morcilla', 'Spanish', 3, 'Lawrenceville', 3.1),
     ],
   },
   {
@@ -207,6 +232,8 @@ export const CAMPUSES = [
       spot('uw', 'aladdin', 'Aladdin Gyro-Cery', 'Mediterranean', 1, 'The Ave', 0.4),
       spot('uw', 'cedars', 'Cedars Restaurant on Brooklyn', 'Indian & Mediterranean', 2, 'Brooklyn Ave', 0.5),
       spot('uw', 'dicks', "Dick's Drive-In", 'Burgers', 1, 'Wallingford', 1.3),
+      dateSpot('uw', 'agua-verde', 'Agua Verde Cafe', 'Mexican', 2, 'Portage Bay', 0.9),
+      dateSpot('uw', 'canlis', 'Canlis', 'Pacific Northwest', 3, 'Queen Anne', 2.6),
     ],
   },
   {
@@ -224,6 +251,8 @@ export const CAMPUSES = [
       spot('uiuc', 'cravings', 'Cravings', 'Chinese', 1, 'Green St', 0.4),
       spot('uiuc', 'sakanaya', 'Sakanaya', 'Sushi', 2, 'Green St', 0.3),
       spot('uiuc', 'maize', 'Maize Mexican Grill', 'Mexican', 1, 'Green St', 0.4),
+      dateSpot('uiuc', 'big-grove', 'Big Grove Tavern', 'American', 2, 'Downtown Champaign', 1.6),
+      dateSpot('uiuc', 'bacaro', 'Bacaro', 'Italian', 3, 'Downtown Champaign', 1.5),
     ],
   },
   {
@@ -240,6 +269,7 @@ export const CAMPUSES = [
       spot('erau', 'steves-diner', "Steve's Famous Diner", 'Diner', 1, 'Daytona Beach', 2.5),
       spot('erau', 'macker', 'Macker Seafood', 'Seafood', 1, 'Daytona Beach', 2),
       spot('erau', 'corleones', "Corleone's Pizza & Gyros", 'Pizza', 1, 'Daytona Beach', 3),
+      dateSpot('erau', 'hyde-park', 'Hyde Park Prime Steakhouse', 'Steakhouse', 3, 'Daytona Beach', 4),
     ],
   },
 ];

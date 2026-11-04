@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -15,7 +15,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, lift, tints } from '../theme';
 import { formatScore } from '../lib/score';
-import { PLATTERS, StampFrame, Sticker } from './art';
+import Svg, { Circle, Rect } from 'react-native-svg';
+import { StampFrame, Sticker } from './art';
 
 // ticking-fabric pinstripes on white, cycling turquoise / orange / lemon
 const PINS = ['rgba(31, 179, 204, 0.22)', 'rgba(255, 123, 28, 0.18)', 'rgba(255, 212, 59, 0.38)'];
@@ -140,8 +141,37 @@ export function Sub({ children, style }) {
   return <Text style={[styles.sub, style]}>{children}</Text>;
 }
 
+// a little how-to note, e.g. "swipe for more". the arrow keeps nudging so you notice it
+export function Hint({ children, arrow = '→', style }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(v, { toValue: 1, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(v, { toValue: 0, duration: 600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  const vertical = arrow === '↓' || arrow === '↑';
+  const shift = v.interpolate({ inputRange: [0, 1], outputRange: [0, 5] });
+  return (
+    <View style={[styles.hint, style]}>
+      <Text style={styles.hintText}>{children}</Text>
+      {arrow ? (
+        <Animated.Text
+          style={[styles.hintArrow, { transform: [vertical ? { translateY: shift } : { translateX: shift }] }]}
+        >
+          {arrow}
+        </Animated.Text>
+      ) : null}
+    </View>
+  );
+}
+
 // section heads read like menu headings: TITLE ———— see all
-export function SectionHeader({ label, title, action, onAction }) {
+export function SectionHeader({ label, title, action, onAction, hint }) {
   return (
     <View style={styles.sectionHeader}>
       {label ? <Label style={{ marginBottom: 4 }}>{label}</Label> : null}
@@ -154,6 +184,7 @@ export function SectionHeader({ label, title, action, onAction }) {
           </Pressable>
         ) : null}
       </View>
+      {hint ? <Hint style={{ marginTop: 6 }}>{hint}</Hint> : null}
     </View>
   );
 }
@@ -226,11 +257,74 @@ export function Dotted({ style }) {
   return <View style={[styles.dotted, style]} />;
 }
 
-// painted majolica platter for the bigger info blocks
+// evenly spaced points around a rounded rectangle (for the dots on the platter rim)
+function aroundRoundRect(x, y, w, h, r, spacing) {
+  const straightW = w - 2 * r;
+  const straightH = h - 2 * r;
+  const arc = (Math.PI * r) / 2;
+  const total = 2 * straightW + 2 * straightH + 4 * arc;
+  const n = Math.max(8, Math.round(total / spacing));
+  const at = (d) => {
+    const segs = [
+      [straightW, (t) => [x + r + t, y]],
+      [arc, (t) => corner(x + w - r, y + r, -Math.PI / 2 + t / r)],
+      [straightH, (t) => [x + w, y + r + t]],
+      [arc, (t) => corner(x + w - r, y + h - r, t / r)],
+      [straightW, (t) => [x + w - r - t, y + h]],
+      [arc, (t) => corner(x + r, y + h - r, Math.PI / 2 + t / r)],
+      [straightH, (t) => [x, y + h - r - t]],
+      [arc, (t) => corner(x + r, y + r, Math.PI + t / r)],
+    ];
+    for (const [len, fn] of segs) {
+      if (d <= len) return fn(d);
+      d -= len;
+    }
+    return [x + r, y];
+  };
+  const corner = (cx, cy, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  return Array.from({ length: n }, (_, i) => at((i / n) * total));
+}
+
+const PLATTER_TONES = {
+  blue: { rim: colors.cobalt, band: colors.aqua, dots: [colors.lemon, colors.paper], center: '#EEF8FA' },
+  orange: { rim: colors.persimmon, band: colors.lemon, dots: [colors.deep, colors.paper], center: '#FFF6E0' },
+  lemon: { rim: colors.deep, band: colors.lemon, dots: [colors.persimmon, colors.paper], center: '#FFFBEA' },
+};
+
+// A majolica platter drawn as vectors so it stays crisp at any size:
+// glazed rim, a ring of painted dots, a thin inner band and a soft center.
 export function Platter({ children, tone = 'blue', style, outer }) {
+  const [size, setSize] = useState(null);
+  const t = PLATTER_TONES[tone];
+  const rim = 13;
   return (
-    <View style={[lift, outer]}>
-      <Image source={PLATTERS[tone]} resizeMode="stretch" style={styles.platterArt} />
+    <View style={[lift, outer]} onLayout={(e) => setSize(e.nativeEvent.layout)}>
+      {size && (
+        <Svg width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
+          <Rect x={1} y={1} width={size.width - 2} height={size.height - 2} rx={34} fill={t.rim} />
+          <Rect
+            x={rim}
+            y={rim}
+            width={size.width - rim * 2}
+            height={size.height - rim * 2}
+            rx={24}
+            fill={colors.paper}
+          />
+          {aroundRoundRect(rim / 2, rim / 2, size.width - rim, size.height - rim, 30, 22).map(([cx, cy], i) => (
+            <Circle key={i} cx={cx} cy={cy} r={2.6} fill={t.dots[i % 2]} />
+          ))}
+          <Rect
+            x={rim + 9}
+            y={rim + 9}
+            width={size.width - (rim + 9) * 2}
+            height={size.height - (rim + 9) * 2}
+            rx={17}
+            fill={t.center}
+            stroke={t.band}
+            strokeWidth={3}
+          />
+        </Svg>
+      )}
       <View style={[styles.platter, style]}>{children}</View>
     </View>
   );
@@ -380,6 +474,9 @@ export const styles = StyleSheet.create({
   note: { fontFamily: fonts.italic, color: colors.ink },
   sub: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.muted },
 
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  hintText: { fontFamily: fonts.italic, fontSize: 13, color: colors.persimmon },
+  hintArrow: { fontFamily: fonts.bold, fontSize: 14, color: colors.persimmon },
   sectionHeader: { paddingHorizontal: 22, marginTop: 34, marginBottom: 14 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sectionRule: { flex: 1, height: 1.5, backgroundColor: colors.ink, opacity: 0.8 },
@@ -399,8 +496,7 @@ export const styles = StyleSheet.create({
   },
   dotted: { borderBottomWidth: 1.5, borderStyle: 'dotted', borderColor: colors.muted, opacity: 0.6 },
 
-  platter: { paddingHorizontal: '11%', paddingVertical: 40, minHeight: 150, justifyContent: 'center' },
-  platterArt: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
+  platter: { paddingHorizontal: 40, paddingVertical: 36, minHeight: 130, justifyContent: 'center' },
   button: {
     borderRadius: 999,
     borderWidth: 2,

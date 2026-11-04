@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { colors, fonts, lift, tints } from '../theme';
 import { Plate, Tag } from './ui';
@@ -16,15 +16,31 @@ export const artForDish = (dish) => ART[dish.tags?.find((t) => ART[t])] || 'gold
 
 // A swipeable deck of menu cards. The card in the middle sits up straight;
 // the ones either side tip back and shrink a little as they slide away.
+let nudged = false;
+
 export function MenuDeck({ dishes, onPress, badgeFor }) {
   const { width } = useWindowDimensions();
   const card = Math.min(320, width * 0.74);
   const gap = 14;
   const step = card + gap;
   const x = useRef(new Animated.Value(0)).current;
+  const list = useRef(null);
+
+  // the first time you see the deck, peek at the next card so it's obvious it swipes
+  useEffect(() => {
+    if (nudged || dishes.length < 2) return undefined;
+    nudged = true;
+    const there = setTimeout(() => list.current?.scrollTo({ x: step * 0.35, animated: true }), 900);
+    const back = setTimeout(() => list.current?.scrollTo({ x: 0, animated: true }), 1500);
+    return () => {
+      clearTimeout(there);
+      clearTimeout(back);
+    };
+  }, [dishes.length]);
 
   return (
     <Animated.ScrollView
+      ref={list}
       horizontal
       showsHorizontalScrollIndicator={false}
       snapToInterval={step}
