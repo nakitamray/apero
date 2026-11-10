@@ -63,7 +63,8 @@ All of these go in **Vercel → Settings → Environment Variables**; redeploy a
 1. [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top. Google needs a billing account on the project (the same Blaze upgrade as photos); each API has a monthly free allowance that a campus app stays inside, but set a budget alert under **Billing → Budgets & alerts** anyway.
 2. **APIs & Services → Library**, enable **Maps JavaScript API** and **Places API (New)**.
 3. **APIs & Services → Credentials → Create credentials → API key**, twice:
-   - **`EXPO_PUBLIC_GOOGLE_MAPS_KEY`** (draws the map, so it's visible in the browser, which is normal for map keys). Edit it: **Application restrictions → Websites**, add `https://YOUR-SITE.vercel.app/*` and your own domain; **API restrictions → Maps JavaScript API** only.
+   - **`EXPO_PUBLIC_GOOGLE_MAPS_KEY`** (draws the Google map on the website, so it's visible in the browser, which is normal for map keys). Edit it: **Application restrictions → Websites**, add `https://YOUR-SITE.vercel.app/*` and your own domain; **API restrictions → Maps JavaScript API** only.
+   - Optional, **`EXPO_PUBLIC_GOOGLE_MAP_ID`**: **Google Maps Platform → Map management → Create map ID** (JavaScript, Vector). The site works with Google's demo map ID until you add your own.
    - **`GOOGLE_PLACES_API_KEY`** (finds places and reviews on the server, never shown to anyone). **API restrictions → Places API (New)** only.
 4. **`YELP_API_KEY`** (optional): [yelp.com/developers](https://www.yelp.com/developers) → **Create app**, copy the **API Key**. Yelp's API has a free trial, then a paid plan. Review excerpts come with some plans only; without them the Yelp rating still shows.
 
@@ -86,7 +87,9 @@ Lookups are cached by Vercel (place locations for a week, ratings for a day), so
 
 **Try it now, free:** install **Expo Go** from the Play Store (Android) or App Store (iPhone). On your computer, in the project folder, run `npm install` once, then `npx expo start`. Scan the QR code it prints: on Android with the Expo Go app, on iPhone with the Camera app. The app opens on your phone and reloads when the code changes. Phone and computer need to be on the same Wi-Fi (or run `npx expo start --tunnel`).
 
-For the map's Google key and the ratings to work on a phone, add your site's address to `.env`: `EXPO_PUBLIC_SITE_URL=https://YOUR-SITE.vercel.app`.
+In Expo Go the map is Google Maps on Android and Apple Maps on iPhone, no key needed. For the ratings and Google's place locations to work on a phone, add your site's address to `.env`: `EXPO_PUBLIC_SITE_URL=https://YOUR-SITE.vercel.app`.
+
+For real builds (below), Google Maps on Android needs a **Maps SDK for Android** key saved as the EAS secret `GOOGLE_MAPS_ANDROID_KEY`; for Google Maps instead of Apple Maps on iPhone, add a **Maps SDK for iOS** key as `EXPO_PUBLIC_GOOGLE_MAPS_IOS_KEY` (`app.config.js` picks both up).
 
 **A real app you can install:**
 

@@ -1,25 +1,23 @@
-import React from 'react';
-import { WebView } from 'react-native-webview';
+import React, { useEffect, useRef } from 'react';
 
-// pages load as if from the website, so a Google key locked to the site's address works in the app too
-const SITE = process.env.EXPO_PUBLIC_SITE_URL
-  ? `${process.env.EXPO_PUBLIC_SITE_URL.replace(/\/$/, '')}/`
-  : 'https://localhost/';
-
-// a self-contained map page; it talks back with window.ReactNativeWebView.postMessage
+// the stand-in map page in an iframe (website only); it talks back with window.parent.postMessage
 export default function MapFrame({ html, onMessage }) {
+  const frame = useRef(null);
+  useEffect(() => {
+    const listen = (e) => {
+      if (e.source !== frame.current?.contentWindow || !e.data?.apero) return;
+      onMessage(e.data);
+    };
+    window.addEventListener('message', listen);
+    return () => window.removeEventListener('message', listen);
+  }, [onMessage]);
   return (
-    <WebView
-      originWhitelist={['*']}
-      source={{ html, baseUrl: SITE }}
-      onMessage={(e) => {
-        try {
-          onMessage(JSON.parse(e.nativeEvent.data));
-        } catch {}
-      }}
-      style={{ flex: 1, backgroundColor: 'transparent' }}
-      nestedScrollEnabled
-      setBuiltInZoomControls={false}
+    <iframe
+      ref={frame}
+      title="Map of places"
+      srcDoc={html}
+      allow="geolocation"
+      style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
     />
   );
 }

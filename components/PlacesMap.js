@@ -1,12 +1,11 @@
 // Explore's map view: every place on the current list as a pin around you (or around campus),
 // and the place you tap slides up as a card underneath.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Location from 'expo-location';
-import MapFrame from './MapFrame';
+import PlacesMapView from './PlacesMapView';
 import { PlaceRow } from './places';
 import { Hint } from './ui';
-import { mapHtml } from '../lib/mapHtml';
 import { placeLocations } from '../lib/outside';
 import { CAMPUS_COORDS, PLACE_COORDS } from '../data/coords';
 import { colors, fonts } from '../theme';
@@ -65,20 +64,13 @@ export default function PlacesMap({ places, campus, modes, statsFor, activityFor
       const s = statsFor(p.id);
       return {
         id: p.id,
+        name: p.name,
         lat: spotOf(p.id)[0],
         lng: spotOf(p.id)[1],
         tone: toneFor(p),
         score: s?.ratingCount > 0 ? s.score.toFixed(1) : null,
       };
     });
-  const key = pins.map((p) => `${p.id}${p.score}${p.lat}`).join() + String(near);
-
-  const html = useMemo(
-    () => (center ? mapHtml({ pins, center, you: near, campusLabel: campus.short }) : null),
-    // rebuild only when the pins or your spot change, not on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key, campus.id],
-  );
 
   const place = picked && places.find((p) => p.id === picked);
   const unmapped = places.length - pins.length;
@@ -87,7 +79,16 @@ export default function PlacesMap({ places, campus, modes, statsFor, activityFor
     <View>
       <View>
         <View style={[styles.frame, { height: Math.max(320, height * 0.5) }]}>
-          {html && <MapFrame html={html} onMessage={(m) => setPicked(m.id || null)} />}
+          {center && (
+            <PlacesMapView
+              pins={pins}
+              center={center}
+              you={near}
+              campusLabel={campus.short}
+              selected={picked}
+              onSelect={setPicked}
+            />
+          )}
         </View>
         {/* the place you tapped floats over the bottom of the map */}
         {place && (
