@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -135,12 +136,17 @@ function ReviewButton({ onPress }) {
 }
 
 function Tabs() {
+  // Android draws edge to edge, so leave room for its home bar / nav buttons (iOS works out to the same 86)
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          { height: 52 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) },
+        ],
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: TABS[route.name]?.color,
         tabBarIcon: ({ focused }) => {
@@ -197,7 +203,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
-    height: 86,
     paddingTop: 8,
   },
   tabLabel: { fontFamily: fonts.medium, fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase' },

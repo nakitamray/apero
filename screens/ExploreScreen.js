@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { List, Map as MapIcon } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSession } from '../context/Session';
 import { activityToday, campusPlaceStats, topPlacesWorld } from '../lib/api';
@@ -7,7 +8,8 @@ import { getPlace } from '../data/campuses';
 import { MODES, bestTrip, totalCost } from '../lib/trip';
 import { Chip, Hint, Masthead, Note, Screen } from '../components/ui';
 import { PlaceRow } from '../components/places';
-import { colors } from '../theme';
+import PlacesMap from '../components/PlacesMap';
+import { colors, fonts } from '../theme';
 
 const KINDS = [
   { id: 'hall', label: 'Dining halls' },
@@ -41,6 +43,7 @@ export default function ExploreScreen({ navigation, route }) {
   const [activity, setActivity] = useState({});
   const [stats, setStats] = useState({});
   const [world, setWorld] = useState([]);
+  const [view, setView] = useState('list');
 
   useEffect(() => {
     if (route.params?.kind) setKind(route.params.kind);
@@ -79,56 +82,26 @@ export default function ExploreScreen({ navigation, route }) {
     );
   }
 
-  const header = (
-    <View>
-      <Masthead kicker={campus.name} title="Explore" accent={campus.short} sticker="tile" stickerSize={104} />
-      <View style={styles.head}>
-        <View style={styles.chips}>
-          {KINDS.map((k) => (
-            <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
-          ))}
-        </View>
-        <Hint style={{ marginTop: 12 }} arrow="↓">
-          tap a place for its menu, map and reviews
-        </Hint>
-        {kind === 'world' && (
-          <Note size={14} style={styles.note}>
-            The best rated places on every campus on apero, from everyone who's rated them.
-          </Note>
-        )}
-        {kind === 'spot' && (
-          <>
-            <View style={[styles.chips, { marginTop: 10 }]}>
-              {PRICES.map((p) => (
-                <Chip
-                  key={p.id}
-                  label={p.label}
-                  active={price === p.id}
-                  onPress={() => setPrice(p.id)}
-                  style={styles.small}
-                />
-              ))}
-            </View>
-            <View style={[styles.chips, { marginTop: 8 }]}>
-              {SORTS.map((s) => (
-                <Chip
-                  key={s.id}
-                  label={s.label}
-                  active={sort === s.id}
-                  onPress={() => setSort(s.id)}
-                  style={styles.small}
-                />
-              ))}
-            </View>
-            <Note size={14} style={styles.note}>
-              Everything within a 25 min walk or 20 min drive. Trip times assume you {modeList(modes)}; change that in
-              Me.
-            </Note>
-          </>
-        )}
-      </View>
-    </View>
-  );
+  const onMap = view === 'map' && kind !== 'world';
+  const open = (p) => navigation.navigate('Place', { placeId: p.id });
+
+  if (onMap) {
+    return (
+      <Screen>
+        <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
+          {header()}
+          <PlacesMap
+            places={places}
+            campus={campus}
+            modes={modes}
+            statsFor={statsFor}
+            activityFor={(id) => activity[id]}
+            onOpen={open}
+          />
+        </ScrollView>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -136,7 +109,7 @@ export default function ExploreScreen({ navigation, route }) {
         data={places}
         ListHeaderComponentStyle={{ marginBottom: 6 }}
         keyExtractor={(p) => p.id}
-        ListHeaderComponent={header}
+        ListHeaderComponent={header()}
         contentContainerStyle={{ paddingBottom: 40 }}
         renderItem={({ item, index }) => (
           <PlaceRow
@@ -147,11 +120,89 @@ export default function ExploreScreen({ navigation, route }) {
             activity={kind === 'world' ? 0 : activity[item.id]}
             stats={statsFor(item.id)}
             worldwide={kind === 'world'}
-            onPress={() => navigation.navigate('Place', { placeId: item.id })}
+            onPress={() => open(item)}
           />
         )}
       />
     </Screen>
+  );
+
+  function header() {
+    return (
+      <View>
+        <Masthead kicker={campus.name} title="Explore" accent={campus.short} sticker="tile" stickerSize={104} />
+        <View style={styles.head}>
+          <View style={styles.chips}>
+            {KINDS.map((k) => (
+              <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
+            ))}
+          </View>
+          {kind !== 'world' && <ViewSwitch view={view} onChange={setView} />}
+          {!onMap && (
+            <Hint style={{ marginTop: 12 }} arrow="↓">
+              tap a place for its menu, map and reviews
+            </Hint>
+          )}
+          {kind === 'world' && (
+            <Note size={14} style={styles.note}>
+              The best rated places on every campus on apero, from everyone who's rated them.
+            </Note>
+          )}
+          {kind === 'spot' && (
+            <>
+              <View style={[styles.chips, { marginTop: 10 }]}>
+                {PRICES.map((p) => (
+                  <Chip
+                    key={p.id}
+                    label={p.label}
+                    active={price === p.id}
+                    onPress={() => setPrice(p.id)}
+                    style={styles.small}
+                  />
+                ))}
+              </View>
+              <View style={[styles.chips, { marginTop: 8 }]}>
+                {SORTS.map((s) => (
+                  <Chip
+                    key={s.id}
+                    label={s.label}
+                    active={sort === s.id}
+                    onPress={() => setSort(s.id)}
+                    style={styles.small}
+                  />
+                ))}
+              </View>
+              {!onMap && (
+                <Note size={14} style={styles.note}>
+                  Everything within a 25 min walk or 20 min drive. Trip times assume you {modeList(modes)}; change that
+                  in Me.
+                </Note>
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    );
+  }
+}
+
+// List / Map switch, two halves of one pill
+function ViewSwitch({ view, onChange }) {
+  return (
+    <View style={styles.switch}>
+      {[
+        { id: 'list', label: 'List', Icon: List },
+        { id: 'map', label: 'Map', Icon: MapIcon },
+      ].map(({ id, label, Icon }) => {
+        const on = view === id;
+        return (
+          <Pressable key={id} onPress={() => onChange(id)} style={[styles.half, on && styles.halfOn]}>
+            <Icon size={15} color={on ? colors.paper : colors.ink} strokeWidth={1.8} />
+            <Text style={[styles.halfText, on && { color: colors.paper }]}>{label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -160,4 +211,16 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   small: { paddingVertical: 5, paddingHorizontal: 12 },
   note: { marginTop: 12 },
+  switch: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    marginTop: 14,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  half: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 16 },
+  halfOn: { backgroundColor: colors.deep },
+  halfText: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
 });

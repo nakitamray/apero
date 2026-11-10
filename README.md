@@ -9,7 +9,7 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 ## What it does
 
 - **Today**: top rated dishes on your campus, what's on the menu right now, where people are eating, and the latest reviews.
-- **Explore**: dining halls, cheap eats and date night spots near campus (anything within a 25 minute walk or a 20 minute drive). For each spot you see how you'd get there (walk, bus/train, or car, depending on what you said you use), how long it takes, and roughly what the meal plus the trip costs. If your school's bus is free with a student ID, that counts as $0.
+- **Explore**: dining halls, cheap eats and date night spots near campus (anything within a 25 minute walk or a 20 minute drive), as a list or as a map with a pin for every place around you. Tap a pin to see the place. For each spot you see how you'd get there (walk, bus/train, or car, depending on what you said you use), how long it takes, and roughly what the meal plus the trip costs. If your school's bus is free with a student ID, that counts as $0.
 - **Rating**: pick a verdict (loved it / it was fine / not for me), say why, then answer a couple of "which did you like more?" questions. That places the dish in your list, like a binary search, so your scores stay consistent with each other.
 - **My list**: your personal ranking, filterable by verdict.
 - **Reviews**: add up to 4 photos of your food and tag who you ate with. Tagged friends see it on their feed too.
@@ -46,7 +46,7 @@ Then push the Firestore rules and indexes with `npm run deploy:firestore`. The f
 npm run build:site
 ```
 
-builds the app for the web into `site/app/` and puts the page next to it. Vercel runs that on every push to `main` (`vercel.json`). `api/` holds the site's one server function, which looks up Google Maps and Yelp ratings so the API keys never ship inside the app.
+builds the app for the web into `site/app/` and puts the page next to it. Vercel runs that on every push to `main` (`vercel.json`). `api/` holds the site's server functions, which ask Google Maps where each place is and look up Google and Yelp ratings, so those API keys never ship inside the app.
 
 ## Data
 

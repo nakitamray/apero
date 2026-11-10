@@ -54,14 +54,20 @@ Everything lives on `main`: the app, the landing page (`website/`) and the revie
 
 Changing an environment variable later only takes effect after a redeploy: **Deployments → ⋯ → Redeploy**.
 
-### Google Maps and Yelp ratings (optional)
+### Google Maps (recommended) and Yelp
 
-Restaurant pages show their Google Maps and Yelp rating plus a few reviews once these keys are set in **Vercel → Settings → Environment Variables** (then redeploy). Without them the section just doesn't appear.
+With Google keys set, the Explore map is a Google map, every restaurant is placed by Google Maps, and restaurant pages show Google and Yelp ratings and reviews. Without them the app still works: the map falls back to a free OpenStreetMap one and the ratings section just doesn't appear.
 
-- **`GOOGLE_PLACES_API_KEY`**: [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top → **APIs & Services → Library** → enable **Places API (New)** → **Credentials → Create credentials → API key**. Edit the key and under **API restrictions** allow only Places API (New). Google bills per lookup after a monthly free allowance; Vercel caches each place for a day to keep that low. Set a budget alert under **Billing**.
-- **`YELP_API_KEY`**: [yelp.com/developers](https://www.yelp.com/developers) → **Create app**, copy the **API Key**. Yelp's API has a free trial, then a paid plan. Review excerpts come with some plans only; without them the Yelp rating still shows.
+All of these go in **Vercel → Settings → Environment Variables**; redeploy after adding them.
 
-Both keys stay on Vercel's server (`api/outside-reviews.js`); they are never in the app or the repo. If you later ship the phone app, set `EXPO_PUBLIC_SITE_URL` to your site's address so it can use the same lookup.
+1. [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top. Google needs a billing account on the project (the same Blaze upgrade as photos); each API has a monthly free allowance that a campus app stays inside, but set a budget alert under **Billing → Budgets & alerts** anyway.
+2. **APIs & Services → Library**, enable **Maps JavaScript API** and **Places API (New)**.
+3. **APIs & Services → Credentials → Create credentials → API key**, twice:
+   - **`EXPO_PUBLIC_GOOGLE_MAPS_KEY`** (draws the map, so it's visible in the browser, which is normal for map keys). Edit it: **Application restrictions → Websites**, add `https://YOUR-SITE.vercel.app/*` and your own domain; **API restrictions → Maps JavaScript API** only.
+   - **`GOOGLE_PLACES_API_KEY`** (finds places and reviews on the server, never shown to anyone). **API restrictions → Places API (New)** only.
+4. **`YELP_API_KEY`** (optional): [yelp.com/developers](https://www.yelp.com/developers) → **Create app**, copy the **API Key**. Yelp's API has a free trial, then a paid plan. Review excerpts come with some plans only; without them the Yelp rating still shows.
+
+Lookups are cached by Vercel (place locations for a week, ratings for a day), so Google sees roughly one request per restaurant per week, not one per visitor.
 
 ### Putting it on your own website
 
@@ -76,6 +82,13 @@ Both keys stay on Vercel's server (`api/outside-reviews.js`); they are never in 
 - **Embedded in a page**: drop the phone demo into any page with
   `<iframe src="https://apero.yourdomain.com/app/?demo=1" width="390" height="844" style="border:0;border-radius:40px"></iframe>`.
 
-## 3. Phones (later)
+## 3. On your phone (Android or iPhone)
 
-The same code builds the iOS and Android apps with Expo's EAS: `npx eas build`. That needs an Apple developer account ($99/year) for the App Store, and a Google Play account ($25 once).
+**Try it now, free:** install **Expo Go** from the Play Store (Android) or App Store (iPhone). On your computer, in the project folder, run `npm install` once, then `npx expo start`. Scan the QR code it prints: on Android with the Expo Go app, on iPhone with the Camera app. The app opens on your phone and reloads when the code changes. Phone and computer need to be on the same Wi-Fi (or run `npx expo start --tunnel`).
+
+For the map's Google key and the ratings to work on a phone, add your site's address to `.env`: `EXPO_PUBLIC_SITE_URL=https://YOUR-SITE.vercel.app`.
+
+**A real app you can install:**
+
+- **Android:** `npx eas-cli build -p android --profile preview` builds an `.apk` you can install directly (sign in with a free Expo account when it asks). Publishing on Google Play costs $25 once.
+- **iPhone:** `npx eas-cli build -p ios` needs an Apple Developer account ($99/year), which is also what puts it on the App Store or TestFlight.

@@ -13,20 +13,34 @@
       "backgroundColor": "#F7841F"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nakitamray.apero"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F7841F"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.nakitamray.apero"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "apero shows where you are on the map of places to eat around campus."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "apero lets you add photos of your food to your reviews."
+        }
+      ]
     ]
   }
 }
