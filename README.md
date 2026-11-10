@@ -15,6 +15,7 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Reviews**: add up to 4 photos of your food and tag who you ate with. Tagged friends see it on their feed too.
 - **Feed**: reviews from your campus or just your friends, as posts or as a photo grid. You can like and share them.
 - **Places**: every dining hall and spot has one score from everyone who's rated anything there (and how the loved it / fine / not for me votes split), a map, directions that match how you get around, and the latest reviews.
+- **Elsewhere online**: each restaurant page also shows its Google Maps and Yelp rating and a few of their reviews, with links back to both.
 - **Worldwide**: the best rated places on every campus.
 - **Friends**: add people by handle or find classmates. Every friend shows a taste match % from the dishes you've both ranked, what you both loved, and what they loved that you haven't tried.
 - **Group decider**: pick who's coming and a budget, get a shortlist ranked for the whole group ("Maya loved the tacos here", "deal today"), then spin the orange.
@@ -39,13 +40,13 @@ Then push the Firestore rules and indexes with `npm run deploy:firestore`. The f
 
 ## Website
 
-This branch (`website`) is the app plus the public page in `website/`: one color, a phone, and the real app running inside it in demo mode. Visitors pick a school and use it like a student; members log in at `/app/`.
+`website/` is the public page: one color, a phone, and the real app running inside it in demo mode. Visitors pick a school and use it like a student; members log in at `/app/`.
 
 ```bash
 npm run build:site
 ```
 
-builds the app for the web into `site/app/` and puts the page next to it. Vercel runs that on every push to this branch (`vercel.json`). To pick up app changes, merge the app branch in: `git merge summer-redesign`.
+builds the app for the web into `site/app/` and puts the page next to it. Vercel runs that on every push to `main` (`vercel.json`). `api/` holds the site's one server function, which looks up Google Maps and Yelp ratings so the API keys never ship inside the app.
 
 ## Data
 

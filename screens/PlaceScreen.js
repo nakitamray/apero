@@ -12,6 +12,8 @@ import { Button, Chip, Empty, Label, Loading, Plate, Platter, Screen, SectionHea
 import { DishMenu, ReviewCard, makeLike } from '../components/rows';
 import MapEmbed from '../components/MapEmbed';
 import { Sticker } from '../components/art';
+import { OutsideReviews } from '../components/outside';
+import { outsideReviews } from '../lib/outside';
 import { colors, fonts } from '../theme';
 
 const MEALS = ['Breakfast', 'Lunch', 'Dinner'];
@@ -99,6 +101,7 @@ export default function PlaceScreen({ navigation, route }) {
   const [reviews, setReviews] = useState([]);
   const [deals, setDeals] = useState([]);
   const [picked, setPicked] = useState(null);
+  const [outside, setOutside] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -116,6 +119,15 @@ export default function PlaceScreen({ navigation, route }) {
         .catch(() => setDeals([]));
     }, [place.id]),
   );
+
+  // Google Maps + Yelp, once per place (only shows up when the site has API keys set)
+  React.useEffect(() => {
+    let live = true;
+    outsideReviews(place, campus).then((d) => live && setOutside(d));
+    return () => {
+      live = false;
+    };
+  }, [place.id]);
 
   const like = makeLike(setReviews, user.uid);
 
@@ -172,6 +184,17 @@ export default function PlaceScreen({ navigation, route }) {
       ...sections,
     ];
   }
+  if (outside) {
+    sections = [
+      ...sections.filter((x) => x.renderItem),
+      {
+        title: 'Elsewhere online',
+        data: [{ id: 'outside', ...outside }],
+        renderItem: ({ item }) => <OutsideReviews data={item} />,
+      },
+      ...sections.filter((x) => !x.renderItem),
+    ];
+  }
   if (deals.length) {
     const vote = makeDealVote(setDeals, user.uid, setDealVote);
     sections = [
@@ -188,7 +211,9 @@ export default function PlaceScreen({ navigation, route }) {
     <View style={styles.head}>
       <Sticker name={place.kind === 'spot' ? 'bloodOrange' : 'tile'} width={76} rotate={10} style={styles.corner} />
       <Label color={place.kind === 'spot' ? colors.persimmon : colors.teal}>
-        {place.kind === 'spot' ? `Cheap eats / ${priceTag(place.price)} / ${place.cuisine}` : 'Dining hall'}
+        {place.kind === 'spot'
+          ? `${place.occasion === 'date' ? 'Date night' : 'Eat out'} / ${priceTag(place.price)} / ${place.cuisine}`
+          : 'Dining hall'}
       </Label>
       <Title size={40} style={{ paddingRight: 70, marginTop: 4 }}>
         {place.name}

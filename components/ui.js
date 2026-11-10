@@ -133,8 +133,12 @@ export function Num({ children, size = 32, color = colors.deep, style }) {
   return <Text style={[styles.num, { fontSize: size, lineHeight: size * 1.15, color }, style]}>{children}</Text>;
 }
 
-export function Note({ children, style, size = 15 }) {
-  return <Text style={[styles.note, { fontSize: size, lineHeight: size * 1.45 }, style]}>{children}</Text>;
+export function Note({ children, style, size = 15, numberOfLines }) {
+  return (
+    <Text style={[styles.note, { fontSize: size, lineHeight: size * 1.45 }, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  );
 }
 
 export function Sub({ children, style }) {

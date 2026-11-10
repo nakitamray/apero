@@ -44,13 +44,24 @@ Steps 1–5 need you in the console. For the rest (deploying rules and indexes, 
 
 ## 2. Vercel
 
-The website lives on its own `website` branch. That branch is this app plus the landing page, so when the app changes, merge it into `website` (`git checkout website && git merge summer-redesign`) and Vercel redeploys.
+Everything lives on `main`: the app, the landing page (`website/`) and the review lookup (`api/`). Every push to `main` redeploys the site.
 
-1. [vercel.com](https://vercel.com) → **Add New → Project → Import** `nakitamray/apero`.
-2. **Settings → Git → Production Branch**: set it to `website`. Vercel reads that branch's `vercel.json` (build `npm run build:site`, output `site`).
-3. **Settings → Environment Variables**: add the six `EXPO_PUBLIC_FIREBASE_*` values (Production and Preview).
-4. Deploy. The site is at `apero-<something>.vercel.app`, the app itself at `/app/`, and the demo at `/app/?demo=1`.
+1. Sign in at [vercel.com](https://vercel.com) with GitHub → **Add New → Project** → **Import** `nakitamray/apero`.
+2. On the import screen leave **Framework Preset** on **Other** and the root directory as is. The build settings come from `vercel.json` (build `npm run build:site`, output `site`).
+3. Open **Environment Variables** on the same screen and add the six `EXPO_PUBLIC_FIREBASE_*` values from Firebase (step 1.5). Skip this to launch demo-only.
+4. **Deploy.** The site is at `apero-<something>.vercel.app`, the app itself at `/app/`, and the demo at `/app/?demo=1`.
 5. Back in Firebase: **Authentication → Settings → Authorized domains → Add** your Vercel domain (and your custom domain), or logging in on the web is blocked.
+
+Changing an environment variable later only takes effect after a redeploy: **Deployments → ⋯ → Redeploy**.
+
+### Google Maps and Yelp ratings (optional)
+
+Restaurant pages show their Google Maps and Yelp rating plus a few reviews once these keys are set in **Vercel → Settings → Environment Variables** (then redeploy). Without them the section just doesn't appear.
+
+- **`GOOGLE_PLACES_API_KEY`**: [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top → **APIs & Services → Library** → enable **Places API (New)** → **Credentials → Create credentials → API key**. Edit the key and under **API restrictions** allow only Places API (New). Google bills per lookup after a monthly free allowance; Vercel caches each place for a day to keep that low. Set a budget alert under **Billing**.
+- **`YELP_API_KEY`**: [yelp.com/developers](https://www.yelp.com/developers) → **Create app**, copy the **API Key**. Yelp's API has a free trial, then a paid plan. Review excerpts come with some plans only; without them the Yelp rating still shows.
+
+Both keys stay on Vercel's server (`api/outside-reviews.js`); they are never in the app or the repo. If you later ship the phone app, set `EXPO_PUBLIC_SITE_URL` to your site's address so it can use the same lookup.
 
 ### Putting it on your own website
 
