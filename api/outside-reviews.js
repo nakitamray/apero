@@ -78,7 +78,8 @@ module.exports = async (req, res) => {
     fromGoogle(name, near).catch(() => null),
     fromYelp(name, near).catch(() => null),
   ]);
-  // ratings barely move day to day, so let Vercel's cache answer repeat visits (keeps API costs down)
-  res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+  // ratings barely move week to week, so Vercel's cache answers repeat visits for 7 days.
+  // that keeps Google to a few hundred lookups a month, inside the free allowance
+  res.setHeader('Cache-Control', 'public, s-maxage=604800, stale-while-revalidate=2592000');
   res.status(200).json({ google, yelp });
 };

@@ -65,7 +65,9 @@ All of these go in **Vercel → Settings → Environment Variables**; redeploy a
    - **`GOOGLE_PLACES_API_KEY`** (finds places and reviews on the server, never shown to anyone). **API restrictions → Places API (New)** only.
 4. **`YELP_API_KEY`** (optional): [yelp.com/developers](https://www.yelp.com/developers) → **Create app**, copy the **API Key**. Yelp's API has a free trial, then a paid plan. Review excerpts come with some plans only; without them the Yelp rating still shows.
 
-Lookups are cached by Vercel (place locations for a week, ratings for a day), so Google sees roughly one request per restaurant per week, not one per visitor.
+Lookups are cached by Vercel for a week, so Google sees roughly one request per restaurant per week, not one per visitor.
+
+To make sure Google can never charge anything, cap it: **APIs & Services → Places API (New) → Quotas & System Limits**, find **SearchTextRequest per day**, edit it to **30**. That's at most ~900 lookups a month, under the 1,000 free ones that include reviews. If the cap is ever hit, the ratings section just hides until the next day.
 
 ### Putting it on your own website
 

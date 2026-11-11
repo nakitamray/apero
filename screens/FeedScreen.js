@@ -75,6 +75,8 @@ export default function FeedScreen({ navigation, route }) {
           </Empty>
         ) : empty ? (
           <Empty title={`Nobody at ${campus.short} has posted yet`} body="Your review could be the first one." />
+        ) : view === 'photos' && !feed.some((r) => r.photos?.length) ? (
+          <Empty title="No photos yet" body="Add a photo when you rate something and it shows up here." />
         ) : view === 'photos' ? (
           <PhotoGrid key={scope} reviews={feed} onPress={openDish} />
         ) : (
