@@ -38,10 +38,6 @@ Two services: **Firebase** holds accounts and data, **Vercel** hosts the website
 
 Start the app with `npx expo start`. Sign up, pick a campus, and you're in.
 
-### Doing the Firebase parts from a cloud environment
-
-Steps 1–5 need you in the console. For the rest (deploying rules and indexes, running the menu script), add the service account JSON from step 7 to your cloud dev environment as an environment variable named `FIREBASE_SERVICE_ACCOUNT` (the whole JSON on one line), plus `EXPO_PUBLIC_FIREBASE_PROJECT_ID`. The environment's network settings also need to allow `*.googleapis.com`. Never commit the key or paste it anywhere public.
-
 ## 2. Vercel
 
 Everything lives on `main`: the app, the landing page (`website/`) and the review lookup (`api/`). Every push to `main` redeploys the site.
