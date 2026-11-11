@@ -1,8 +1,8 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { colors } from '../theme';
 import { Plate, Rise } from './ui';
-import { photoSource } from './rows';
+import Photo from './Photo';
 
 // three-across photo grid, each tile with its score on a little plate
 export function PhotoGrid({ reviews, onPress, gutter = 20, columns = 3 }) {
@@ -15,7 +15,7 @@ export function PhotoGrid({ reviews, onPress, gutter = 20, columns = 3 }) {
       {posts.map((r, i) => (
         <Rise key={r.id} index={i}>
           <Pressable onPress={() => onPress(r)} style={({ pressed }) => [pressed && { opacity: 0.8 }]}>
-            <Image source={photoSource(r.photos[0])} style={[styles.tile, { width: tile, height: tile }]} />
+            <Photo photo={r.photos[0]} style={[styles.tile, { width: tile, height: tile }]} />
             <View style={styles.badge}>
               <Plate score={r.score} size={34} />
             </View>

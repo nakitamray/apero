@@ -1,10 +1,11 @@
 import React from 'react';
-import { Image, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Heart, Share2 } from 'lucide-react-native';
 import { colors, fonts } from '../theme';
 import { timeAgo } from '../lib/time';
 import { reasonLabel } from '../lib/tags';
 import { setLiked } from '../lib/api';
+import Photo from './Photo';
 import { Dotted, MenuCard, Note, Paper, Plate, Rise, Stamp, Tag } from './ui';
 
 // tiny alternating tilt so a list looks pasted down by hand
@@ -65,9 +66,6 @@ export const makeLike = (setRows, uid) => async (review, liked) => {
   await setLiked(review.id, uid, liked);
 };
 
-// photos are download links from Storage, or bundled images in the demo
-export const photoSource = (photo) => (typeof photo === 'string' ? { uri: photo } : photo);
-
 // swipeable photos at the top of a review, like a post
 function PhotoStrip({ photos, width }) {
   const [page, setPage] = React.useState(0);
@@ -81,7 +79,7 @@ function PhotoStrip({ photos, width }) {
         style={{ width, borderRadius: 4 }}
       >
         {photos.map((p, i) => (
-          <Image key={i} source={photoSource(p)} style={{ width, height: width, borderRadius: 4 }} />
+          <Photo key={i} photo={p} style={{ width, height: width, borderRadius: 4 }} />
         ))}
       </ScrollView>
       {photos.length > 1 && (

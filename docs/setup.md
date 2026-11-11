@@ -1,13 +1,12 @@
 # Setting up apero
 
-Two services: **Firebase** holds accounts and data, **Vercel** hosts the website (the landing page plus the web version of the app). Without Firebase the site still works, it just runs the demo only.
+Two services: **Firebase** holds accounts, data and review photos, **Vercel** hosts the website (the landing page plus the web version of the app). Both run on their free plans with no card on file. Without Firebase the site still works, it just runs the demo only.
 
 ## 1. Firebase
 
 1. Go to [console.firebase.google.com](https://console.firebase.google.com) and **Add project** (call it `apero`). Google Analytics is optional.
 2. **Build → Authentication → Get started → Email/Password → Enable.**
 3. **Build → Firestore Database → Create database.** Pick a location close to your users (e.g. `nam5`), start in **production mode**.
-   Then **Build → Storage → Get started** (same location, production mode). That's where food photos on reviews go. Storage needs the Blaze plan, but the free allowance covers a campus app easily.
 4. **Project settings (gear) → General → Your apps → Web (`</>`)**, register an app called `apero web`. Firebase shows a `firebaseConfig` block.
 5. Copy `.env.example` to `.env` and paste those six values in:
 
@@ -19,12 +18,14 @@ Two services: **Firebase** holds accounts and data, **Vercel** hosts the website
    ```
 
    These are fine to ship in a web app (Firebase web config isn't secret, the security rules are what protect the data), but `.env` is gitignored anyway.
-6. Push the security rules (Firestore and Storage) and indexes from this repo:
+6. Push the security rules and indexes from this repo (use your project id, e.g. `apero-1a2b3`):
 
    ```bash
    npx firebase-tools login
-   npm run deploy:firestore
+   npx firebase-tools deploy --only firestore --project YOUR_PROJECT_ID
    ```
+
+   Food photos on reviews are shrunk on the phone and saved in Firestore (`photos/`), so there's no Storage bucket and no paid plan. The free plan's 1 GB is room for several thousand photos.
 
    Indexes take a few minutes to build. Until they finish, some lists (feed, top dishes) show an error in the console.
 7. Optional, Purdue menus: **Project settings → Service accounts → Generate new private key**, save it as `py/serviceAccountKey.json` (gitignored), then:
@@ -50,13 +51,13 @@ Everything lives on `main`: the app, the landing page (`website/`) and the revie
 
 Changing an environment variable later only takes effect after a redeploy: **Deployments → ⋯ → Redeploy**.
 
-### Google Maps (recommended) and Yelp
+### Google Maps and Yelp (optional, need a card)
 
-With Google keys set, the Explore map is a Google map, every restaurant is placed by Google Maps, and restaurant pages show Google and Yelp ratings and reviews. Without them the app still works: the map falls back to a free OpenStreetMap one and the ratings section just doesn't appear.
+Skip this section to keep everything free. Without these keys the Explore map is a free OpenStreetMap map with every place pinned from `data/coords.js`, and the Google/Yelp ratings section just doesn't appear. With Google keys set, the map is a Google map, every restaurant is placed by Google Maps, and restaurant pages show Google and Yelp ratings and reviews.
 
 All of these go in **Vercel → Settings → Environment Variables**; redeploy after adding them.
 
-1. [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top. Google needs a billing account on the project (the same Blaze upgrade as photos); each API has a monthly free allowance that a campus app stays inside, but set a budget alert under **Billing → Budgets & alerts** anyway.
+1. [console.cloud.google.com](https://console.cloud.google.com), pick your Firebase project at the top. Google needs a billing account on the project; each API has a monthly free allowance that a campus app stays inside, but set a budget alert under **Billing → Budgets & alerts** anyway.
 2. **APIs & Services → Library**, enable **Maps JavaScript API** and **Places API (New)**.
 3. **APIs & Services → Credentials → Create credentials → API key**, twice:
    - **`EXPO_PUBLIC_GOOGLE_MAPS_KEY`** (draws the Google map on the website, so it's visible in the browser, which is normal for map keys). Edit it: **Application restrictions → Websites**, add `https://YOUR-SITE.vercel.app/*` and your own domain; **API restrictions → Maps JavaScript API** only.

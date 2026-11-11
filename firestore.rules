@@ -39,6 +39,17 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.postedBy == request.auth.uid;
     }
 
+    // review photos (small jpegs as data links). only you can add yours, and each stays under ~600 KB
+    match /photos/{photoId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.data is string
+        && request.resource.data.data.size() < 600000
+        && request.resource.data.data.matches('data:image/.*');
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     match /reviews/{reviewId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;

@@ -7,7 +7,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "deploy:firestore": "firebase deploy --only firestore,storage --project $EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+    "deploy:firestore": "firebase deploy --only firestore",
     "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
@@ -20,6 +20,7 @@
     "expo": "~54.0.20",
     "expo-dev-client": "~6.0.18",
     "expo-font": "~14.0.9",
+    "expo-image-manipulator": "~14.0.7",
     "expo-image-picker": "~17.0.8",
     "expo-location": "~19.0.7",
     "expo-status-bar": "~3.0.8",

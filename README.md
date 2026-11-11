@@ -36,7 +36,7 @@ cp .env.example .env   # paste in your Firebase web config
 npx expo start
 ```
 
-Then push the Firestore rules and indexes with `npm run deploy:firestore`. The full walkthrough (Firebase project, Vercel, custom domain) is in [docs/setup.md](docs/setup.md).
+Then push the Firestore rules and indexes with `npx firebase-tools deploy --only firestore --project YOUR_PROJECT_ID`. The full walkthrough (Firebase project, Vercel, custom domain) is in [docs/setup.md](docs/setup.md).
 
 ## Website
 
