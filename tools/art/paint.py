@@ -106,7 +106,8 @@ class Canvas:
             rgba = np.dstack([rgb, out_a])
         if shadow:
             sh = gaussian_filter(rgba[..., 3], 7)
-            sh = np.roll(np.roll(sh, 7, 0), 4, 1) * 0.28
+            # shift down/right without wrapping round the edges
+            sh = np.pad(sh, ((7, 0), (4, 0)))[: sh.shape[0], : sh.shape[1]] * 0.28
             a2 = rgba[..., 3]
             out_a = a2 + sh * (1 - a2)
             shade_rgb = np.array([0.08, 0.15, 0.35])

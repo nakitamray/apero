@@ -31,6 +31,7 @@ cpSync(join(root, 'website'), out, { recursive: true });
 mkdirSync(join(out, 'img'), { recursive: true });
 mkdirSync(join(out, 'fonts'), { recursive: true });
 cpSync(join(root, 'assets', 'art', 'orange_slice.png'), join(out, 'img', 'orange_slice.png'));
+cpSync(join(root, 'assets', 'art', 'icon_web.png'), join(out, 'img', 'icon.png'));
 ['Medan.otf', 'Doblegh-Regular.ttf', 'Doblegh-SemiBold.ttf'].forEach((f) =>
   cpSync(join(root, 'assets', 'fonts', f), join(out, 'fonts', f)),
 );

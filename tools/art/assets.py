@@ -189,6 +189,7 @@ def spritz(seed=11):
     for a in np.linspace(0, 2 * np.pi, 9)[:-1]:
         c.stroke([(560, 150), (560 + 88 * np.cos(a), 150 + 88 * np.sin(a))], '#FFF1D8', width=6, alpha=0.9)
     c.save(f'{OUT}/spritz.png', size=(460, 660))
+    return c
 
 
 # ---------------------------------------------------------------- majolica plate (score holder)
