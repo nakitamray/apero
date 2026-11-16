@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, MailCheck } from 'lucide-react-native';
@@ -6,7 +6,7 @@ import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
 import { CAMPUSES, getCampus } from '../data/campuses';
 import { MODES, defaultModes } from '../lib/trip';
-import { checkSchool, confirmPassword, domainFor, emailFits, sendSchoolLink, verifiedFor } from '../lib/school';
+import { clearPendingSchool, domainFor, emailFits, schoolConfirmed, schoolNote, sendSchoolLink } from '../lib/school';
 import { Button, Chip, Dotted, Field, Label, Masthead, MenuCard, Paper, Screen, Sub } from '../components/ui';
 import { colors, fonts } from '../theme';
 
@@ -22,21 +22,41 @@ export default function SettingsScreen({ navigation, route }) {
   // school email check: null, 'email' (asking for it), 'sent' (waiting for the link to be clicked)
   const [step, setStep] = useState(null);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [needPassword, setNeedPassword] = useState(false);
   const [problem, setProblem] = useState('');
+  // your private note of the student email you've confirmed (or are confirming)
+  const [note, setNote] = useState(null);
+  const [proven, setProven] = useState(false);
 
   const user = auth?.currentUser;
   const campus = getCampus(campusId);
   const switching = campusId && campusId !== profile?.campusId;
-  const mustVerify = !demo && switching && !verifiedFor(user, campusId);
+  const mustVerify = !demo && switching && !proven;
+
+  // pick up where you left off if a link is already on its way
+  useEffect(() => {
+    if (demo || !user) return;
+    schoolNote(user.uid).then((n) => {
+      setNote(n);
+      if (n?.pendingCampusId && n.pendingCampusId !== profile?.campusId) {
+        setCampusId(n.pendingCampusId);
+        setEmail(n.email || '');
+        setStep('sent');
+      }
+    });
+  }, []);
+
+  // a student email you already confirmed at this school counts again (switching back, say)
+  useEffect(() => {
+    setProven(false);
+    if (demo || !user || !note?.email || !emailFits(note.email, campusId)) return;
+    schoolConfirmed(user.uid, note.email).then(setProven);
+  }, [campusId, note?.email]);
 
   const pickCampus = (id) => {
     setCampusId(id);
     setStep(null);
     setProblem('');
-    if (emailFits(user?.email, id)) setEmail(user.email);
-    else setEmail('');
+    setEmail(note?.email && emailFits(note.email, id) ? note.email : '');
     // until they choose for themselves, assume a free bus pass gets used
     if (!touchedModes) setModes(defaultModes(getCampus(id)));
   };
@@ -50,11 +70,8 @@ export default function SettingsScreen({ navigation, route }) {
     setBusy(true);
     const name = profile?.name || user?.displayName || 'Guest';
     try {
-      // a token minted before the email was verified wouldn't pass the database's school check
-      if (!demo && switching) await user.getIdToken(true);
       await updateProfile({
         campusId,
-        pendingCampusId: null,
         getAround: modes,
         name,
         // friends find you by this, e.g. @maya42
@@ -62,6 +79,7 @@ export default function SettingsScreen({ navigation, route }) {
           profile?.handle || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}${Math.floor(Math.random() * 90 + 10)}`,
         following: profile?.following || [],
       });
+      if (!demo && user) await clearPendingSchool(user.uid).catch(() => {});
       if (onboarding) return;
       if (!switching) {
         navigation.goBack();
@@ -85,26 +103,18 @@ export default function SettingsScreen({ navigation, route }) {
     }
     setBusy(true);
     try {
-      if (needPassword) await confirmPassword(user, password);
-      // remembered on your profile, so the switch finishes even if you have to log back in after clicking the link
-      await updateProfile({ pendingCampusId: campusId });
-      await sendSchoolLink(user, email);
-      setNeedPassword(false);
-      setPassword('');
+      await sendSchoolLink(user.uid, email, campusId);
+      setNote({ email: email.trim().toLowerCase(), pendingCampusId: campusId });
       setStep('sent');
     } catch (e) {
-      if (e.code === 'auth/requires-recent-login') {
-        setNeedPassword(true);
-        setProblem('For your security, enter your apero password first.');
-      } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        setProblem("That password didn't work.");
-      } else if (e.code === 'auth/email-already-in-use') {
-        setProblem('That email already belongs to another apero account.');
-      } else if (e.code === 'auth/too-many-requests') {
-        setProblem('Too many tries. Wait a few minutes and send it again.');
-      } else {
-        setProblem("Couldn't send the link. Check the address and try again.");
-      }
+      setProblem(
+        {
+          'auth/too-many-requests': 'Too many tries. Wait a few minutes and send it again.',
+          'auth/operation-not-allowed': "Email links aren't switched on in Firebase yet (see the setup guide).",
+          'auth/unauthorized-continue-uri': "This site's address isn't on Firebase's authorized domains yet.",
+          'apero/no-site': "Confirming a school needs the website's address (EXPO_PUBLIC_SITE_URL).",
+        }[e.code] || "Couldn't send the link. Check the address and try again.",
+      );
     }
     setBusy(false);
   };
@@ -113,20 +123,15 @@ export default function SettingsScreen({ navigation, route }) {
     setProblem('');
     setBusy(true);
     try {
-      if (await checkSchool(user, campusId)) {
+      if (await schoolConfirmed(user.uid, email)) {
         setStep(null);
+        setProven(true);
         await save();
         return;
       }
       setProblem("It's not confirmed yet. Open the link in the email (check spam too), then try again.");
-    } catch (e) {
-      // changing an account's email signs it out everywhere; logging back in finishes the switch
-      if (e.code === 'auth/user-token-expired' || e.code === 'auth/user-not-found') {
-        setProblem(`Your school email is confirmed. Log in again with ${email} to finish switching.`);
-        setTimeout(logOut, 2500);
-      } else {
-        setProblem("Couldn't check just now. Try again in a moment.");
-      }
+    } catch {
+      setProblem("Couldn't check just now. Try again in a moment.");
     }
     setBusy(false);
   };
@@ -212,8 +217,8 @@ export default function SettingsScreen({ navigation, route }) {
               {step === 'email' ? (
                 <>
                   <Sub style={styles.verifyBody}>
-                    Enter your {campus.short} student email. We'll send a link to it; open it and come back here. It
-                    also becomes the email you log in with.
+                    Enter your {campus.short} student email. We'll send a link to it; open it on any device and come
+                    back here. You still log in the way you always do, and only you can see this address.
                   </Sub>
                   <Field
                     placeholder={`you@${domainFor(campusId)}`}
@@ -224,14 +229,6 @@ export default function SettingsScreen({ navigation, route }) {
                     keyboardType="email-address"
                     inputMode="email"
                   />
-                  {needPassword && (
-                    <Field
-                      placeholder="Your apero password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry
-                    />
-                  )}
                   <Button label="Send the link" onPress={sendLink} loading={busy} disabled={!email.trim()} />
                 </>
               ) : (

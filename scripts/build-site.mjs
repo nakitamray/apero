@@ -13,7 +13,8 @@ if (!process.env.EXPO_PUBLIC_FIREBASE_API_KEY && !existsSync(join(root, '.env'))
 }
 
 rmSync(out, { recursive: true, force: true });
-execSync(`npx expo export --platform web --output-dir ${app}`, { cwd: root, stdio: 'inherit' });
+// --clear: Expo bakes EXPO_PUBLIC_* settings in at build time, and a cached build would keep old ones
+execSync(`npx expo export --platform web --clear --output-dir ${app}`, { cwd: root, stdio: 'inherit' });
 
 // expo writes absolute paths (/_expo, /assets). make them relative so the site works from any folder
 const relative = (file) => {

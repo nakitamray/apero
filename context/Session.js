@@ -6,7 +6,7 @@ import { getProfile, saveProfile, setDemoMode, setFollowing } from '../lib/api';
 import { DEMO_UID } from '../lib/demoApi';
 import { getCampus } from '../data/campuses';
 import { defaultModes } from '../lib/trip';
-import { verifiedFor } from '../lib/school';
+import { clearPendingSchool, emailFits, schoolConfirmed, schoolNote } from '../lib/school';
 
 const SessionContext = createContext(null);
 
@@ -65,14 +65,19 @@ export function SessionProvider({ children }) {
     }
     return onAuthStateChanged(auth, async (next) => {
       let p = next ? await getProfile(next.uid).catch(() => null) : null;
-      // a school switch you confirmed by email (and had to log back in for) finishes here
-      if (p?.pendingCampusId && verifiedFor(next, p.pendingCampusId)) {
-        try {
-          await next.getIdToken(true);
-          await saveProfile(next.uid, { campusId: p.pendingCampusId, pendingCampusId: null });
-          p = await getProfile(next.uid);
-        } catch {
-          // leave it pending; the school page can finish it
+      // a school switch waiting on its email link finishes here once the link has been opened (on any device)
+      if (next) {
+        const note = await schoolNote(next.uid);
+        if (note?.pendingCampusId && emailFits(note.email, note.pendingCampusId)) {
+          try {
+            if (await schoolConfirmed(next.uid, note.email)) {
+              await saveProfile(next.uid, { campusId: note.pendingCampusId });
+              await clearPendingSchool(next.uid);
+              p = await getProfile(next.uid);
+            }
+          } catch {
+            // leave it pending; the school page can finish it
+          }
         }
       }
       setProfile(p);

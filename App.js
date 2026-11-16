@@ -6,6 +6,11 @@ import { useFonts } from 'expo-font';
 import { SessionProvider } from './context/Session';
 import AppNavigator from './navigation/AppNavigator';
 import Splash from './components/Splash';
+import SchoolLink from './components/SchoolLink';
+import { isSchoolLink } from './lib/school';
+
+// opened from the link in a student email: show just the confirmation page
+const fromSchoolLink = isSchoolLink();
 import { colors } from './theme';
 
 export default function App() {
@@ -27,8 +32,8 @@ export default function App() {
       <SessionProvider>
         <StatusBar style="dark" />
         <View style={{ flex: 1, backgroundColor: colors.page }}>
-          <AppNavigator />
-          {showSplash && <Splash onDone={() => setShowSplash(false)} />}
+          {fromSchoolLink ? <SchoolLink /> : <AppNavigator />}
+          {showSplash && !fromSchoolLink && <Splash onDone={() => setShowSplash(false)} />}
         </View>
       </SessionProvider>
     </SafeAreaProvider>

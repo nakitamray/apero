@@ -5,7 +5,7 @@ Two services: **Firebase** holds accounts, data and review photos, **Vercel** ho
 ## 1. Firebase
 
 1. Go to [console.firebase.google.com](https://console.firebase.google.com) and **Add project** (call it `apero`). Google Analytics is optional.
-2. **Build → Authentication → Get started → Email/Password → Enable.**
+2. **Build → Authentication → Get started → Email/Password → Enable**, and on the same screen also turn on **Email link (passwordless sign-in)**. Accounts log in with a password; the email link is only used to confirm a student email when someone picks their school.
 3. **Build → Firestore Database → Create database.** Pick a location close to your users (e.g. `nam5`), start in **production mode**.
 4. **Project settings (gear) → General → Your apps → Web (`</>`)**, register an app called `apero web`. Firebase shows a `firebaseConfig` block.
 5. Copy `.env.example` to `.env` and paste those six values in:
@@ -39,7 +39,7 @@ Two services: **Firebase** holds accounts, data and review photos, **Vercel** ho
 
    To keep menus fresh, run that once a day (a GitHub Action or any cron works).
 
-Start the app with `npx expo start`. Sign up, pick a campus, and confirm it with your student email (Firebase sends the link from `noreply@YOUR-PROJECT.firebaseapp.com`; it can land in spam). The school email domains live in `lib/school.js` and `firestore.rules`; add a school's domain to both when you add a campus.
+Start the app with `npx expo start`. Sign up with any email, pick a campus, and confirm it with your student email (Firebase sends the link from `noreply@YOUR-PROJECT.firebaseapp.com`; it can land in spam). The link opens the website, so the site's address has to be in **Authentication → Settings → Authorized domains** (step 2.5). The school email domains live in `lib/school.js` and `firestore.rules`; add a school's domain to both when you add a campus.
 
 ## 2. Vercel
 

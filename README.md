@@ -23,7 +23,7 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Deals**: student discounts and specials posted by students, with a "still good" vote. They show up on Today and on each place.
 - **Campus Wrapped**: your semester in food as story cards: dishes rated, your number one, your spot, your eater type, your taste twin.
 - **Me**: your stats, your photo grid, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
-- **Your school**: picking or changing your campus needs a verified student email there (e.g. `@purdue.edu`, `@g.ucla.edu`). Firebase emails a link; once it's opened, the switch goes through. The database rules check the same thing, so it can't be skipped. Change school from Me, the sidebar on a computer, or the link under Today's news strip.
+- **Your school**: log in with any email; picking or changing your campus means confirming a student email there (e.g. `@purdue.edu`, `@g.ucla.edu`). apero emails it a one-time link, and opening it (on any device) ties that address to your account without changing how you log in. The address stays private to you, and the database rules check it before a campus can change. Change school from Me, the sidebar on a computer, or the link under Today's news strip.
 - **Food art**: each dish gets a painting picked from its name (ramen, tacos, curry, croissant, about 30 kinds) from `tools/art/food.py`.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
