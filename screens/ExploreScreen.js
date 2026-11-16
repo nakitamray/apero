@@ -9,6 +9,7 @@ import { MODES, bestTrip, totalCost } from '../lib/trip';
 import { Chip, Hint, Masthead, Note, Screen } from '../components/ui';
 import { PlaceRow } from '../components/places';
 import PlacesMap from '../components/PlacesMap';
+import { useLayout } from '../lib/layout';
 import { colors, fonts } from '../theme';
 
 const KINDS = [
@@ -44,6 +45,8 @@ export default function ExploreScreen({ navigation, route }) {
   const [stats, setStats] = useState({});
   const [world, setWorld] = useState([]);
   const [view, setView] = useState('list');
+  const [hover, setHover] = useState(null);
+  const { wide, height } = useLayout();
 
   useEffect(() => {
     if (route.params?.kind) setKind(route.params.kind);
@@ -85,6 +88,55 @@ export default function ExploreScreen({ navigation, route }) {
   const onMap = view === 'map' && kind !== 'world';
   const open = (p) => navigation.navigate('Place', { placeId: p.id });
 
+  const row = ({ item, index }) => (
+    <View
+      onPointerEnter={wide ? () => setHover(item.id) : undefined}
+      onPointerLeave={wide ? () => setHover(null) : undefined}
+    >
+      <PlaceRow
+        place={item}
+        index={index}
+        campus={campus}
+        modes={modes}
+        activity={kind === 'world' ? 0 : activity[item.id]}
+        stats={statsFor(item.id)}
+        worldwide={kind === 'world'}
+        onPress={() => open(item)}
+      />
+    </View>
+  );
+
+  // desktop: the list on the left, the map standing next to it the whole time
+  if (wide && kind !== 'world') {
+    return (
+      <Screen full>
+        <View style={styles.split}>
+          <FlatList
+            style={styles.splitList}
+            data={places}
+            keyExtractor={(p) => p.id}
+            ListHeaderComponent={header()}
+            ListHeaderComponentStyle={{ marginBottom: 6 }}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            renderItem={row}
+          />
+          <View style={styles.splitMap}>
+            <PlacesMap
+              places={places}
+              campus={campus}
+              modes={modes}
+              statsFor={statsFor}
+              activityFor={(id) => activity[id]}
+              onOpen={open}
+              hover={hover}
+              frameHeight={height - 150}
+            />
+          </View>
+        </View>
+      </Screen>
+    );
+  }
+
   if (onMap) {
     return (
       <Screen>
@@ -111,18 +163,7 @@ export default function ExploreScreen({ navigation, route }) {
         keyExtractor={(p) => p.id}
         ListHeaderComponent={header()}
         contentContainerStyle={{ paddingBottom: 40 }}
-        renderItem={({ item, index }) => (
-          <PlaceRow
-            place={item}
-            index={index}
-            campus={campus}
-            modes={modes}
-            activity={kind === 'world' ? 0 : activity[item.id]}
-            stats={statsFor(item.id)}
-            worldwide={kind === 'world'}
-            onPress={() => open(item)}
-          />
-        )}
+        renderItem={row}
       />
     </Screen>
   );
@@ -137,7 +178,7 @@ export default function ExploreScreen({ navigation, route }) {
               <Chip key={k.id} label={k.label} active={kind === k.id} onPress={() => setKind(k.id)} />
             ))}
           </View>
-          {kind !== 'world' && <ViewSwitch view={view} onChange={setView} />}
+          {kind !== 'world' && !wide && <ViewSwitch view={view} onChange={setView} />}
           {!onMap && (
             <Hint style={{ marginTop: 12 }} arrow="↓">
               tap a place for its menu, map and reviews
@@ -208,6 +249,9 @@ function ViewSwitch({ view, onChange }) {
 
 const styles = StyleSheet.create({
   head: { paddingHorizontal: 22, paddingTop: 6, paddingBottom: 16 },
+  split: { flex: 1, flexDirection: 'row' },
+  splitList: { flex: 1, maxWidth: 560 },
+  splitMap: { flex: 1, paddingTop: 24, paddingRight: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   small: { paddingVertical: 5, paddingHorizontal: 12 },
   note: { marginTop: 12 },

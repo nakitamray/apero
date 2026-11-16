@@ -1,12 +1,13 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useLayout } from '../lib/layout';
 import { colors } from '../theme';
 import { Plate, Rise } from './ui';
 import Photo from './Photo';
 
 // three-across photo grid, each tile with its score on a little plate
 export function PhotoGrid({ reviews, onPress, gutter = 20, columns = 3 }) {
-  const { width } = useWindowDimensions();
+  const { column: width } = useLayout();
   const gap = 6;
   const tile = Math.floor((width - gutter * 2 - gap * (columns - 1)) / columns);
   const posts = reviews.filter((r) => r.photos?.length);

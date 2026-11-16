@@ -114,6 +114,25 @@ export default function ProfileScreen({ navigation }) {
           </Paper>
         </View>
 
+        <Pressable
+          onPress={() => navigation.navigate('Passport')}
+          style={({ pressed, hovered }) => [
+            styles.passport,
+            (pressed || hovered) && { transform: [{ rotate: '-0.6deg' }] },
+          ]}
+        >
+          <View style={styles.passportInner}>
+            <Sticker name="stamp" width={44} rotate={-10} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.passportTitle}>Food passport</Text>
+              <Text style={styles.passportSub}>
+                {reviews ? `${Object.keys(taste.places).length} stamps so far · ` : ''}one for every place you rate
+              </Text>
+            </View>
+            <ChevronRight size={20} color={colors.lemon} />
+          </View>
+        </Pressable>
+
         {!reviews ? (
           <Loading />
         ) : (
@@ -199,6 +218,19 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  passport: { marginHorizontal: 20, marginTop: 16, backgroundColor: colors.deep, borderRadius: 8, padding: 4, ...lift },
+  passportInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1.2,
+    borderColor: colors.lemon,
+    borderRadius: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  passportTitle: { fontFamily: fonts.title, fontSize: 22, color: colors.lemon },
+  passportSub: { fontFamily: fonts.body, fontSize: 12.5, color: colors.paper, opacity: 0.9 },
   tiles: { flexDirection: 'row', gap: 14, marginHorizontal: 22, marginTop: 22 },
   tile: { alignItems: 'center', paddingVertical: 14, minHeight: 140, justifyContent: 'center' },
   tileTitle: { fontFamily: fonts.title, fontSize: 28, color: colors.ink, marginTop: 4 },

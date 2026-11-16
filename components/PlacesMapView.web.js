@@ -68,11 +68,11 @@ function FitOnce({ pins, center, you }) {
   return null;
 }
 
-function Fallback({ pins, center, you, campusLabel, onSelect }) {
+function Fallback({ pins, center, you, campusLabel, selected, onSelect }) {
   const html = React.useMemo(
     () => mapHtml({ pins, center, you, campusLabel }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [pins.map((p) => p.id + p.score).join(), String(you)],
   );
-  return <MapFrame html={html} onMessage={(m) => onSelect(m.id || null)} />;
+  return <MapFrame html={html} highlight={selected} onMessage={(m) => onSelect(m.id || null)} />;
 }

@@ -8,7 +8,8 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 
 ## What it does
 
-- **Today**: top rated dishes on your campus, what's on the menu right now, where people are eating, and the latest reviews.
+- **Today**: set like the campus paper, *The Purdue Daily Plate*: tonight's No. 1 dish as the lead story, a live news strip, and columns for the rest of the rankings, deals (classifieds), where the crowd is, a mood forecast, spots off the meal plan and what people said.
+- **Food passport**: a rubber stamp for every place you rate something at (round for dining halls, square for spots, a ticket for date night), a page per campus with the places you haven't tried left blank, and badges to collect. Rating somewhere new ends with the stamp coming down on the page.
 - **Explore**: dining halls, cheap eats and date night spots near campus (anything within a 25 minute walk or a 20 minute drive), as a list or as a map with a pin for every place around you. Tap a pin to see the place. For each spot you see how you'd get there (walk, bus/train, or car, depending on what you said you use), how long it takes, and roughly what the meal plus the trip costs. If your school's bus is free with a student ID, that counts as $0.
 - **Rating**: pick a verdict (loved it / it was fine / not for me), say why, then answer a couple of "which did you like more?" questions. That places the dish in your list, like a binary search, so your scores stay consistent with each other.
 - **My list**: your personal ranking, filterable by verdict.
@@ -23,6 +24,10 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Campus Wrapped**: your semester in food as story cards: dishes rated, your number one, your spot, your eater type, your taste twin.
 - **Me**: your stats, your photo grid, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
+
+## On a computer
+
+From 900px wide the bottom tabs turn into a printed-menu sidebar ("la carte"), Explore puts the list and the map side by side (hovering a place lights up its pin), and from 1260px a live column, *On the wire*, runs down the right with ratings as they come in, deals running today and where it's busy. Sizes live in `lib/layout.js`.
 
 ## Look
 

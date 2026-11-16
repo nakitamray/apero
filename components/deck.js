@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useLayout } from '../lib/layout';
 import { colors, fonts, lift, tints } from '../theme';
 import { Plate, Tag } from './ui';
 import { Sticker } from './art';
@@ -19,7 +20,7 @@ export const artForDish = (dish) => ART[dish.tags?.find((t) => ART[t])] || 'gold
 let nudged = false;
 
 export function MenuDeck({ dishes, onPress, badgeFor }) {
-  const { width } = useWindowDimensions();
+  const { column: width } = useLayout();
   const card = Math.min(320, width * 0.74);
   const gap = 14;
   const step = card + gap;

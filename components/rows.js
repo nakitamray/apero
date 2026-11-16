@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { useLayout } from '../lib/layout';
 import { Heart, Share2 } from 'lucide-react-native';
 import { colors, fonts } from '../theme';
 import { timeAgo } from '../lib/time';
@@ -102,7 +103,7 @@ export const withLine = (people) =>
         .join(', ')} & ${people.at(-1).name}`;
 
 export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
-  const { width } = useWindowDimensions();
+  const { column: width } = useLayout();
   const photoWidth = width - 40 - 36 + 12;
   const liked = review.likedBy?.includes(uid);
   const likes = review.likedBy?.length || 0;

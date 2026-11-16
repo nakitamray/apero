@@ -17,6 +17,7 @@ import { colors, fonts, lift, tints } from '../theme';
 import { formatScore } from '../lib/score';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { StampFrame, Sticker } from './art';
+import { COLUMN_MAX, useLayout } from '../lib/layout';
 
 // ticking-fabric pinstripes on white, cycling turquoise / orange / lemon
 const PINS = ['rgba(31, 179, 204, 0.22)', 'rgba(255, 123, 28, 0.18)', 'rgba(255, 212, 59, 0.38)'];
@@ -36,11 +37,13 @@ export function Pinstripes() {
   );
 }
 
-export function Screen({ children, style }) {
+// `full` skips the centered column on desktop, for screens with their own wide layout (Explore's list + map)
+export function Screen({ children, style, full }) {
+  const { wide } = useLayout();
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.page }, style]}>
+    <View style={[{ flex: 1, backgroundColor: colors.page, overflow: 'hidden' }, !(wide && !full) && style]}>
       <Pinstripes />
-      {children}
+      {wide && !full ? <View style={[styles.column, style]}>{children}</View> : children}
     </View>
   );
 }
@@ -453,6 +456,7 @@ export const styles = StyleSheet.create({
   pin: { position: 'absolute', top: 0, bottom: 0, flexDirection: 'row', gap: 3 },
   pinLine: { width: 1, height: '100%' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  column: { flex: 1, width: '100%', maxWidth: COLUMN_MAX, alignSelf: 'center' },
 
   mast: { paddingHorizontal: 22, paddingBottom: 6 },
   mastTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginBottom: 8 },

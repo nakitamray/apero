@@ -36,7 +36,8 @@ async function whereAmI() {
 
 const toneFor = (p) => (p.kind === 'hall' ? 'hall' : p.occasion === 'date' ? 'date' : 'spot');
 
-export default function PlacesMap({ places, campus, modes, statsFor, activityFor, onOpen }) {
+// on desktop Explore passes `hover` (the place under the mouse in the list) and a fixed `frameHeight`
+export default function PlacesMap({ places, campus, modes, statsFor, activityFor, onOpen, hover, frameHeight }) {
   const [you, setYou] = useState(undefined); // undefined = still asking
   const [picked, setPicked] = useState(null);
   const [google, setGoogle] = useState({});
@@ -78,14 +79,14 @@ export default function PlacesMap({ places, campus, modes, statsFor, activityFor
   return (
     <View>
       <View>
-        <View style={[styles.frame, { height: Math.max(320, height * 0.5) }]}>
+        <View style={[styles.frame, { height: frameHeight || Math.max(320, height * 0.5) }]}>
           {center && (
             <PlacesMapView
               pins={pins}
               center={center}
               you={near}
               campusLabel={campus.short}
-              selected={picked}
+              selected={hover || picked}
               onSelect={setPicked}
             />
           )}

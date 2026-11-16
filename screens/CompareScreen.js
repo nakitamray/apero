@@ -5,12 +5,16 @@ import { myRankings, saveReview, uploadReviewPhoto } from '../lib/api';
 import { MAX_QUESTIONS, eloForPosition, toTen } from '../lib/score';
 import { Button, Hint, Label, Loading, Note, Plate, Screen, Title } from '../components/ui';
 import { Sticker } from '../components/art';
+import { StampSlam } from '../components/stamp';
+import { getPlace } from '../data/campuses';
 import { colors, fonts, lift } from '../theme';
 
 // Binary search through your own same-verdict list: each answer halves where the new dish can go.
 export default function CompareScreen({ navigation, route }) {
   const { dish, verdict, tags, note, photos = [], withPeople = [] } = route.params;
-  const { user, name } = useSession();
+  const { user, name, campus } = useSession();
+  // how many dishes you'd already rated at this place, so the stamp knows if it's new
+  const [visits, setVisits] = useState(0);
   const [ranked, setRanked] = useState(null);
   const [lo, setLo] = useState(0);
   const [hi, setHi] = useState(0);
@@ -21,6 +25,7 @@ export default function CompareScreen({ navigation, route }) {
   useEffect(() => {
     myRankings(user.uid).then((all) => {
       const same = all.filter((r) => r.verdict === verdict && r.dishId !== dish.id);
+      setVisits(all.filter((r) => r.placeId === dish.placeId && r.dishId !== dish.id).length);
       setRanked(same);
       setHi(same.length);
     });
@@ -59,23 +64,52 @@ export default function CompareScreen({ navigation, route }) {
   }
 
   if (finalScore != null) {
+    const place = getPlace(dish.placeId);
     return (
       <Screen style={styles.center}>
-        <View>
-          <Sticker name="lemon" width={96} rotate={-14} style={styles.lemonSticker} />
-          <Plate score={finalScore} size={150} />
-        </View>
+        {place ? (
+          <View style={styles.result}>
+            <View>
+              <Sticker name="lemon" width={70} rotate={-14} style={styles.lemonSticker} />
+              <Plate score={finalScore} size={124} />
+            </View>
+            <StampSlam place={place} date={new Date()} visits={visits + 1} campusShort={campus.short} />
+          </View>
+        ) : (
+          <View>
+            <Sticker name="lemon" width={96} rotate={-14} style={styles.lemonSticker} />
+            <Plate score={finalScore} size={150} />
+          </View>
+        )}
         <Label style={{ marginTop: 22 }}>Saved to your list</Label>
         <Title size={42} style={{ textAlign: 'center', marginTop: 4 }}>
           {dish.name}
         </Title>
+        {place && (
+          <Text style={styles.stampNote}>
+            {visits === 0
+              ? `New stamp! ${place.name} goes in your passport.`
+              : `Visit ${visits + 1} at ${place.name}. Another star on its stamp.`}
+          </Text>
+        )}
+        {place && (
+          <Button
+            label="See my passport"
+            kind="citrus"
+            onPress={() => {
+              navigation.popToTop();
+              navigation.navigate('MeTab', { screen: 'Passport' });
+            }}
+            style={{ marginTop: 24, alignSelf: 'stretch' }}
+          />
+        )}
         <Button
           label="See my list"
           onPress={() => {
             navigation.popToTop();
             navigation.navigate('ListTab', { screen: 'MyList' });
           }}
-          style={{ marginTop: 30, alignSelf: 'stretch' }}
+          style={{ marginTop: 14, alignSelf: 'stretch' }}
         />
         <Button
           label="Rate another"
@@ -157,6 +191,8 @@ function Choice({ title, place, onPress, tint, art, tilt }) {
 const styles = StyleSheet.create({
   center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   lemonSticker: { position: 'absolute', right: -50, top: -30, zIndex: 2 },
+  result: { flexDirection: 'row', alignItems: 'center', gap: 26, flexWrap: 'wrap', justifyContent: 'center' },
+  stampNote: { fontFamily: fonts.italic, fontSize: 16, color: colors.persimmon, textAlign: 'center', marginTop: 10 },
   choice: {
     alignSelf: 'stretch',
     borderRadius: 8,

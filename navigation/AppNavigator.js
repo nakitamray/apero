@@ -3,9 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Compass, ListOrdered, Sun, User } from 'lucide-react-native';
 import { Sticker } from '../components/art';
+import Sidebar from '../components/Sidebar';
+import LiveRail from '../components/LiveRail';
+import { useLayout } from '../lib/layout';
 import { useSession } from '../context/Session';
 import { colors, fonts } from '../theme';
 
@@ -30,6 +33,7 @@ import DealsScreen from '../screens/DealsScreen';
 import AddDealScreen from '../screens/AddDealScreen';
 import DeciderScreen from '../screens/DeciderScreen';
 import WrappedScreen from '../screens/WrappedScreen';
+import PassportScreen from '../screens/PassportScreen';
 
 const Root = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -106,11 +110,14 @@ function ListTab() {
 }
 
 function MeTab() {
+  // desktop reaches the passport from the sidebar, so it doesn't need a back bar
+  const { wide } = useLayout();
   return (
     <MeStack.Navigator screenOptions={stackOptions}>
       <MeStack.Screen name="Profile" component={ProfileScreen} options={noHeader} />
       <MeStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Campus & getting around' }} />
       <MeStack.Screen name="Friends" component={FriendsScreen} options={{ title: 'Friends' }} />
+      <MeStack.Screen name="Passport" component={PassportScreen} options={{ title: '', headerShown: !wide }} />
       {detailScreens(MeStack)}
     </MeStack.Navigator>
   );
@@ -135,13 +142,19 @@ function ReviewButton({ onPress }) {
   );
 }
 
-function Tabs() {
+function Tabs({ navigation }) {
   // Android draws edge to edge, so leave room for its home bar / nav buttons (iOS works out to the same 86)
   const insets = useSafeAreaInsets();
-  return (
+  const { wide, rail } = useLayout();
+  // the live column sits outside the tabs, so it opens things through the Today tab
+  const openIn = (screen, params) => navigation.navigate('Main', { screen: 'TodayTab', params: { screen, params } });
+
+  const tabs = (
     <Tab.Navigator
+      tabBar={(props) => (wide ? <Sidebar {...props} /> : <BottomTabBar {...props} />)}
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarPosition: wide ? 'left' : 'bottom',
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: [
           styles.tabBar,
@@ -171,6 +184,17 @@ function Tabs() {
       <Tab.Screen name="MeTab" component={MeTab} options={{ title: 'Me' }} />
     </Tab.Navigator>
   );
+
+  if (!rail) return tabs;
+  return (
+    <View style={styles.desk}>
+      <View style={{ flex: 1 }}>{tabs}</View>
+      <LiveRail
+        openDish={(dishId) => openIn('Dish', { dishId })}
+        openPlace={(placeId) => openIn('Place', { placeId })}
+      />
+    </View>
+  );
 }
 
 export default function AppNavigator() {
@@ -199,6 +223,7 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  desk: { flex: 1, flexDirection: 'row', backgroundColor: colors.page },
   tabBar: {
     backgroundColor: colors.paper,
     borderTopWidth: 1,

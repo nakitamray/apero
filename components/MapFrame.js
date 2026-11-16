@@ -1,8 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 
 // the stand-in map page in an iframe (website only); it talks back with window.parent.postMessage
-export default function MapFrame({ html, onMessage }) {
+export default function MapFrame({ html, onMessage, highlight }) {
   const frame = useRef(null);
+  useEffect(() => {
+    frame.current?.contentWindow?.postMessage({ aperoHighlight: highlight || null }, '*');
+  }, [highlight]);
   useEffect(() => {
     const listen = (e) => {
       if (e.source !== frame.current?.contentWindow || !e.data?.apero) return;
