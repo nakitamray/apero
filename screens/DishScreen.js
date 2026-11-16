@@ -11,6 +11,7 @@ import { Button, Empty, Label, Loading, Paper, Plate, Screen, Stamp, Tag, Title 
 import { ReviewCard, makeLike } from '../components/rows';
 import { Avatar } from '../components/people';
 import { Sticker } from '../components/art';
+import FoodArt from '../components/foodArt';
 import { colors, fonts } from '../theme';
 
 export default function DishScreen({ navigation, route }) {
@@ -60,10 +61,15 @@ export default function DishScreen({ navigation, route }) {
         <Pressable onPress={() => place && navigation.navigate('Place', { placeId: place.id })}>
           <Label color={colors.teal}>{dish.placeName} →</Label>
         </Pressable>
-        <Title size={50} style={{ marginTop: 4 }}>
-          {dish.name}
-        </Title>
-        <Sticker name="swash" width={150} style={{ marginTop: 4 }} />
+        <View style={styles.head}>
+          <View style={{ flex: 1 }}>
+            <Title size={50} style={{ marginTop: 4 }}>
+              {dish.name}
+            </Title>
+            <Sticker name="swash" width={150} style={{ marginTop: 4 }} />
+          </View>
+          <FoodArt dish={dish} width={150} rotate={6} />
+        </View>
 
         <View style={styles.scores}>
           <View style={styles.scoreBlock}>
@@ -137,6 +143,7 @@ export default function DishScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   body: { padding: 22, paddingBottom: 40 },
   scores: { flexDirection: 'row', alignItems: 'flex-start', gap: 26, marginTop: 24 },
   scoreBlock: { alignItems: 'center' },

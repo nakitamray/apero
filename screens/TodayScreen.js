@@ -13,7 +13,7 @@ import { bestTrip, describeTrip } from '../lib/trip';
 import { useLayout } from '../lib/layout';
 import { Chip, Loading, Plate, Screen } from '../components/ui';
 import { Columns, Nameplate, Story, Ticker } from '../components/paper';
-import { artForDish } from '../components/deck';
+import FoodArt from '../components/foodArt';
 import { Sticker } from '../components/art';
 import { colors, fonts, lift } from '../theme';
 
@@ -100,6 +100,13 @@ export default function TodayScreen({ navigation }) {
             line={`${greeting()}, ${name}. The ${currentMeal().toLowerCase()} edition, from ${campus.city}.`}
           />
           <Ticker items={ticker} />
+          <Pressable
+            onPress={() => navigation.navigate('MeTab', { screen: 'Settings' })}
+            style={styles.switchSchool}
+            hitSlop={6}
+          >
+            <Text style={styles.switchText}>Not at {campus.short}? Change school →</Text>
+          </Pressable>
 
           {demo && (
             <Pressable onPress={logOut} style={styles.demo}>
@@ -144,6 +151,7 @@ export default function TodayScreen({ navigation }) {
                     style={({ hovered }) => [styles.menuLine, hovered && styles.hover]}
                   >
                     <Text style={styles.menuNo}>{i + 2}</Text>
+                    <FoodArt dish={d} width={48} rotate={i % 2 ? 6 : -6} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.menuName} numberOfLines={2}>
                         {d.name}
@@ -314,7 +322,6 @@ export default function TodayScreen({ navigation }) {
 
 // the lead story: tonight's No. 1 dish, headline and all, with a framed "photo" of the painted art
 function Lead({ dish, onToday, campus, twoCol, onPress }) {
-  const art = artForDish(dish);
   const n = dish.ratingCount || 0;
   return (
     <Pressable
@@ -334,7 +341,7 @@ function Lead({ dish, onToday, campus, twoCol, onPress }) {
       </View>
       <View style={[styles.figure, twoCol && { flex: 1, marginTop: 0 }]}>
         <View style={styles.photo}>
-          <Sticker name={art} width={art === 'sardine' ? 260 : 170} rotate={-8} />
+          <FoodArt dish={dish} width={230} rotate={-6} />
           <View style={styles.photoPlate}>
             <Plate score={dish.score} size={76} />
           </View>
@@ -423,6 +430,8 @@ const styles = StyleSheet.create({
   },
   ctaText: { fontFamily: fonts.bold, color: colors.paper, fontSize: 15 },
 
+  switchSchool: { alignSelf: 'flex-end', marginHorizontal: 22, marginTop: 8 },
+  switchText: { fontFamily: fonts.italic, fontSize: 13, color: colors.persimmon },
   sectionRule: { height: 3, backgroundColor: colors.ink, marginHorizontal: 22, marginTop: 26 },
   hover: { backgroundColor: colors.butter },
   body: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.ink },

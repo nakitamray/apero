@@ -3,17 +3,9 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLayout } from '../lib/layout';
 import { colors, fonts, lift, tints } from '../theme';
 import { Plate, Tag } from './ui';
-import { Sticker } from './art';
+import FoodArt from './foodArt';
 
-const ART = {
-  sweet: 'lemonSlice',
-  spicy: 'bloodOrange',
-  protein: 'sardine',
-  healthy: 'lemon',
-  cozy: 'vase',
-  value: 'orangeSlice',
-};
-export const artForDish = (dish) => ART[dish.tags?.find((t) => ART[t])] || 'goldfish';
+export { artForDish } from './foodArt';
 
 // A swipeable deck of menu cards. The card in the middle sits up straight;
 // the ones either side tip back and shrink a little as they slide away.
@@ -65,7 +57,6 @@ export function MenuDeck({ dishes, onPress, badgeFor }) {
             { translateY: x.interpolate({ inputRange: input, outputRange: [14, 0, 14], extrapolate: 'clamp' }) },
           ],
         };
-        const art = artForDish(dish);
         return (
           <Animated.View
             key={dish.id}
@@ -83,7 +74,7 @@ export function MenuDeck({ dishes, onPress, badgeFor }) {
                   <Plate score={dish.score} size={70} />
                 </View>
                 <View style={styles.art}>
-                  <Sticker name={art} width={art === 'sardine' ? 230 : 130} rotate={i % 2 ? 8 : -8} />
+                  <FoodArt dish={dish} width={140} rotate={i % 2 ? 6 : -6} />
                 </View>
                 <Text style={styles.name} numberOfLines={2}>
                   {dish.name}
@@ -112,7 +103,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'flex-start', gap: 4 },
   no: { fontFamily: fonts.italic, fontSize: 16, color: colors.ink, marginTop: 12 },
   rank: { fontFamily: fonts.title, fontSize: 56, lineHeight: 58, color: colors.persimmon },
-  art: { height: 120, alignItems: 'center', justifyContent: 'center', marginVertical: 6 },
+  art: { height: 140, alignItems: 'center', justifyContent: 'center', marginVertical: 6 },
   name: { fontFamily: fonts.title, fontSize: 28, lineHeight: 29, color: colors.deep, marginTop: 4 },
   place: { fontFamily: fonts.medium, fontSize: 13, color: colors.teal, marginTop: 6 },
 });

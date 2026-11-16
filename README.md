@@ -23,6 +23,8 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Deals**: student discounts and specials posted by students, with a "still good" vote. They show up on Today and on each place.
 - **Campus Wrapped**: your semester in food as story cards: dishes rated, your number one, your spot, your eater type, your taste twin.
 - **Me**: your stats, your photo grid, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
+- **Your school**: picking or changing your campus needs a verified student email there (e.g. `@purdue.edu`, `@g.ucla.edu`). Firebase emails a link; once it's opened, the switch goes through. The database rules check the same thing, so it can't be skipped. Change school from Me, the sidebar on a computer, or the link under Today's news strip.
+- **Food art**: each dish gets a painting picked from its name (ramen, tacos, curry, croissant, about 30 kinds) from `tools/art/food.py`.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
 ## On a computer
@@ -84,7 +86,7 @@ They need a service account: `py/serviceAccountKey.json` from the Firebase conso
 
 ## Art
 
-The painted stickers, plates and wave bands in `assets/art` come from `tools/art/assets.py`, a small watercolor painter (numpy + scipy + Pillow). `python tools/art/assets.py vase` repaints one piece; with no arguments it repaints everything.
+The painted stickers, plates and wave bands in `assets/art` come from `tools/art/assets.py`, a small watercolor painter (numpy + scipy + Pillow). `python tools/art/assets.py vase` repaints one piece; with no arguments it repaints everything. The food paintings come from `tools/art/food.py` the same way (`python tools/art/food.py ramen`), and `components/foodArt.js` matches dish names to them. The app icon is `tools/art/icon.py`.
 
 ## Notes
 

@@ -84,8 +84,15 @@ export default function ProfileScreen({ navigation }) {
           stickerSize={150}
           right="Me"
         />
-        <Pressable onPress={() => navigation.navigate('Settings')} style={styles.campusRow} hitSlop={8}>
-          <Text style={styles.campusText}>{campus.name} / how you get around</Text>
+        <Pressable
+          onPress={() => navigation.navigate('Settings')}
+          style={({ hovered, pressed }) => [styles.school, (hovered || pressed) && { backgroundColor: colors.butter }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.schoolLabel}>Your school</Text>
+            <Text style={styles.schoolName}>{campus.name}</Text>
+          </View>
+          <Text style={styles.schoolChange}>Change school</Text>
           <ChevronRight size={16} color={colors.persimmon} strokeWidth={2} />
         </Pressable>
 
@@ -209,7 +216,7 @@ export default function ProfileScreen({ navigation }) {
         )}
 
         <View style={styles.block}>
-          <Button label="Campus & getting around" kind="light" onPress={() => navigation.navigate('Settings')} />
+          <Button label="School & getting around" kind="light" onPress={() => navigation.navigate('Settings')} />
           <Button label={demo ? 'Leave the demo' : 'Log out'} kind="light" onPress={logOut} style={{ marginTop: 12 }} />
         </View>
       </ScrollView>
@@ -218,6 +225,28 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  school: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    borderRadius: 8,
+    backgroundColor: colors.paper,
+  },
+  schoolLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    color: colors.teal,
+    textTransform: 'uppercase',
+  },
+  schoolName: { fontFamily: fonts.title, fontSize: 18, color: colors.ink, marginTop: 1 },
+  schoolChange: { fontFamily: fonts.bold, fontSize: 13, color: colors.persimmon },
   passport: { marginHorizontal: 20, marginTop: 16, backgroundColor: colors.deep, borderRadius: 8, padding: 4, ...lift },
   passportInner: {
     flexDirection: 'row',
@@ -235,8 +264,6 @@ const styles = StyleSheet.create({
   tile: { alignItems: 'center', paddingVertical: 14, minHeight: 140, justifyContent: 'center' },
   tileTitle: { fontFamily: fonts.title, fontSize: 28, color: colors.ink, marginTop: 4 },
   tileSub: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  campusRow: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 22, marginTop: 4 },
-  campusText: { fontFamily: fonts.bold, fontSize: 13, color: colors.persimmon },
   statsOuter: { marginHorizontal: 22, marginTop: 22 },
   stats: { flexDirection: 'row', paddingVertical: 4 },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14 },

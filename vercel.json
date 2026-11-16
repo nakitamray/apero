@@ -2,5 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install",
   "buildCommand": "npm run build:site",
-  "outputDirectory": "site"
+  "outputDirectory": "site",
+  "rewrites": [{ "source": "/app/:path*", "destination": "/app/index.html" }]
 }

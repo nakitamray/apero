@@ -9,6 +9,7 @@ import { Sticker } from '../components/art';
 import Sidebar from '../components/Sidebar';
 import LiveRail from '../components/LiveRail';
 import { useLayout } from '../lib/layout';
+import { linking } from '../lib/linking';
 import { useSession } from '../context/Session';
 import { colors, fonts } from '../theme';
 
@@ -115,7 +116,7 @@ function MeTab() {
   return (
     <MeStack.Navigator screenOptions={stackOptions}>
       <MeStack.Screen name="Profile" component={ProfileScreen} options={noHeader} />
-      <MeStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Campus & getting around' }} />
+      <MeStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Your school' }} />
       <MeStack.Screen name="Friends" component={FriendsScreen} options={{ title: 'Friends' }} />
       <MeStack.Screen name="Passport" component={PassportScreen} options={{ title: '', headerShown: !wide }} />
       {detailScreens(MeStack)}
@@ -202,7 +203,7 @@ export default function AppNavigator() {
   if (loading) return null;
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} linking={linking} documentTitle={{ formatter: () => 'apero' }}>
       <Root.Navigator screenOptions={noHeader}>
         {!user ? (
           <>

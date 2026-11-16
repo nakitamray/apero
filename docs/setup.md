@@ -25,6 +25,8 @@ Two services: **Firebase** holds accounts, data and review photos, **Vercel** ho
    npx firebase-tools deploy --only firestore --project YOUR_PROJECT_ID
    ```
 
+   Run this again whenever `firestore.rules` changes (it holds the student email check for schools).
+
    Food photos on reviews are shrunk on the phone and saved in Firestore (`photos/`), so there's no Storage bucket and no paid plan. The free plan's 1 GB is room for several thousand photos.
 
    Indexes take a few minutes to build. Until they finish, some lists (feed, top dishes) show an error in the console.
@@ -37,7 +39,7 @@ Two services: **Firebase** holds accounts, data and review photos, **Vercel** ho
 
    To keep menus fresh, run that once a day (a GitHub Action or any cron works).
 
-Start the app with `npx expo start`. Sign up, pick a campus, and you're in.
+Start the app with `npx expo start`. Sign up, pick a campus, and confirm it with your student email (Firebase sends the link from `noreply@YOUR-PROJECT.firebaseapp.com`; it can land in spam). The school email domains live in `lib/school.js` and `firestore.rules`; add a school's domain to both when you add a campus.
 
 ## 2. Vercel
 

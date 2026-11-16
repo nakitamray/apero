@@ -4,9 +4,41 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function ratingFields() { return ['ratingSum', 'ratingCount', 'score', 'love', 'fine', 'meh']; }
 
+    // your school is whichever one your verified email belongs to (same list as lib/school.js)
+    function schoolEmail() {
+      return {
+        'purdue': '.*@([a-z0-9-]+[.])*purdue[.]edu',
+        'ucla': '.*@([a-z0-9-]+[.])*ucla[.]edu',
+        'usc': '.*@([a-z0-9-]+[.])*usc[.]edu',
+        'berkeley': '.*@([a-z0-9-]+[.])*berkeley[.]edu',
+        'stanford': '.*@([a-z0-9-]+[.])*stanford[.]edu',
+        'uci': '.*@([a-z0-9-]+[.])*uci[.]edu',
+        'ucr': '.*@([a-z0-9-]+[.])*ucr[.]edu',
+        'mit': '.*@([a-z0-9-]+[.])*mit[.]edu',
+        'nyu': '.*@([a-z0-9-]+[.])*nyu[.]edu',
+        'cmu': '.*@([a-z0-9-]+[.])*cmu[.]edu',
+        'uw': '.*@([a-z0-9-]+[.])*uw[.]edu',
+        'uiuc': '.*@([a-z0-9-]+[.])*illinois[.]edu',
+        'erau': '.*@([a-z0-9-]+[.])*erau[.]edu'
+      };
+    }
+    function verifiedAt(campusId) {
+      return request.auth.token.email_verified == true
+        && campusId in schoolEmail()
+        && request.auth.token.email.lower().matches(schoolEmail()[campusId]);
+    }
+    function sameSchool() {
+      return request.resource.data.get('campusId', null) == resource.data.get('campusId', null);
+    }
+
     match /users/{uid} {
       allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == uid;
+      // picking or changing your school needs a verified student email there
+      allow create: if signedIn() && request.auth.uid == uid
+        && (!('campusId' in request.resource.data) || verifiedAt(request.resource.data.campusId));
+      allow update: if signedIn() && request.auth.uid == uid
+        && (sameSchool() || verifiedAt(request.resource.data.campusId));
+      allow delete: if signedIn() && request.auth.uid == uid;
 
       // friends can see each other's lists (taste match, "their list")
       match /rankings/{dishId} {

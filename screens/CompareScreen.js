@@ -5,12 +5,26 @@ import { myRankings, saveReview, uploadReviewPhoto } from '../lib/api';
 import { MAX_QUESTIONS, eloForPosition, toTen } from '../lib/score';
 import { Button, Hint, Label, Loading, Note, Plate, Screen, Title } from '../components/ui';
 import { Sticker } from '../components/art';
+import FoodArt from '../components/foodArt';
 import { StampSlam } from '../components/stamp';
 import { getPlace } from '../data/campuses';
 import { colors, fonts, lift } from '../theme';
 
+// a refresh halfway through a rating loses what you picked, so start the rating over
+export default function CompareScreen(props) {
+  if (!props.route.params?.dish) return <StartOver navigation={props.navigation} />;
+  return <Compare {...props} />;
+}
+
+function StartOver({ navigation }) {
+  useEffect(() => {
+    navigation.replace('PickDish');
+  }, []);
+  return null;
+}
+
 // Binary search through your own same-verdict list: each answer halves where the new dish can go.
-export default function CompareScreen({ navigation, route }) {
+function Compare({ navigation, route }) {
   const { dish, verdict, tags, note, photos = [], withPeople = [] } = route.params;
   const { user, name, campus } = useSession();
   // how many dishes you'd already rated at this place, so the stamp knows if it's new
@@ -150,7 +164,7 @@ export default function CompareScreen({ navigation, route }) {
         place={dish.placeName}
         onPress={() => pick(true)}
         tint="#FFE3CF"
-        art="bloodOrange"
+        dish={dish}
         tilt={-1}
       />
       <Note size={26} style={styles.or}>
@@ -161,7 +175,7 @@ export default function CompareScreen({ navigation, route }) {
         place={other.placeName}
         onPress={() => pick(false)}
         tint={colors.lagoon}
-        art="sardine"
+        dish={{ name: other.dishName }}
         tilt={0.8}
       />
 
@@ -172,7 +186,7 @@ export default function CompareScreen({ navigation, route }) {
   );
 }
 
-function Choice({ title, place, onPress, tint, art, tilt }) {
+function Choice({ title, place, onPress, tint, dish, tilt }) {
   return (
     <Pressable
       onPress={onPress}
@@ -181,7 +195,7 @@ function Choice({ title, place, onPress, tint, art, tilt }) {
         { backgroundColor: tint, transform: [{ rotate: `${tilt}deg` }, { scale: pressed ? 0.98 : 1 }] },
       ]}
     >
-      <Sticker name={art} width={art === 'sardine' ? 120 : 56} rotate={tilt * 8} style={styles.choiceArt} />
+      <FoodArt dish={dish} width={86} rotate={tilt * 8} style={styles.choiceArt} />
       <Text style={styles.choiceTitle}>{title}</Text>
       <Text style={styles.choicePlace}>{place}</Text>
     </Pressable>

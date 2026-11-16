@@ -7,6 +7,7 @@ import { timeAgo } from '../lib/time';
 import { reasonLabel } from '../lib/tags';
 import { setLiked } from '../lib/api';
 import Photo from './Photo';
+import FoodArt from './foodArt';
 import { Dotted, MenuCard, Note, Paper, Plate, Rise, Stamp, Tag } from './ui';
 
 // tiny alternating tilt so a list looks pasted down by hand
@@ -18,6 +19,7 @@ export function DishRow({ dish, rank, score, subtitle, onPress, badge, index = 0
     <Rise index={index}>
       <Pressable onPress={onPress} style={({ pressed }) => [styles.line, pressed && styles.linePressed]}>
         {rank != null && <Text style={styles.rank}>{rank}</Text>}
+        <FoodArt dish={dish} width={46} rotate={index % 2 ? 5 : -5} />
         <View style={{ flex: 1 }}>
           <Text style={styles.dishName} numberOfLines={2}>
             {dish.name || dish.dishName}

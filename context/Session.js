@@ -6,12 +6,51 @@ import { getProfile, saveProfile, setDemoMode, setFollowing } from '../lib/api';
 import { DEMO_UID } from '../lib/demoApi';
 import { getCampus } from '../data/campuses';
 import { defaultModes } from '../lib/trip';
+import { verifiedFor } from '../lib/school';
 
 const SessionContext = createContext(null);
 
-// the website embeds the app with ?demo=1 so visitors land straight in the demo
-const demoFromUrl = Platform.OS === 'web' && typeof window !== 'undefined' && /[?&]demo=1/.test(window.location.search);
-if (demoFromUrl) setDemoMode(true);
+// the website embeds the app with ?demo=1 so visitors land straight in the demo. the address changes as
+// you move around (and loses the ?demo=1), so the tab remembers it until you leave the demo
+const web = Platform.OS === 'web' && typeof window !== 'undefined';
+const remember = (on) => {
+  try {
+    if (on) window.sessionStorage.setItem('apero-demo', '1');
+    else window.sessionStorage.removeItem('apero-demo');
+  } catch {
+    // private windows can refuse storage; the demo still works, it just won't survive a refresh
+  }
+};
+const remembered = () => {
+  try {
+    return window.sessionStorage.getItem('apero-demo') === '1';
+  } catch {
+    return false;
+  }
+};
+// the school you picked in the demo, so a refresh lands back on the same page
+const demoSchool = {
+  get: () => {
+    try {
+      return JSON.parse(window.sessionStorage.getItem('apero-demo-school') || 'null');
+    } catch {
+      return null;
+    }
+  },
+  set: (value) => {
+    try {
+      if (value) window.sessionStorage.setItem('apero-demo-school', JSON.stringify(value));
+      else window.sessionStorage.removeItem('apero-demo-school');
+    } catch {
+      // fine without it
+    }
+  },
+};
+const demoFromUrl = web && (/[?&]demo=1/.test(window.location.search) || remembered());
+if (demoFromUrl) {
+  setDemoMode(true);
+  remember(true);
+}
 
 export function SessionProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined while firebase is still checking
@@ -25,13 +64,29 @@ export function SessionProvider({ children }) {
       return undefined;
     }
     return onAuthStateChanged(auth, async (next) => {
-      setProfile(next ? await getProfile(next.uid).catch(() => null) : null);
+      let p = next ? await getProfile(next.uid).catch(() => null) : null;
+      // a school switch you confirmed by email (and had to log back in for) finishes here
+      if (p?.pendingCampusId && verifiedFor(next, p.pendingCampusId)) {
+        try {
+          await next.getIdToken(true);
+          await saveProfile(next.uid, { campusId: p.pendingCampusId, pendingCampusId: null });
+          p = await getProfile(next.uid);
+        } catch {
+          // leave it pending; the school page can finish it
+        }
+      }
+      setProfile(p);
       setUser(next);
     });
   }, []);
 
   useEffect(() => {
-    if (demo) getProfile(DEMO_UID).then(setProfile);
+    if (!demo) return;
+    (async () => {
+      const saved = web ? demoSchool.get() : null;
+      if (saved?.campusId) await saveProfile(DEMO_UID, saved);
+      setProfile(await getProfile(DEMO_UID));
+    })();
   }, [demo]);
 
   const value = useMemo(() => {
@@ -48,6 +103,7 @@ export function SessionProvider({ children }) {
       following: profile?.following || [],
       updateProfile: async (patch) => {
         await saveProfile(current.uid, patch);
+        if (demo && web && patch.campusId) demoSchool.set({ campusId: patch.campusId, getAround: patch.getAround });
         // re-read: saving can change more than the patch (the demo hands you friends when you pick a school)
         setProfile(await getProfile(current.uid));
       },
@@ -59,11 +115,16 @@ export function SessionProvider({ children }) {
         await setFollowing(current.uid, otherUid, on);
       },
       startDemo: () => {
+        if (web) remember(true);
         setDemoMode(true);
         setDemo(true);
       },
       logOut: () => {
         if (demo) {
+          if (web) {
+            remember(false);
+            demoSchool.set(null);
+          }
           setDemoMode(false);
           setDemo(false);
           setProfile(null);

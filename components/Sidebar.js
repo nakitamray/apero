@@ -60,9 +60,16 @@ export default function Sidebar({ state, navigation }) {
               <Text style={styles.est}>est. on campus</Text>
             </View>
           </View>
-          <Text style={styles.kicker} numberOfLines={1}>
-            {campus.short} / {campus.city}
-          </Text>
+          <Pressable onPress={() => navigation.navigate('MeTab', { screen: 'Settings' })} style={styles.schoolRow}>
+            {({ hovered }) => (
+              <>
+                <Text style={styles.kicker} numberOfLines={1}>
+                  {campus.short} / {campus.city}
+                </Text>
+                <Text style={[styles.change, hovered && { textDecorationLine: 'underline' }]}>change school</Text>
+              </>
+            )}
+          </Pressable>
           <View style={styles.ruleThick} />
           <View style={styles.ruleThin} />
 
@@ -134,9 +141,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.6,
     color: colors.ink,
     textTransform: 'uppercase',
-    marginTop: 16,
-    marginBottom: 6,
   },
+  schoolRow: { marginTop: 16, marginBottom: 6 },
+  change: { fontFamily: fonts.italic, fontSize: 12, color: colors.persimmon, marginTop: 2 },
   ruleThick: { height: 3, backgroundColor: colors.ink },
   ruleThin: { height: 1, backgroundColor: colors.ink, marginTop: 3 },
   carte: {

@@ -24,6 +24,16 @@ const relative = (file) => {
   writeFileSync(file, text);
 };
 relative(join(app, 'index.html'));
+
+// deep links (/app/dish/abc) are served the same index.html, so point relative files back at the app folder
+const index = join(app, 'index.html');
+writeFileSync(
+  index,
+  readFileSync(index, 'utf8').replace(
+    '<head>',
+    `<head><script>(function(){var m=location.pathname.match(/^(.*?\\/app\\/)/);document.write('<base href="'+(m?m[1]:'./')+'">');})()</script>`,
+  ),
+);
 const js = join(app, '_expo', 'static', 'js', 'web');
 readdirSync(js).forEach((f) => f.endsWith('.js') && relative(join(js, f)));
 
