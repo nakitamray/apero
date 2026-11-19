@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSession } from '../context/Session';
 import { getPlace } from '../data/campuses';
-import { dishReviews, getDish, myRanking } from '../lib/api';
+import { dishReviews, getDish, myRanking, userReviews } from '../lib/api';
 import { toTen } from '../lib/score';
 import { moodLabel } from '../lib/tags';
 import { todayKey } from '../lib/time';
@@ -25,8 +25,13 @@ export default function DishScreen({ navigation, route }) {
   useFocusEffect(
     useCallback(() => {
       Promise.all([getDish(dishId), dishReviews(dishId, 20), myRanking(user.uid, dishId)])
-        .then(([d, r, m]) => {
+        .then(async ([d, r, m]) => {
           if (!d) setMissing(true);
+          // your own review always shows here (with edit / delete), even on a busy dish
+          if (m && !r.some((x) => x.userId === user.uid)) {
+            const own = (await userReviews(user.uid).catch(() => [])).find((x) => x.dishId === dishId);
+            if (own) r = [own, ...r];
+          }
           setDish(d);
           setReviews(r);
           setMine(m);

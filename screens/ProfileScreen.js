@@ -10,6 +10,8 @@ import { dayStreak, timeAgo } from '../lib/time';
 import { Button, Label, Loading, Masthead, MenuCard, Paper, Plate, Platter, Screen } from '../components/ui';
 import { Sticker } from '../components/art';
 import { DishMenu } from '../components/rows';
+import DeleteAccount from '../components/DeleteAccount';
+import InstallHint from '../components/InstallHint';
 import { PhotoGrid } from '../components/grid';
 import { colors, fonts, lift } from '../theme';
 
@@ -121,6 +123,8 @@ export default function ProfileScreen({ navigation }) {
           </Paper>
         </View>
 
+        <InstallHint />
+
         <Pressable
           onPress={() => navigation.navigate('Passport')}
           style={({ pressed, hovered }) => [
@@ -195,6 +199,7 @@ export default function ProfileScreen({ navigation }) {
             {total > 0 && (
               <>
                 <Text style={styles.section}>Lately</Text>
+                <Text style={styles.lateHint}>tap one to see it, edit it or delete it</Text>
                 {reviews.slice(0, 5).map((r) => (
                   <Pressable
                     key={r.id}
@@ -218,6 +223,7 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.block}>
           <Button label="School & getting around" kind="light" onPress={() => navigation.navigate('Settings')} />
           <Button label={demo ? 'Leave the demo' : 'Log out'} kind="light" onPress={logOut} style={{ marginTop: 12 }} />
+          {!demo && <DeleteAccount />}
         </View>
       </ScrollView>
     </Screen>
@@ -225,6 +231,14 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  lateHint: {
+    fontFamily: fonts.italic,
+    fontSize: 13,
+    color: colors.persimmon,
+    marginHorizontal: 22,
+    marginTop: -6,
+    marginBottom: 8,
+  },
   school: {
     flexDirection: 'row',
     alignItems: 'center',

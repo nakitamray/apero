@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useSession } from '../context/Session';
 import { Button, Field, Masthead, Note, Screen } from '../components/ui';
@@ -35,11 +35,41 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
+  const [notice, setNotice] = useState('');
   const { startDemo } = useSession();
+
+  // Firebase emails a link to pick a new password (free)
+  const forgot = async () => {
+    setProblem('');
+    setNotice('');
+    if (!auth) {
+      setProblem('Accounts are off on this build. You can still look around in the demo.');
+      return;
+    }
+    if (!email.trim()) {
+      setProblem('Type your email above, then tap "Forgot password?" again.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setNotice(
+        `If there's an account for ${email.trim()}, a link to reset your password is on its way. Check spam too.`,
+      );
+    } catch (e) {
+      setProblem(
+        e.code === 'auth/invalid-email'
+          ? "That email doesn't look right."
+          : e.code === 'auth/too-many-requests'
+            ? 'Too many tries. Wait a few minutes and try again.'
+            : "Couldn't send the reset link. Try again in a moment.",
+      );
+    }
+  };
 
   // shown on the page (pop-up alerts don't appear in a web browser)
   const logIn = async () => {
     setProblem('');
+    setNotice('');
     if (!auth) {
       setProblem('Accounts are off on this build. You can still look around in the demo.');
       return;
@@ -81,7 +111,11 @@ export default function LoginScreen({ navigation }) {
               secureTextEntry
               onSubmitEditing={logIn}
             />
+            <Pressable onPress={forgot} style={styles.forgot} hitSlop={8} accessibilityRole="button">
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </Pressable>
             {problem ? <Text style={styles.problem}>{problem}</Text> : null}
+            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
             <Button
               label="Log in"
               onPress={logIn}
@@ -107,6 +141,9 @@ export const styles = StyleSheet.create({
   form: { padding: 26, paddingTop: 34 },
   switch: { marginTop: 24, alignItems: 'center' },
   problem: { fontFamily: fonts.medium, fontSize: 14, color: colors.blood, marginBottom: 6 },
+  notice: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.teal, marginBottom: 6 },
+  forgot: { alignSelf: 'flex-end', marginTop: -8, marginBottom: 10 },
+  forgotText: { fontFamily: fonts.medium, fontSize: 13, color: colors.orange },
   backDemo: { paddingHorizontal: 22, paddingTop: 14, alignSelf: 'flex-start' },
   backDemoText: { fontFamily: fonts.bold, fontSize: 13, color: colors.persimmon },
   switchText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted },

@@ -3,7 +3,7 @@
     python tools/art/icon.py
 
 Writes assets/icon.png, adaptive-icon.png (Android, spritz only), splash-icon.png, favicon.png
-and assets/art/icon_web.png (the website's tab icon).
+and assets/art/icon_web.png (the website's tab icon), plus website/img/icon-*.png for installing the site.
 """
 import os
 import tempfile
@@ -59,4 +59,13 @@ if __name__ == '__main__':
     small = rounded(icon, 180)
     small.resize((48, 48), Image.LANCZOS).save(f'{ROOT}/favicon.png', optimize=True)
     small.resize((192, 192), Image.LANCZOS).save(f'{ROOT}/art/icon_web.png', optimize=True)
+    # installable website (Add to Home Screen): square icons the phone rounds itself, plus a "maskable"
+    # one with the glass kept inside the middle 80% so Android's circle / squircle masks never cut it
+    site = os.path.join(ROOT, '..', 'website', 'img')
+    os.makedirs(site, exist_ok=True)
+    icon.convert('RGB').resize((512, 512), Image.LANCZOS).save(f'{site}/icon-512.png', optimize=True)
+    icon.convert('RGB').resize((192, 192), Image.LANCZOS).save(f'{site}/icon-192.png', optimize=True)
+    icon.convert('RGB').resize((180, 180), Image.LANCZOS).save(f'{site}/apple-touch-icon.png', optimize=True)
+    masked = place(ticking(1024).convert('RGBA'), art, 640, -7, (8, 4))
+    masked.convert('RGB').resize((512, 512), Image.LANCZOS).save(f'{site}/icon-maskable.png', optimize=True)
     print('icons written')

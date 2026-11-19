@@ -102,13 +102,18 @@ service cloud.firestore {
         && request.resource.data.owner is string;
       allow read: if request.auth != null
         && (resource.data.owner == request.auth.uid || request.auth.token.email == email);
+      // deleting your account removes it
+      allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
     }
 
     match /reviews/{reviewId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      // anyone can like; the author can also fix the words (not the score)
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy']);
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+          || (resource.data.userId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['note', 'tags', 'editedAt'])));
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
   }

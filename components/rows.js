@@ -1,14 +1,14 @@
 import React from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useLayout } from '../lib/layout';
-import { Heart, Share2 } from 'lucide-react-native';
+import { Heart, Pencil, Share2, Trash2 } from 'lucide-react-native';
 import { colors, fonts } from '../theme';
 import { timeAgo } from '../lib/time';
-import { reasonLabel } from '../lib/tags';
-import { setLiked } from '../lib/api';
+import { REASONS, reasonLabel } from '../lib/tags';
+import { deleteReview, setLiked, updateReview } from '../lib/api';
 import Photo from './Photo';
 import FoodArt from './foodArt';
-import { Dotted, MenuCard, Note, Paper, Plate, Rise, Stamp, Tag } from './ui';
+import { Button, Chip, Dotted, Field, MenuCard, Note, Paper, Plate, Rise, Stamp, Tag } from './ui';
 
 // tiny alternating tilt so a list looks pasted down by hand
 export const tiltFor = (i) => [-0.6, 0.4, -0.2, 0.7][i % 4];
@@ -104,9 +104,18 @@ export const withLine = (people) =>
         .map((p) => p.name)
         .join(', ')} & ${people.at(-1).name}`;
 
-export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
+export function ReviewCard({ review: given, uid, onLike, onPressDish, index = 0 }) {
   const { column: width } = useLayout();
   const photoWidth = width - 40 - 36 + 12;
+  // your own reviews can be fixed or taken down right here
+  const [edits, setEdits] = React.useState(null); // the words after an edit
+  const [gone, setGone] = React.useState(false);
+  const [mode, setMode] = React.useState(null); // null | 'edit' | 'delete'
+  const [draft, setDraft] = React.useState({ note: '', tags: [] });
+  const [busy, setBusy] = React.useState(false);
+  const [problem, setProblem] = React.useState('');
+  const review = edits ? { ...given, ...edits } : given;
+  const mine = review.userId === uid;
   const liked = review.likedBy?.includes(uid);
   const likes = review.likedBy?.length || 0;
 
@@ -114,6 +123,37 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
     Share.share({
       message: `${review.dishName} at ${review.placeName}: ${review.score?.toFixed(1)}/10 on apero${review.note ? ` — "${review.note}"` : ''}`,
     });
+
+  const startEdit = () => {
+    setDraft({ note: review.note || '', tags: review.tags || [] });
+    setProblem('');
+    setMode('edit');
+  };
+  const toggleTag = (id) =>
+    setDraft((d) => ({ ...d, tags: d.tags.includes(id) ? d.tags.filter((t) => t !== id) : [...d.tags, id] }));
+  const saveEdit = async () => {
+    setBusy(true);
+    try {
+      await updateReview(review.id, draft);
+      setEdits({ note: draft.note.trim(), tags: draft.tags });
+      setMode(null);
+    } catch {
+      setProblem("Couldn't save that. Try again.");
+    }
+    setBusy(false);
+  };
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await deleteReview(review, uid);
+      setGone(true);
+    } catch {
+      setProblem("Couldn't delete it. Try again.");
+      setBusy(false);
+    }
+  };
+
+  if (gone) return null;
 
   return (
     <Paper
@@ -144,9 +184,30 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
         <Plate score={review.score} size={62} />
       </Pressable>
 
-      {review.note ? <Note style={{ marginTop: 14 }}>“{review.note}”</Note> : null}
+      {mode === 'edit' ? (
+        <View style={{ marginTop: 14 }}>
+          <Field
+            label="What you said"
+            value={draft.note}
+            onChangeText={(note) => setDraft((d) => ({ ...d, note }))}
+            multiline
+          />
+          <View style={[styles.tags, { marginTop: 0, marginBottom: 14 }]}>
+            {REASONS.map((r) => (
+              <Chip key={r.id} label={r.label} active={draft.tags.includes(r.id)} onPress={() => toggleTag(r.id)} />
+            ))}
+          </View>
+          <Text style={styles.small}>To change the score, rate the dish again.</Text>
+          <View style={styles.editButtons}>
+            <Button label="Save" onPress={saveEdit} loading={busy} style={{ flex: 1 }} />
+            <Button label="Cancel" kind="light" onPress={() => setMode(null)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      ) : review.note ? (
+        <Note style={{ marginTop: 14 }}>“{review.note}”</Note>
+      ) : null}
 
-      {review.tags?.length > 0 && (
+      {mode !== 'edit' && review.tags?.length > 0 && (
         <View style={styles.tags}>
           {review.tags.map((t) => (
             <Tag key={t}>{reasonLabel(t)}</Tag>
@@ -167,7 +228,37 @@ export function ReviewCard({ review, uid, onLike, onPressDish, index = 0 }) {
         <Pressable style={styles.action} onPress={share} hitSlop={8}>
           <Share2 size={18} color={colors.cobalt} strokeWidth={1.6} />
         </Pressable>
+        {mine && !mode && (
+          <>
+            <View style={{ flex: 1 }} />
+            <Pressable style={styles.action} onPress={startEdit} hitSlop={8} accessibilityLabel="Edit review">
+              <Pencil size={16} color={colors.cobalt} strokeWidth={1.6} />
+              <Text style={styles.actionText}>Edit</Text>
+            </Pressable>
+            <Pressable
+              style={styles.action}
+              onPress={() => setMode('delete')}
+              hitSlop={8}
+              accessibilityLabel="Delete review"
+            >
+              <Trash2 size={16} color={colors.blood} strokeWidth={1.6} />
+              <Text style={[styles.actionText, { color: colors.blood }]}>Delete</Text>
+            </Pressable>
+          </>
+        )}
       </View>
+      {mode === 'delete' && (
+        <View style={styles.confirm}>
+          <Text style={styles.confirmText}>
+            Delete this review? If it's your only one for this dish, your rating comes off its score and your list.
+          </Text>
+          <View style={styles.editButtons}>
+            <Button label="Delete" kind="citrus" onPress={remove} loading={busy} style={{ flex: 1 }} />
+            <Button label="Keep it" kind="light" onPress={() => setMode(null)} style={{ flex: 1 }} />
+          </View>
+        </View>
+      )}
+      {problem ? <Text style={styles.problem}>{problem}</Text> : null}
     </Paper>
   );
 }
@@ -208,5 +299,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
   },
   action: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  small: { fontFamily: fonts.italic, fontSize: 13, color: colors.muted, marginBottom: 10 },
+  editButtons: { flexDirection: 'row', gap: 10 },
+  confirm: { marginTop: 14, padding: 12, borderRadius: 6, backgroundColor: colors.peach },
+  confirmText: { fontFamily: fonts.body, fontSize: 14, lineHeight: 20, color: colors.ink, marginBottom: 12 },
+  problem: { fontFamily: fonts.medium, fontSize: 13, color: colors.blood, marginTop: 10 },
   actionText: { fontFamily: fonts.body, fontSize: 14, color: colors.cobalt },
 });

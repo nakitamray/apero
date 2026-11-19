@@ -25,6 +25,8 @@ Purdue · UCLA · USC · UC Berkeley · Stanford · UC Irvine · UC Riverside ·
 - **Me**: your stats, your photo grid, a breakdown of your taste, a few dishes to try next, and where you change campus or how you get around.
 - **Your school**: log in with any email; picking or changing your campus means confirming a student email there (e.g. `@purdue.edu`, `@g.ucla.edu`). apero emails it a one-time link, and opening it (on any device) ties that address to your account without changing how you log in. The address stays private to you, and the database rules check it before a campus can change. Change school from Me, the sidebar on a computer, or the link under Today's news strip.
 - **Food art**: each dish gets a painting picked from its name (ramen, tacos, curry, croissant, about 30 kinds) from `tools/art/food.py`.
+- **Your account**: forgot your password? The login page emails a reset link. Edit or delete your own reviews from the review itself (deleting your only review of a dish takes your rating back out of its scores). Me has "Delete my account", which removes everything you added.
+- **Install it**: on a phone the website can go on your home screen and open full screen like an app (Me shows how). `website/manifest.webmanifest` and `website/sw.js`.
 - **Demo**: "Try the demo" on the login screen (or `?demo=1` on the web build) runs the whole app on sample data, no account needed.
 
 ## On a computer

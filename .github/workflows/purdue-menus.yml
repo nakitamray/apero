@@ -1,0 +1,25 @@
+# Pulls today's Purdue dining court menus into Firestore every morning, so "on today" stays true.
+# Needs the repository secret FIREBASE_SERVICE_ACCOUNT (the Firebase service account JSON, see docs/setup.md).
+# Run it by hand any time from the Actions tab: Purdue menus -> Run workflow.
+name: Purdue menus
+
+on:
+  schedule:
+    - cron: '23 10 * * *' # every day around 5-6am in West Lafayette
+  workflow_dispatch:
+
+jobs:
+  menus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: py/requirements.txt
+      - run: pip install -r py/requirements.txt
+      - run: python py/purdue_menus.py
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

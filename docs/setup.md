@@ -37,7 +37,10 @@ Two services: **Firebase** holds accounts, data and review photos, **Vercel** ho
    python py/purdue_menus.py --days 3
    ```
 
-   To keep menus fresh, run that once a day (a GitHub Action or any cron works).
+   To keep menus fresh, GitHub runs it every morning for free (`.github/workflows/purdue-menus.yml`). It needs the key once:
+   open the service account JSON from this step in a text editor and copy all of it, then on GitHub go to the repo's
+   **Settings → Secrets and variables → Actions → New repository secret**, name it `FIREBASE_SERVICE_ACCOUNT`, paste,
+   **Add secret**. To check it, **Actions → Purdue menus → Run workflow**; a green check means today's menus are in.
 
 Start the app with `npx expo start`. Sign up with any email, pick a campus, and confirm it with your student email (Firebase sends the link from `noreply@YOUR-PROJECT.firebaseapp.com`; it can land in spam). The link opens the website, so the site's address has to be in **Authentication → Settings → Authorized domains** (step 2.5). The school email domains live in `lib/school.js` and `firestore.rules`; add a school's domain to both when you add a campus.
 

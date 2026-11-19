@@ -32,7 +32,15 @@ writeFileSync(
   index,
   readFileSync(index, 'utf8').replace(
     '<head>',
-    `<head><script>(function(){var m=location.pathname.match(/^(.*?\\/app\\/)/);document.write('<base href="'+(m?m[1]:'./')+'">');})()</script>`,
+    `<head><script>(function(){var m=location.pathname.match(/^(.*?\\/app\\/)/);document.write('<base href="'+(m?m[1]:'./')+'">');})()</script>` +
+      // installable: the site's manifest + icons, and the small file helper (website/sw.js)
+      '<link rel="manifest" href="../manifest.webmanifest" />' +
+      '<link rel="apple-touch-icon" href="../img/apple-touch-icon.png" />' +
+      '<meta name="apple-mobile-web-app-capable" content="yes" />' +
+      '<meta name="mobile-web-app-capable" content="yes" />' +
+      '<meta name="apple-mobile-web-app-title" content="apero" />' +
+      '<meta name="theme-color" content="#ffffff" />' +
+      `<script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register(document.baseURI+'../sw.js',{scope:document.baseURI+'../'}).catch(function(){})})</script>`,
   ),
 );
 const js = join(app, '_expo', 'static', 'js', 'web');

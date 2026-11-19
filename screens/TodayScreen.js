@@ -17,6 +17,9 @@ import FoodArt from '../components/foodArt';
 import { Sticker } from '../components/art';
 import { colors, fonts, lift } from '../theme';
 
+// after midnight it's the late-night edition, not breakfast yet
+const edition = (d = new Date()) => (d.getHours() < 5 ? 'late-night' : currentMeal(d).toLowerCase());
+
 const VERDICT = { love: 'loved', fine: 'was fine with', meh: "wasn't into" };
 
 // a mood forecast, written like the weather
@@ -97,7 +100,7 @@ export default function TodayScreen({ navigation }) {
           <Nameplate
             campus={campus}
             compact={compact}
-            line={`${greeting()}, ${name}. The ${currentMeal().toLowerCase()} edition, from ${campus.city}.`}
+            line={`${greeting()}, ${name}. The ${edition()} edition, from ${campus.city}.`}
           />
           <Ticker items={ticker} />
           <Pressable
