@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { Button, Field, Note, Screen } from '../components/ui';
-import { AuthHeader, styles } from './LoginScreen';
+import { AuthHeader, BackToDemo, styles } from './LoginScreen';
 
 const ERRORS = {
   'auth/email-already-in-use': 'That email already has an account.',
   'auth/invalid-email': "That email doesn't look right.",
   'auth/weak-password': 'Password needs at least 6 characters.',
+  'auth/too-many-requests': 'Too many tries. Wait a few minutes and try again.',
 };
 
 export default function SignUpScreen({ navigation }) {
@@ -16,10 +17,12 @@ export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState('');
 
   const signUp = async () => {
+    setProblem('');
     if (!auth) {
-      Alert.alert('Accounts are off on this build', 'You can still look around in the demo.');
+      setProblem('Accounts are off on this build. You can still look around in the demo.');
       return;
     }
     setBusy(true);
@@ -28,7 +31,7 @@ export default function SignUpScreen({ navigation }) {
       await updateProfile(user, { displayName: name.trim() });
       // the navigator sends new accounts to campus setup from here
     } catch (e) {
-      Alert.alert("Couldn't sign up", ERRORS[e.code] || e.message);
+      setProblem(ERRORS[e.code] || "Couldn't make the account. Try again in a moment.");
       setBusy(false);
     }
   };
@@ -37,6 +40,7 @@ export default function SignUpScreen({ navigation }) {
     <Screen>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
+          <BackToDemo />
           <AuthHeader />
           <View style={styles.form}>
             <Note size={24} style={styles.tagline}>
@@ -51,6 +55,7 @@ export default function SignUpScreen({ navigation }) {
               keyboardType="email-address"
             />
             <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+            {problem ? <Text style={styles.problem}>{problem}</Text> : null}
             <Button
               label="Create account"
               onPress={signUp}

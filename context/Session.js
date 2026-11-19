@@ -56,6 +56,8 @@ export function SessionProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined while firebase is still checking
   const [profile, setProfile] = useState(null);
   const [demo, setDemo] = useState(demoFromUrl);
+  // left the demo to log in or sign up: those screens offer a way back
+  const [wasDemo, setWasDemo] = useState(false);
 
   useEffect(() => {
     if (!auth) {
@@ -102,6 +104,7 @@ export function SessionProvider({ children }) {
       profile,
       campus,
       demo,
+      wasDemo,
       modes: profile?.getAround || defaultModes(campus),
       name: profile?.name || current?.displayName || current?.email?.split('@')[0] || 'friend',
       loading: demo ? !profile : user === undefined,
@@ -126,10 +129,9 @@ export function SessionProvider({ children }) {
       },
       logOut: () => {
         if (demo) {
-          if (web) {
-            remember(false);
-            demoSchool.set(null);
-          }
+          // the demo school is kept, so going back to the demo lands where you were
+          if (web) remember(false);
+          setWasDemo(true);
           setDemoMode(false);
           setDemo(false);
           setProfile(null);
@@ -138,7 +140,7 @@ export function SessionProvider({ children }) {
         signOut(auth);
       },
     };
-  }, [user, profile, demo]);
+  }, [user, profile, demo, wasDemo]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

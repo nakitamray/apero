@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, lift, tints } from '../theme';
 import { formatScore } from '../lib/score';
 import Svg, { Circle, Rect } from 'react-native-svg';
+import { Eye, EyeOff } from 'lucide-react-native';
 import { StampFrame, Sticker } from './art';
 import { COLUMN_MAX, useLayout } from '../lib/layout';
 
@@ -418,15 +419,31 @@ export function Tag({ children, color = colors.deep }) {
   );
 }
 
-export function Field({ label, style, ...props }) {
+// a text box; password boxes get an eye to show what you typed
+export function Field({ label, style, secureTextEntry, ...props }) {
+  const [shown, setShown] = useState(false);
   return (
     <View style={[{ marginBottom: 16 }, style]}>
       {label ? <Label style={{ marginBottom: 6 }}>{label}</Label> : null}
-      <TextInput
-        placeholderTextColor={colors.muted}
-        style={[styles.input, props.multiline && styles.multiline]}
-        {...props}
-      />
+      <View>
+        <TextInput
+          placeholderTextColor={colors.muted}
+          style={[styles.input, props.multiline && styles.multiline, secureTextEntry && { paddingRight: 52 }]}
+          secureTextEntry={secureTextEntry && !shown}
+          {...props}
+        />
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setShown((s) => !s)}
+            style={styles.eye}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={shown ? 'Hide password' : 'Show password'}
+          >
+            {shown ? <EyeOff size={20} color={colors.deep} /> : <Eye size={20} color={colors.muted} />}
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -553,6 +570,7 @@ export const styles = StyleSheet.create({
     color: colors.ink,
   },
   multiline: { minHeight: 100, textAlignVertical: 'top' },
+  eye: { position: 'absolute', right: 6, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: 30, paddingHorizontal: 34 },
   emptyBody: { fontSize: 15, marginTop: 6, textAlign: 'center', lineHeight: 21 },
 });

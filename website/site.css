@@ -159,8 +159,24 @@ main {
 .screen iframe {
   display: block;
   width: 390px;
-  height: 800px;
+  height: 766px;
   border: 0;
+}
+
+/* the strip under the app with the home bar, so the tab bar clears the rounded corners */
+.home {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fffdf7;
+}
+
+.home i {
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: #13285e;
 }
 
 .hint {

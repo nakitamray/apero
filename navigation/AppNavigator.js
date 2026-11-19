@@ -159,7 +159,7 @@ function Tabs({ navigation }) {
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: [
           styles.tabBar,
-          { height: 52 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) },
+          { height: 64 + Math.max(insets.bottom, 8), paddingBottom: Math.max(insets.bottom, 8) },
         ],
         tabBarLabelStyle: styles.tabLabel,
         tabBarActiveTintColor: TABS[route.name]?.color,
